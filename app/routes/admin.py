@@ -69,6 +69,7 @@ class BrokerageUpdate(BaseModel):
     slack_team_id: Optional[str] = None
     slack_signing_secret: Optional[str] = None
     featured_properties: Optional[list] = None
+    active: Optional[bool] = None
 
 
 # ───────────── ROUTES ─────────────
@@ -111,7 +112,7 @@ async def get_account(brokerage_id: str, _=Depends(require_admin)):
 @router.patch("/brokerages/{brokerage_id}")
 async def update_account(brokerage_id: str, body: BrokerageUpdate, _=Depends(require_admin)):
     """Update any config field. Only provided fields are changed."""
-    changes = {k: v for k, v in body.model_dump().items() if v is not None}
+    changes = body.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(status_code=400, detail="No fields to update.")
     ok = update_brokerage(brokerage_id, changes)
@@ -127,6 +128,15 @@ async def deactivate_account(brokerage_id: str, _=Depends(require_admin)):
     if not ok:
         raise HTTPException(status_code=500, detail="Deactivation failed.")
     return {"status": "deactivated", "brokerage_id": brokerage_id}
+
+
+@router.post("/brokerages/{brokerage_id}/reactivate")
+async def reactivate_account(brokerage_id: str, _=Depends(require_admin)):
+    """Reactivate a previously paused brokerage."""
+    ok = set_brokerage_active(brokerage_id, True)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Reactivation failed.")
+    return {"status": "reactivated", "brokerage_id": brokerage_id}
 
 
 @router.post("/brokerages/{brokerage_id}/train")

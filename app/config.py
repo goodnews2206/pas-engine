@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     # Admin
     ADMIN_API_KEY: str = ""           # set a strong secret — required to use /admin/* routes
 
+    # Twilio Browser Calling (for the website "Talk to Alex" demo widget)
+    # Setup: console.twilio.com/project/api-keys → create Standard key → save SID + Secret
+    #        console.twilio.com/voice/twiml/apps → create app → Voice URL = BASE_URL/demo/call
+    TWILIO_API_KEY_SID: str = ""      # e.g. SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    TWILIO_API_SECRET: str = ""       # shown once when creating the API key
+    TWILIO_TWIML_APP_SID: str = ""    # e.g. APxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
     # App
     BASE_URL: str  # e.g. https://your-app.up.railway.app
     ENVIRONMENT: str = "development"

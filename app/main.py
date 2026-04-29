@@ -4,10 +4,12 @@ ORVN Labs | Production MVP
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.routes.twilio_webhook import router as twilio_router
@@ -16,6 +18,8 @@ from app.routes.outbound import router as outbound_router
 from app.routes.slack_command import router as slack_router
 from app.routes.admin import router as admin_router
 from app.routes.agents import router as agents_router
+from app.routes.portal import router as portal_router
+from app.routes.demo import router as demo_router
 from app.db.supabase_client import init_supabase
 from app.config import get_settings
 
@@ -92,6 +96,13 @@ app.include_router(outbound_router, prefix="/outbound", tags=["Outbound"])
 app.include_router(slack_router, prefix="/slack", tags=["Slack"])
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 app.include_router(agents_router, prefix="/admin", tags=["Agents"])
+app.include_router(portal_router, prefix="/portal", tags=["Portal"])
+app.include_router(demo_router, prefix="/demo", tags=["Demo"])
+
+# Serve the brokerage client dashboard at /dashboard
+_dashboard_dir = os.path.join(os.path.dirname(__file__), "static", "dashboard")
+if os.path.isdir(_dashboard_dir):
+    app.mount("/dashboard", StaticFiles(directory=_dashboard_dir, html=True), name="dashboard")
 
 
 @app.get("/health")

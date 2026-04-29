@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAS Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060410;--bg2:#0C0820;--bg3:#120E2C;--bg4:#181438;
+  --p:#5B3FD4;--pl:#7B5FEA;--pd:#3A28A8;
+  --w:#F0ECFF;--off:#C8C0E4;--mu:#58507A;--dim:#1E1A32;
+  --bo:rgba(91,63,212,0.2);
+  --gr:#22C55E;--am:#F59E0B;--re:#EF4444;--bl:#3B82F6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.7;overflow-x:hidden}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(91,63,212,.15) 0%,transparent 70%)}
+.login-card{background:var(--bg2);border:1px solid var(--bo);border-radius:14px;padding:44px;max-width:440px;width:100%}
+.login-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--pl);margin-bottom:4px}
+.login-tagline{font-size:13px;color:var(--mu);margin-bottom:32px}
+.login-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:6px}
+.login-input{width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-family:'DM Mono',monospace;font-size:13px;padding:12px 14px;outline:none;transition:border-color .2s}
+.login-input:focus{border-color:var(--pl)}
+.login-btn{width:100%;margin-top:14px;background:var(--p);color:#fff;border:none;border-radius:7px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.login-btn:hover{background:var(--pl);transform:translateY(-1px)}
+.login-btn:disabled{opacity:.5;cursor:default;transform:none}
+.login-err{color:var(--re);font-size:12px;margin-top:10px;display:none;font-family:'DM Mono',monospace}
+.login-note{font-size:11px;color:var(--mu);margin-top:20px;text-align:center}
+
+/* ── SHELL ── */
+.app{display:none;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:900;background:rgba(6,4,16,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--bo);height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--pl);flex-shrink:0}
+.topbar-name{font-size:12px;color:var(--mu);border-left:1px solid var(--bo);padding-left:14px;flex:1}
+.topbar-badge{font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;letter-spacing:.08em}
+.badge-admin{background:rgba(245,158,11,.15);color:var(--am);border:1px solid rgba(245,158,11,.25)}
+.badge-brok{background:rgba(91,63,212,.18);color:var(--pl);border:1px solid var(--bo)}
+.logout-btn{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;border:1px solid var(--bo);border-radius:4px;padding:4px 10px;background:transparent;transition:all .2s}
+.logout-btn:hover{color:var(--w);border-color:var(--pl)}
+.tabs{border-bottom:1px solid var(--bo);background:var(--bg2);display:flex;padding:0 24px;overflow-x:auto}
+.tab{padding:0 16px;height:44px;display:flex;align-items:center;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--mu);border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.tab.on{color:var(--w);border-bottom-color:var(--pl)}
+.tab:hover:not(.on){color:var(--off)}
+.pg{display:none}.pg.on{display:block}
+.wrap{max-width:1040px;margin:0 auto;padding:32px 24px 80px}
+
+/* ── LAYOUT ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sh{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(18px,2.5vw,26px);letter-spacing:-.02em;margin-bottom:6px}
+.sub{font-size:13px;color:var(--mu);margin-bottom:22px}
+.card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:20px}
+.section-head{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--pl);margin-bottom:12px}
+
+/* ── TAGS ── */
+.tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;padding:2px 8px;border-radius:3px;display:inline-block}
+.tag-g{background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.22)}
+.tag-a{background:rgba(245,158,11,.12);color:var(--am);border:1px solid rgba(245,158,11,.2)}
+.tag-r{background:rgba(239,68,68,.12);color:var(--re);border:1px solid rgba(239,68,68,.2)}
+.tag-b{background:rgba(59,130,246,.12);color:var(--bl);border:1px solid rgba(59,130,246,.2)}
+.tag-p{background:rgba(91,63,212,.18);color:var(--pl);border:1px solid var(--bo)}
+
+/* ── CALLOUT ── */
+.callout{border-radius:8px;padding:14px 18px;margin:14px 0}
+.c-p{background:rgba(91,63,212,.1);border:1px solid var(--bo);border-left:3px solid var(--pl)}
+.c-g{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-left:3px solid var(--gr)}
+.c-a{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-left:3px solid var(--am)}
+.c-r{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-left:3px solid var(--re)}
+.callout-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.cl-p{color:var(--pl)}.cl-g{color:var(--gr)}.cl-a{color:var(--am)}.cl-r{color:var(--re)}
+.callout p{font-size:13px;color:#B0A8C8;line-height:1.72}
+.callout strong{color:var(--w)}
+
+/* ── STAT CARDS ── */
+.stat-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:18px}
+.stat-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:8px}
+.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;line-height:1;margin-bottom:4px}
+.stat-sub{font-size:11px;color:var(--mu)}
+
+/* ── BEST AGENT ── */
+.best-card{background:linear-gradient(135deg,rgba(91,63,212,.15),rgba(91,63,212,.05));border:1px solid var(--bo);border-radius:10px;padding:20px}
+.best-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--pl);margin-bottom:6px}
+.best-name{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin-bottom:2px}
+.best-rate{font-family:'Syne',sans-serif;font-weight:800;font-size:40px;color:var(--gr);line-height:1}
+.best-sub{font-size:12px;color:var(--mu);margin-top:4px}
+.qa-btn{display:block;width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:6px;padding:11px 14px;color:var(--w);font-size:13px;cursor:pointer;text-align:left;margin-bottom:8px;transition:all .2s;font-family:'DM Sans',sans-serif}
+.qa-btn:hover{border-color:var(--pl);background:var(--dim)}
+.qa-btn:last-child{margin-bottom:0}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;overflow:hidden}
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead tr{background:var(--bg3)}
+.tbl th{padding:10px 14px;text-align:left;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+.tbl td{padding:11px 14px;border-bottom:1px solid rgba(91,63,212,.07);font-size:12.5px;color:#B0A8C8;vertical-align:middle}
+.tbl td:first-child{color:var(--w)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(91,63,212,.04)}
+.pager{display:flex;gap:8px;margin-top:14px;align-items:center;justify-content:flex-end}
+.pager-btn{background:var(--bg2);border:1px solid var(--bo);border-radius:5px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--mu);cursor:pointer;transition:all .2s}
+.pager-btn:hover:not(:disabled){border-color:var(--pl);color:var(--w)}
+.pager-btn:disabled{opacity:.35;cursor:default}
+.pager-info{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);flex:1;text-align:center}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-btn{background:var(--bg2);border:1px solid var(--bo);border-radius:5px;padding:5px 14px;font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;transition:all .2s}
+.filter-btn.on{color:var(--w);border-color:var(--pl);background:rgba(91,63,212,.12)}
+
+/* ── AGENTS ── */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.agent-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:18px}
+.agent-rank{font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.agent-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:10px}
+.agent-stats{display:flex;gap:16px;margin-bottom:10px}
+.a-stat-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--pl)}
+.a-stat-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.08em;text-transform:uppercase}
+
+/* ── TRAINING ── */
+.training-item{background:var(--bg2);border:1px solid var(--bo);border-radius:9px;padding:16px;margin-bottom:10px}
+.training-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.training-v{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--pl)}
+.training-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);margin-left:auto}
+
+/* ── CALCULATOR ── */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.lc-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:5px}
+.lc-live{color:var(--gr)}.lc-req{color:var(--re)}
+.lc-input{width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s}
+.lc-input:focus{border-color:var(--pl)}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--p);border:2px solid var(--pl);cursor:pointer}
+.rv{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;text-align:center;color:var(--w);margin-top:3px}
+.rhl{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);margin-top:1px}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:16px}
+.form-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:6px}
+.form-hint{font-size:11px;color:var(--mu);margin-top:4px}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-family:'DM Mono',monospace;font-size:13px;padding:11px 14px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--pl)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ── BUTTONS ── */
+.btn{border:none;border-radius:7px;padding:11px 20px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--p);color:#fff}.btn-primary:hover{background:var(--pl)}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--re);border:1px solid rgba(239,68,68,.25)}.btn-danger:hover{background:rgba(239,68,68,.25)}
+.btn-ghost{background:var(--bg3);color:var(--w);border:1px solid var(--bo)}.btn-ghost:hover{border-color:var(--pl)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-full{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* ── CONTROL TAB ── */
+.status-widget{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.sw-left .sw-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);margin-bottom:6px}
+.sw-status{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;display:flex;align-items:center;gap:8px}
+.dot-active{color:var(--gr)}.dot-paused{color:var(--re)}
+.prop-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.prop-item{background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.prop-body .prop-addr{font-weight:600;color:var(--w);margin-bottom:2px}
+.prop-body .prop-meta{font-size:12px;color:var(--mu)}
+.prop-remove{background:transparent;border:1px solid var(--bo);border-radius:4px;color:var(--mu);padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0;transition:all .2s;font-family:'DM Mono',monospace}
+.prop-remove:hover{border-color:var(--re);color:var(--re)}
+.add-prop-form{background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:18px}
+
+/* ── ADMIN ── */
+.brok-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.brok-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:18px}
+.brok-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.brok-id{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);margin-bottom:10px}
+.brok-stats{display:flex;gap:14px;margin-bottom:12px;font-size:12px;color:var(--mu)}
+.brok-stats strong{color:var(--w)}
+.api-key-row{background:var(--bg3);border:1px solid var(--bo);border-radius:6px;padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.api-key-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--off);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-btn{background:transparent;border:1px solid var(--bo);border-radius:4px;color:var(--mu);padding:3px 10px;font-size:10px;cursor:pointer;flex-shrink:0;transition:all .2s;font-family:'DM Mono',monospace}
+.copy-btn:hover{border-color:var(--pl);color:var(--pl)}
+.edit-panel{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:24px;margin-top:14px;display:none;animation:fu .3s ease both}
+.edit-panel.show{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.success-box{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:18px;margin-top:16px;display:none;animation:fu .3s ease both}
+.success-box.show{display:block}
+.api-reveal{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:var(--gr);word-break:break-all;margin:8px 0}
+.ms-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(91,63,212,.08);font-size:12.5px}
+.ms-row:last-child{border-bottom:none}
+.ms-label{color:var(--mu)}.ms-val{font-family:'DM Mono',monospace;color:var(--w)}
+
+/* ── LOADING ── */
+.loading{text-align:center;padding:60px 20px;color:var(--mu);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--bo);border-top-color:var(--pl);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--bo);border-radius:8px;padding:12px 18px;font-size:13px;color:var(--w);z-index:9999;animation:fu .3s ease both;pointer-events:none}
+.toast.green{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08);color:var(--gr)}
+.toast.red{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--re)}
+
+@media(max-width:700px){
+  .g4{grid-template-columns:1fr 1fr}
+  .g3,.g2,.calc-grid,.form-row{grid-template-columns:1fr}
+  .topbar,.wrap{padding-left:14px;padding-right:14px}
+  .tabs{padding:0 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
+    <div class="login-logo">PAS Portal</div>
+    <div class="login-tagline">Brokerage command centre — powered by ORVN.</div>
+    <label class="login-label">API Key</label>
+    <input class="login-input" id="keyInput" type="password" placeholder="pas_..." autocomplete="off">
+    <div class="login-err" id="loginErr">Invalid key. Contact your ORVN account manager.</div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Dashboard →</button>
+    <p class="login-note">Enter your brokerage API key — or ORVN admin key to manage accounts.</p>
+  </div>
+</div>
+
+<!-- ════════ BROKERAGE APP ════════ -->
+<div class="app" id="brokerageApp">
+  <div class="topbar">
+    <div class="topbar-logo">PAS</div>
+    <div class="topbar-name" id="bTopName">—</div>
+    <span class="topbar-badge badge-brok">BROKERAGE</span>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+  <div class="tabs" id="bTabs">
+    <button class="tab on" onclick="bGo('overview',this)">Overview</button>
+    <button class="tab" onclick="bGo('control',this)">Control</button>
+    <button class="tab" onclick="bGo('calls',this)">Calls</button>
+    <button class="tab" onclick="bGo('leads',this)">Leads</button>
+    <button class="tab" onclick="bGo('agents',this)">Agents</button>
+    <button class="tab" onclick="bGo('calculator',this)">Revenue Audit</button>
+    <button class="tab" onclick="bGo('settings',this)">Settings</button>
+    <button class="tab" onclick="bGo('training',this)">Self-Training</button>
+  </div>
+
+  <div class="pg on" id="bpg-overview"><div class="wrap"><div id="overviewContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div></div>
+
+  <!-- CONTROL -->
+  <div class="pg" id="bpg-control">
+    <div class="wrap">
+      <h2 class="sh">PAS Control</h2>
+      <p class="sub">Pause, resume, and manage what PAS says on every call — no backend access needed.</p>
+      <div id="controlContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="pg" id="bpg-calls">
+    <div class="wrap">
+      <h2 class="sh">Call History</h2>
+      <p class="sub">Every call PAS processed — inbound and outbound.</p>
+      <div class="filter-bar">
+        <button class="filter-btn on" onclick="filterCalls(null,this)">All</button>
+        <button class="filter-btn" onclick="filterCalls('booked',this)">Booked</button>
+        <button class="filter-btn" onclick="filterCalls('not_interested',this)">Not Interested</button>
+        <button class="filter-btn" onclick="filterCalls('incomplete',this)">Incomplete</button>
+      </div>
+      <div id="callsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="pg" id="bpg-leads">
+    <div class="wrap">
+      <h2 class="sh">Lead Memory</h2>
+      <p class="sub">Every prospect PAS has spoken with. Memory persists across all calls.</p>
+      <div id="leadsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="pg" id="bpg-agents">
+    <div class="wrap">
+      <h2 class="sh">Agent Leaderboard</h2>
+      <p class="sub">Ranked by close rate. PAS routes bookings to the best available agent automatically.</p>
+      <div id="agentsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div class="pg" id="bpg-calculator">
+    <div class="wrap">
+      <h2 class="sh">Revenue Audit Calculator</h2>
+      <p class="sub">Pre-filled with your live data. Add commission and ISA cost to see the full picture.</p>
+      <div class="card" style="margin-bottom:20px">
+        <div class="calc-grid">
+          <div>
+            <label class="lc-lbl">Monthly Leads <span class="lc-live">● live</span></label>
+            <input type="number" class="lc-input" id="cLeads" placeholder="Loading...">
+          </div>
+          <div>
+            <label class="lc-lbl">Avg Commission ($) <span class="lc-req">* manual</span></label>
+            <input type="number" class="lc-input" id="cComm" placeholder="12000">
+          </div>
+          <div>
+            <label class="lc-lbl">Close Rate: <span id="cCloseV" style="color:var(--pl)">8%</span> <span class="lc-live">● agents</span></label>
+            <input type="range" id="cClose" min="1" max="30" value="8" oninput="document.getElementById('cCloseV').textContent=this.value+'%'">
+            <div class="rhl"><span>1%</span><span>avg 8%</span><span>30%</span></div>
+          </div>
+          <div>
+            <label class="lc-lbl">Response Time: <span id="cRespV" style="color:var(--pl)">3 sec (PAS)</span></label>
+            <input type="range" id="cResp" min="1" max="480" value="1" oninput="updateCResp(this)">
+            <div class="rhl"><span>&lt;1 min</span><span>1 hr</span><span>8 hrs</span></div>
+          </div>
+          <div>
+            <label class="lc-lbl">CRM Size <span class="lc-live">● live</span></label>
+            <input type="number" class="lc-input" id="cCRM" placeholder="Loading...">
+          </div>
+          <div>
+            <label class="lc-lbl">ISA Annual Cost ($) <span class="lc-req">* manual</span></label>
+            <input type="number" class="lc-input" id="cISA" placeholder="85000">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="runCalc()">Calculate Revenue Opportunity</button>
+        <div id="calcResults" style="display:none;margin-top:20px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="pg" id="bpg-settings">
+    <div class="wrap">
+      <h2 class="sh">Settings</h2>
+      <p class="sub">Changes take effect on the next call. Contact your account manager to update your Twilio number.</p>
+      <div id="settingsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="pg" id="bpg-training">
+    <div class="wrap">
+      <h2 class="sh">Self-Training History</h2>
+      <p class="sub">Claude analyses your transcripts every 25 calls and rewrites PAS scripts for better conversion.</p>
+      <div id="trainingContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ ADMIN APP ════════ -->
+<div class="app" id="adminApp">
+  <div class="topbar">
+    <div class="topbar-logo">PAS</div>
+    <div class="topbar-name">ORVN Admin</div>
+    <span class="topbar-badge badge-admin">ADMIN</span>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="aGo('brokerages',this)">All Brokerages</button>
+    <button class="tab" onclick="aGo('create',this)">+ Onboard Client</button>
+  </div>
+
+  <!-- BROKERAGES LIST -->
+  <div class="pg on" id="apg-brokerages">
+    <div class="wrap">
+      <h2 class="sh">All Brokerage Accounts</h2>
+      <p class="sub">Click "Edit" on any brokerage to update their config or view their API key.</p>
+      <div id="brokeragesContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- CREATE BROKERAGE -->
+  <div class="pg" id="apg-create">
+    <div class="wrap">
+      <h2 class="sh">Onboard New Client</h2>
+      <p class="sub">Creates the brokerage account and generates their API key. Share the key with the client securely.</p>
+      <div class="card" style="max-width:600px">
+        <div class="section-head">Account Details</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Brokerage ID (slug) *</label>
+            <input class="form-input" id="cId" placeholder="remax-miami">
+            <div class="form-hint">URL-safe, lowercase, hyphens only. Cannot be changed later.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input class="form-input" id="cName" placeholder="RE/MAX Miami">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Agent Name (PAS identity)</label>
+            <input class="form-input" id="cAgentName" placeholder="Alex" value="Alex">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Twilio Phone</label>
+            <input class="form-input" id="cTwilioPhone" placeholder="+13051234567">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Agent Backup Phone (SMS)</label>
+            <input class="form-input" id="cAgentPhone" placeholder="+13059876543">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slack Webhook URL</label>
+            <input class="form-input" id="cSlack" placeholder="https://hooks.slack.com/...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Slack Team ID</label>
+          <input class="form-input" id="cSlackTeam" placeholder="T012AB3CD">
+          <div class="form-hint">Found in Slack workspace settings. Required for /pas slash commands.</div>
+        </div>
+        <button class="btn btn-primary btn-full" id="createBrokBtn" onclick="createBrokerage()" style="margin-top:6px">Create Brokerage Account</button>
+        <div class="success-box" id="createSuccess">
+          <div class="callout-lbl cl-g" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px">Account Created</div>
+          <p style="font-size:13px;color:#B0A8C8;margin-bottom:10px">Save this API key and share it with the client. <strong style="color:var(--w)">It will not be shown again.</strong></p>
+          <div class="api-reveal" id="newApiKey">—</div>
+          <button class="btn btn-ghost btn-sm" onclick="copyText(document.getElementById('newApiKey').textContent)">Copy Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT BROKERAGE PANEL (admin) -->
+<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;display:none;align-items:center;justify-content:center;padding:24px" id="editOverlay" onclick="if(event.target===this)closeEdit()">
+  <div style="background:var(--bg2);border:1px solid var(--bo);border-radius:14px;padding:32px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px" id="editTitle">Edit Brokerage</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeEdit()">✕ Close</button>
+    </div>
+    <input type="hidden" id="editId">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="eName">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Agent Name</label>
+        <input class="form-input" id="eAgentName">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Twilio Phone</label>
+        <input class="form-input" id="eTwilioPhone">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Agent Backup Phone</label>
+        <input class="form-input" id="eAgentPhone">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Slack Webhook URL</label>
+      <input class="form-input" id="eSlack">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Slack Team ID</label>
+      <input class="form-input" id="eSlackTeam">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveEdit()">Save Changes</button>
+      <button class="btn btn-danger" onclick="toggleActive()" id="toggleActiveBtn">Pause Account</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = window.location.origin;
+let API_KEY = '', ADMIN_KEY = '', MODE = '';
+let callsOffset = 0, callsOutcome = null, leadsOffset = 0;
+let calcPrefilled = false, settingsLoaded = false, controlLoaded = false;
+let editActiveCurrent = true;
+
+// ════ AUTH ════
+async function doLogin() {
+  const key = document.getElementById('keyInput').value.trim();
+  if (!key) return;
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = 'Connecting...'; btn.disabled = true;
+  document.getElementById('loginErr').style.display = 'none';
+
+  try {
+    // Try brokerage portal first
+    let r = await fetch(BASE + '/portal/overview', {headers: {'X-API-Key': key}});
+    if (r.ok) {
+      API_KEY = key; MODE = 'brokerage';
+      localStorage.setItem('pas_portal_key', key);
+      startBrokerageApp(await r.json());
+      btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+      return;
+    }
+    // Try admin key
+    r = await fetch(BASE + '/admin/brokerages', {headers: {'X-Admin-Key': key}});
+    if (r.ok) {
+      ADMIN_KEY = key; MODE = 'admin';
+      localStorage.setItem('pas_admin_key', key);
+      startAdminApp(await r.json());
+      btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+      return;
+    }
+    document.getElementById('loginErr').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loginErr').textContent = 'Cannot reach PAS server.';
+    document.getElementById('loginErr').style.display = 'block';
+  }
+  btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+}
+
+function doLogout() {
+  localStorage.removeItem('pas_portal_key');
+  localStorage.removeItem('pas_admin_key');
+  API_KEY = ''; ADMIN_KEY = ''; MODE = '';
+  document.getElementById('brokerageApp').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'none';
+  document.getElementById('loginView').style.display = 'flex';
+  document.getElementById('keyInput').value = '';
+}
+
+document.getElementById('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+window.addEventListener('load', async () => {
+  const bk = localStorage.getItem('pas_portal_key');
+  const ak = localStorage.getItem('pas_admin_key');
+  if (bk) {
+    try {
+      const r = await fetch(BASE + '/portal/overview', {headers: {'X-API-Key': bk}});
+      if (r.ok) { API_KEY = bk; MODE = 'brokerage'; startBrokerageApp(await r.json()); return; }
+    } catch(e) {}
+    localStorage.removeItem('pas_portal_key');
+  }
+  if (ak) {
+    try {
+      const r = await fetch(BASE + '/admin/brokerages', {headers: {'X-Admin-Key': ak}});
+      if (r.ok) { ADMIN_KEY = ak; MODE = 'admin'; startAdminApp(await r.json()); return; }
+    } catch(e) {}
+    localStorage.removeItem('pas_admin_key');
+  }
+});
+
+// ════ BROKERAGE APP ════
+function startBrokerageApp(overview) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('brokerageApp').style.display = 'block';
+  document.getElementById('bTopName').textContent = overview.brokerage_name;
+  renderOverview(overview);
+}
+
+function bGo(id, btn) {
+  document.querySelectorAll('#brokerageApp .pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('#bTabs .tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('bpg-' + id).classList.add('on');
+  btn.classList.add('on');
+  if (id === 'calls'      && needsLoad('callsContent'))    loadCalls();
+  if (id === 'leads'      && needsLoad('leadsContent'))    loadLeads();
+  if (id === 'agents'     && needsLoad('agentsContent'))   loadAgents();
+  if (id === 'training'   && needsLoad('trainingContent')) loadTraining();
+  if (id === 'control'    && !controlLoaded)               loadControl();
+  if (id === 'settings'   && !settingsLoaded)              loadSettings();
+  if (id === 'calculator' && !calcPrefilled)               loadCalcPrefill();
+}
+
+function needsLoad(id) { return document.getElementById(id).innerHTML.includes('spinner'); }
+function portalFetch(path, opts={}) {
+  return fetch(BASE + path, {...opts, headers: {'X-API-Key': API_KEY, 'Content-Type': 'application/json', ...(opts.headers||{})}});
+}
+
+// ── OVERVIEW ──
+function renderOverview(d) {
+  const brColor = d.booking_rate_pct >= 30 ? 'var(--gr)' : d.booking_rate_pct >= 15 ? 'var(--am)' : 'var(--re)';
+  document.getElementById('overviewContent').innerHTML = `
+    <h2 class="sh">${d.brokerage_name}</h2>
+    <p class="sub">Training v${d.training_version}${d.last_trained_at ? ' · Last trained ' + fmtDate(d.last_trained_at) : ''}</p>
+    <div class="g4">
+      <div class="stat-card"><div class="stat-lbl">Calls Today</div><div class="stat-val" style="color:var(--pl)">${d.calls_today}</div><div class="stat-sub">inbound + outbound</div></div>
+      <div class="stat-card"><div class="stat-lbl">Calls This Week</div><div class="stat-val">${d.calls_this_week}</div><div class="stat-sub">${d.booked_this_week} booked</div></div>
+      <div class="stat-card"><div class="stat-lbl">Booking Rate</div><div class="stat-val" style="color:${brColor}">${d.booking_rate_pct}%</div><div class="stat-sub">this week</div></div>
+      <div class="stat-card"><div class="stat-lbl">Total Leads</div><div class="stat-val">${d.total_leads}</div><div class="stat-sub">${d.available_agents}/${d.total_agents} agents on</div></div>
+    </div>
+    <div class="g2">
+      ${d.best_agent ? `
+      <div class="best-card">
+        <div class="best-lbl">⭐ Top Agent</div>
+        <div class="best-name">${d.best_agent.name}</div>
+        <div class="best-rate">${Number(d.best_agent.close_rate).toFixed(1)}%</div>
+        <div class="best-sub">close rate · ${d.best_agent.total_closed} deals closed · ${d.best_agent.total_assigned} assigned</div>
+      </div>` : `<div class="callout c-p" style="margin:0"><div class="callout-lbl cl-p">No agents yet</div><p>Contact your ORVN account manager to add agents.</p></div>`}
+      <div class="card">
+        <div class="section-head">Quick Actions</div>
+        <button class="qa-btn" onclick="bGo('control',document.querySelectorAll('#bTabs .tab')[1])">Control PAS (pause, properties) →</button>
+        <button class="qa-btn" onclick="bGo('calls',document.querySelectorAll('#bTabs .tab')[2])">View recent calls →</button>
+        <button class="qa-btn" onclick="bGo('leads',document.querySelectorAll('#bTabs .tab')[3])">Browse lead memory →</button>
+        <button class="qa-btn" onclick="bGo('calculator',document.querySelectorAll('#bTabs .tab')[5])">Run revenue audit →</button>
+      </div>
+    </div>`;
+}
+
+// ── CONTROL ──
+async function loadControl() {
+  controlLoaded = true;
+  const r = await portalFetch('/portal/settings');
+  const d = await r.json();
+  renderControl(d);
+}
+
+function renderControl(d) {
+  const isActive = d.active !== false;
+  const props = d.featured_properties || [];
+  document.getElementById('controlContent').innerHTML = `
+    <div class="status-widget">
+      <div class="sw-left">
+        <div class="sw-label">PAS Status</div>
+        <div class="sw-status">
+          <span class="${isActive ? 'dot-active' : 'dot-paused'}">●</span>
+          <span>${isActive ? 'Active — accepting calls' : 'Paused — not making or accepting calls'}</span>
+        </div>
+      </div>
+      <button class="btn ${isActive ? 'btn-danger' : 'btn-primary'}" id="pauseResumeBtn" onclick="togglePas(${isActive})">
+        ${isActive ? 'Pause PAS' : 'Resume PAS'}
+      </button>
+    </div>
+    <div class="card">
+      <div class="section-head">Featured Properties</div>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Alex mentions these on calls when a lead asks about available properties.</p>
+      <div class="prop-list" id="propList">
+        ${props.length ? props.map((p, i) => propCard(p, i)).join('') : '<div style="font-size:13px;color:var(--mu);padding:8px 0">No featured properties yet. Add one below.</div>'}
+      </div>
+      <div class="add-prop-form">
+        <div class="section-head">Add a Property</div>
+        <div class="form-row" style="margin-bottom:12px">
+          <div>
+            <label class="form-label">Address *</label>
+            <input class="form-input" id="pAddr" placeholder="123 Ocean Drive, Miami">
+          </div>
+          <div>
+            <label class="form-label">Price</label>
+            <input class="form-input" id="pPrice" placeholder="$850,000">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:12px">
+          <div>
+            <label class="form-label">Bedrooms / Size</label>
+            <input class="form-input" id="pBeds" placeholder="3 bed, 2 bath, 1,800 sqft">
+          </div>
+          <div>
+            <label class="form-label">One-line description</label>
+            <input class="form-input" id="pDesc" placeholder="Waterfront condo with marina views">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addProperty()">Add Property</button>
+      </div>
+    </div>`;
+}
+
+function propCard(p, i) {
+  return `<div class="prop-item">
+    <div class="prop-body">
+      <div class="prop-addr">${p.address || '—'}</div>
+      <div class="prop-meta">${[p.price, p.bedrooms, p.description].filter(Boolean).join(' · ')}</div>
+    </div>
+    <button class="prop-remove" onclick="removeProperty(${i})">Remove</button>
+  </div>`;
+}
+
+async function togglePas(isActive) {
+  const action = isActive ? 'pause' : 'resume';
+  const r = await portalFetch('/portal/control', {method:'POST', body: JSON.stringify({action})});
+  if (r.ok) { toast(isActive ? 'PAS paused' : 'PAS resumed', !isActive); controlLoaded = false; loadControl(); }
+  else toast('Failed — try again', false);
+}
+
+async function addProperty() {
+  const addr = document.getElementById('pAddr').value.trim();
+  if (!addr) { toast('Address is required', false); return; }
+  const prop = {address: addr, price: document.getElementById('pPrice').value.trim(), bedrooms: document.getElementById('pBeds').value.trim(), description: document.getElementById('pDesc').value.trim()};
+  const r = await portalFetch('/portal/control', {method:'POST', body: JSON.stringify({action:'add_property', property_data: prop})});
+  if (r.ok) { toast('Property added — Alex will mention it on calls'); controlLoaded = false; loadControl(); }
+  else toast('Failed', false);
+}
+
+async function removeProperty(index) {
+  const r = await portalFetch('/portal/control', {method:'POST', body: JSON.stringify({action:'remove_property', remove_index: index})});
+  if (r.ok) { toast('Property removed'); controlLoaded = false; loadControl(); }
+  else toast('Failed', false);
+}
+
+// ── CALLS ──
+function filterCalls(outcome, btn) {
+  callsOutcome = outcome; callsOffset = 0;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  loadCalls();
+}
+async function loadCalls() {
+  const el = document.getElementById('callsContent');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
+  let url = `/portal/calls?limit=20&offset=${callsOffset}`;
+  if (callsOutcome) url += `&outcome=${callsOutcome}`;
+  const d = await (await portalFetch(url)).json();
+  const calls = d.calls || [];
+  if (!calls.length) { el.innerHTML = '<div class="loading">No calls found.</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Phone</th><th>Source</th><th>Outcome</th><th>Duration</th><th>Date</th></tr></thead>
+    <tbody>${calls.map(c => `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${mask(c.phone_number)}</td>
+      <td><span class="tag tag-${c.source==='outbound'?'b':'p'}">${c.source||'inbound'}</span></td>
+      <td><span class="tag tag-${outcomeTag(c.outcome)}">${c.outcome}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${fmtDur(c.duration_seconds)}</td>
+      <td style="color:var(--mu);font-size:12px">${fmtDate(c.start_time)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>
+  <div class="pager">
+    <button class="pager-btn" onclick="callsOffset=Math.max(0,callsOffset-20);loadCalls()" ${callsOffset===0?'disabled':''}>← Prev</button>
+    <span class="pager-info">${callsOffset+1}–${callsOffset+calls.length}</span>
+    <button class="pager-btn" onclick="callsOffset+=20;loadCalls()" ${calls.length<20?'disabled':''}>Next →</button>
+  </div>`;
+}
+
+// ── LEADS ──
+async function loadLeads() {
+  const el = document.getElementById('leadsContent');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
+  const d = await (await portalFetch(`/portal/leads?limit=20&offset=${leadsOffset}`)).json();
+  const leads = d.leads || [];
+  if (!leads.length) { el.innerHTML = '<div class="loading">No leads yet.</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Name</th><th>Phone</th><th>Intent</th><th>Budget</th><th>Calls</th><th>Last Booked</th></tr></thead>
+    <tbody>${leads.map(l => `<tr>
+      <td>${l.name||'Unknown'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${mask(l.phone_number)}</td>
+      <td>${l.intent?`<span class="tag tag-${intentTag(l.intent)}">${l.intent}</span>`:'—'}</td>
+      <td style="font-size:12px;color:var(--mu)">${l.budget||'—'}</td>
+      <td style="font-family:'DM Mono',monospace">${l.total_calls||0}</td>
+      <td style="color:var(--mu);font-size:12px">${l.last_booked_at?fmtDate(l.last_booked_at):'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>
+  <div class="pager">
+    <button class="pager-btn" onclick="leadsOffset=Math.max(0,leadsOffset-20);loadLeads()" ${leadsOffset===0?'disabled':''}>← Prev</button>
+    <span class="pager-info">${leadsOffset+1}–${leadsOffset+leads.length}</span>
+    <button class="pager-btn" onclick="leadsOffset+=20;loadLeads()" ${leads.length<20?'disabled':''}>Next →</button>
+  </div>`;
+}
+
+// ── AGENTS ──
+async function loadAgents() {
+  const el = document.getElementById('agentsContent');
+  const d = await (await portalFetch('/portal/agents')).json();
+  const agents = d.leaderboard || [];
+  if (!agents.length) { el.innerHTML = `<div class="callout c-p"><div class="callout-lbl cl-p">No agents</div><p>Contact your ORVN account manager to add agents.</p></div>`; return; }
+  el.innerHTML = `<div style="font-size:13px;color:var(--mu);margin-bottom:16px">${d.available_count} of ${d.total_count} available</div>
+  <div class="agent-grid">${agents.map((a,i) => `
+    <div class="agent-card" style="${i===0?'border-color:rgba(91,63,212,.5)':''}">
+      <div class="agent-rank">#${i+1} ${dot(a.status)} <span class="tag tag-${a.status==='available'?'g':a.status==='busy'?'a':'r'}">${a.status}</span></div>
+      <div class="agent-name">${a.name}</div>
+      <div class="agent-stats">
+        <div><div class="a-stat-val">${Number(a.close_rate||0).toFixed(1)}%</div><div class="a-stat-lbl">Close Rate</div></div>
+        <div><div class="a-stat-val">${a.total_closed||0}</div><div class="a-stat-lbl">Closed</div></div>
+        <div><div class="a-stat-val">${a.total_assigned||0}</div><div class="a-stat-lbl">Assigned</div></div>
+      </div>
+      ${a.specialties?.length?`<div style="font-size:11px;color:var(--mu)">${a.specialties.join(', ')}</div>`:''}
+    </div>`).join('')}</div>`;
+}
+
+// ── TRAINING ──
+async function loadTraining() {
+  const el = document.getElementById('trainingContent');
+  const d = await (await portalFetch('/portal/training')).json();
+  if (!d.current_version && !d.history.length) {
+    el.innerHTML = `<div class="callout c-a"><div class="callout-lbl cl-a">Not trained yet</div><p>PAS self-trains every <strong>25 calls</strong>. Claude will analyse transcripts and improve scripts automatically.</p></div>`;
+    return;
+  }
+  const ins = d.insights || {};
+  el.innerHTML = `${d.current_version?`<div class="callout c-g" style="margin-bottom:20px"><div class="callout-lbl cl-g">Active v${d.current_version}</div><p>${ins.what_works||'Scripts trained and optimised.'} ${ins.calls_analyzed?`Based on ${ins.calls_analyzed} calls.`:''} ${ins.booking_rate?`Booking rate: <strong>${ins.booking_rate}%</strong>.`:''}</p></div>`:''}
+  ${d.history.map(t=>`<div class="training-item"><div class="training-header"><span class="training-v">v${t.version}</span><span class="tag tag-p">${t.calls_analyzed} calls</span><span class="tag tag-g">${t.booking_rate||0}% booking</span><span class="training-date">${fmtDate(t.created_at)}</span></div><div style="font-size:12.5px;color:#B0A8C8">${t.insights?.what_works||'Training completed.'}</div></div>`).join('')}`;
+}
+
+// ── SETTINGS ──
+async function loadSettings() {
+  settingsLoaded = true;
+  const r = await portalFetch('/portal/settings');
+  const d = await r.json();
+  document.getElementById('settingsContent').innerHTML = `
+    <div class="card" style="max-width:560px">
+      <div class="section-head">Agent Configuration</div>
+      <div class="form-group">
+        <label class="form-label">Agent Name (how PAS identifies itself on calls)</label>
+        <input class="form-input" id="sAgentName" value="${d.agent_name||'Alex'}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Agent Backup Phone (SMS fallback)</label>
+        <input class="form-input" id="sAgentPhone" value="${d.agent_phone||''}" placeholder="+13051234567">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Slack Webhook URL (post-call summaries)</label>
+        <input class="form-input" id="sSlack" value="${d.slack_webhook_url||''}" placeholder="https://hooks.slack.com/...">
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+    <div class="callout c-p" style="max-width:560px;margin-top:14px">
+      <div class="callout-lbl cl-p">Changes take effect on the next call</div>
+      <p>To update your Twilio phone number or Cal.com integration, contact your ORVN account manager. Those require backend configuration.</p>
+    </div>`;
+}
+
+async function saveSettings() {
+  const body = {};
+  const n = document.getElementById('sAgentName').value.trim();
+  const p = document.getElementById('sAgentPhone').value.trim();
+  const s = document.getElementById('sSlack').value.trim();
+  if (n) body.agent_name = n;
+  if (p) body.agent_phone = p;
+  if (s) body.slack_webhook_url = s;
+  const r = await portalFetch('/portal/settings', {method:'PATCH', body: JSON.stringify(body)});
+  if (r.ok) { toast('Settings saved'); settingsLoaded = false; }
+  else toast('Save failed', false);
+}
+
+// ── CALCULATOR ──
+async function loadCalcPrefill() {
+  calcPrefilled = true;
+  const d = await (await portalFetch('/portal/calculator-prefill')).json();
+  if (d.monthly_leads) document.getElementById('cLeads').value = d.monthly_leads;
+  if (d.crm_size) document.getElementById('cCRM').value = d.crm_size;
+  if (d.avg_close_rate_pct > 0) {
+    const r = Math.round(d.avg_close_rate_pct);
+    document.getElementById('cClose').value = r;
+    document.getElementById('cCloseV').textContent = r + '%';
+  }
+}
+function updateCResp(el) {
+  const v = parseInt(el.value);
+  document.getElementById('cRespV').textContent = v<=1?'3 sec (PAS)':v<5?'<5 min':v<30?v+' min':v<60?'30–60 min':v<240?'1–4 hrs':'4+ hrs';
+}
+function getPenalty(rt) { if(rt<=5)return 0;if(rt<=30)return.4;if(rt<=60)return.6;if(rt<=240)return.72;return.82; }
+function runCalc() {
+  const leads=parseFloat(document.getElementById('cLeads').value)||150;
+  const comm=parseFloat(document.getElementById('cComm').value)||12000;
+  const cr=parseFloat(document.getElementById('cClose').value)/100||.08;
+  const rt=parseFloat(document.getElementById('cResp').value)||1;
+  const crm=parseFloat(document.getElementById('cCRM').value)||0;
+  const isa=parseFloat(document.getElementById('cISA').value)||0;
+  const P=getPenalty(rt),ideal=leads*cr,lost=ideal*P,mLost=lost*comm,aLost=mLost*12;
+  const grav=crm*.12*cr*.4*comm,total=aLost+grav,netGain=total-999*12;
+  const el=document.getElementById('calcResults');
+  el.style.display='block';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,rgba(239,68,68,.1),rgba(91,63,212,.07));border:1px solid rgba(239,68,68,.24);border-radius:10px;padding:24px;text-align:center;margin-bottom:14px;animation:fu .4s ease both">
+    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--re);text-transform:uppercase;margin-bottom:8px">Annual Revenue at Risk</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(40px,7vw,64px);color:var(--re);letter-spacing:-.03em;line-height:1;margin-bottom:6px">${fm(total)}</div>
+    <div style="font-size:12px;color:var(--mu)">speed-to-lead loss + graveyard CRM combined</div>
+  </div>
+  <div class="g3" style="margin-bottom:14px">
+    <div style="background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:6px">Deals Lost/Month</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--re)">${Math.round(lost)}</div></div>
+    <div style="background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:6px">Graveyard Value</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gr)">${fm(grav)}</div></div>
+    <div style="background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:6px">Net vs ORVN</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:${netGain>0?'var(--gr)':'var(--am)'}">${fm(Math.abs(netGain))}</div></div>
+  </div>
+  ${isa>0?`<div class="callout c-p"><p>ISA: <strong>${fm(isa)}/yr</strong> vs ORVN: <strong>$11,988/yr</strong>. You save <strong>${fm(isa-999*12)}/yr</strong> — before recovered revenue.</p></div>`:''}`;
+}
+
+// ════ ADMIN APP ════
+function startAdminApp(data) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+  renderBrokerages(data.brokerages || []);
+}
+
+function aGo(id, btn) {
+  document.querySelectorAll('#adminApp .pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('#adminApp .tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('apg-' + id).classList.add('on');
+  btn.classList.add('on');
+  if (id === 'brokerages') loadBrokerages();
+  if (id === 'create') {
+    document.getElementById('createSuccess').classList.remove('show');
+    ['cId','cName','cAgentPhone','cTwilioPhone','cSlack','cSlackTeam'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('cAgentName').value='Alex';
+  }
+}
+
+function adminFetch(path, opts={}) {
+  return fetch(BASE + path, {...opts, headers: {'X-Admin-Key': ADMIN_KEY, 'Content-Type': 'application/json', ...(opts.headers||{})}});
+}
+
+async function loadBrokerages() {
+  document.getElementById('brokeragesContent').innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
+  const d = await (await adminFetch('/admin/brokerages')).json();
+  renderBrokerages(d.brokerages || []);
+}
+
+function renderBrokerages(list) {
+  if (!list.length) {
+    document.getElementById('brokeragesContent').innerHTML = `<div class="callout c-a"><div class="callout-lbl cl-a">No brokerages yet</div><p>Go to "Onboard Client" to create the first account.</p></div>`;
+    return;
+  }
+  document.getElementById('brokeragesContent').innerHTML = `
+    <div class="brok-grid">${list.map(b => `
+      <div class="brok-card">
+        <div class="brok-name">${b.name} ${b.active===false?'<span class="tag tag-r">PAUSED</span>':'<span class="tag tag-g">ACTIVE</span>'}</div>
+        <div class="brok-id">${b.id}</div>
+        <div class="brok-stats"><span>Calls: <strong>${b.call_count||0}</strong></span><span>Training: <strong>v${b.training_version||0}</strong></span></div>
+        <div class="api-key-row">
+          <div class="api-key-val" title="${b.api_key||'—'}">${b.api_key||'—'}</div>
+          <button class="copy-btn" onclick="copyText('${b.api_key||''}')">Copy</button>
+        </div>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="openEdit(${JSON.stringify(b).replace(/"/g,'&quot;')})">Edit Config</button>
+      </div>`).join('')}
+    </div>`;
+}
+
+function openEdit(b) {
+  editActiveCurrent = b.active !== false;
+  document.getElementById('editTitle').textContent = 'Editing: ' + b.name;
+  document.getElementById('editId').value = b.id;
+  document.getElementById('eName').value = b.name || '';
+  document.getElementById('eAgentName').value = b.agent_name || 'Alex';
+  document.getElementById('eTwilioPhone').value = b.twilio_phone || '';
+  document.getElementById('eAgentPhone').value = b.agent_phone || '';
+  document.getElementById('eSlack').value = b.slack_webhook_url || '';
+  document.getElementById('eSlackTeam').value = b.slack_team_id || '';
+  document.getElementById('toggleActiveBtn').textContent = editActiveCurrent ? 'Pause Account' : 'Reactivate';
+  document.getElementById('editOverlay').style.display = 'flex';
+}
+
+function closeEdit() { document.getElementById('editOverlay').style.display = 'none'; }
+
+async function saveEdit() {
+  const id = document.getElementById('editId').value;
+  const body = {
+    name: document.getElementById('eName').value.trim() || undefined,
+    agent_name: document.getElementById('eAgentName').value.trim() || undefined,
+    twilio_phone: document.getElementById('eTwilioPhone').value.trim() || undefined,
+    agent_phone: document.getElementById('eAgentPhone').value.trim() || undefined,
+    slack_webhook_url: document.getElementById('eSlack').value.trim() || undefined,
+    slack_team_id: document.getElementById('eSlackTeam').value.trim() || undefined,
+  };
+  Object.keys(body).forEach(k => body[k] === undefined && delete body[k]);
+  const r = await adminFetch(`/admin/brokerages/${id}`, {method:'PATCH', body: JSON.stringify(body)});
+  if (r.ok) { toast('Saved'); closeEdit(); loadBrokerages(); }
+  else toast('Save failed', false);
+}
+
+async function toggleActive() {
+  const id = document.getElementById('editId').value;
+  const endpoint = editActiveCurrent ? 'deactivate' : 'reactivate';
+  let r;
+  if (editActiveCurrent) {
+    r = await adminFetch(`/admin/brokerages/${id}`, {method:'DELETE'});
+  } else {
+    r = await adminFetch(`/admin/brokerages/${id}/reactivate`, {method:'POST'});
+  }
+  if (r.ok) { toast(editActiveCurrent ? 'Account paused' : 'Account reactivated', true); closeEdit(); loadBrokerages(); }
+  else toast('Failed', false);
+}
+
+async function createBrokerage() {
+  const id = document.getElementById('cId').value.trim();
+  const name = document.getElementById('cName').value.trim();
+  if (!id || !name) { toast('ID and Name are required', false); return; }
+  const btn = document.getElementById('createBrokBtn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  const body = {
+    id, name,
+    agent_name: document.getElementById('cAgentName').value.trim() || 'Alex',
+    twilio_phone: document.getElementById('cTwilioPhone').value.trim(),
+    agent_phone: document.getElementById('cAgentPhone').value.trim(),
+    slack_webhook_url: document.getElementById('cSlack').value.trim(),
+    slack_team_id: document.getElementById('cSlackTeam').value.trim(),
+    slack_signing_secret: '',
+  };
+  const r = await adminFetch('/admin/brokerages', {method:'POST', body: JSON.stringify(body)});
+  btn.disabled = false; btn.textContent = 'Create Brokerage Account';
+  if (r.ok) {
+    const d = await r.json();
+    document.getElementById('newApiKey').textContent = d.brokerage?.api_key || '—';
+    document.getElementById('createSuccess').classList.add('show');
+    toast('Brokerage created');
+  } else {
+    const err = await r.json().catch(()=>({}));
+    toast(err.detail || 'Creation failed', false);
+  }
+}
+
+// ════ HELPERS ════
+function fm(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+Math.round(n).toLocaleString();}
+function fmtDate(s){if(!s)return'—';return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function fmtDur(s){if(!s)return'—';return Math.floor(s/60)+'m '+(s%60)+'s';}
+function mask(p){if(!p||p==='unknown')return'—';return p.slice(0,-4).replace(/\d/g,'*')+p.slice(-4);}
+function outcomeTag(o){return o==='booked'?'g':o==='not_interested'?'r':'a';}
+function intentTag(i){return i==='buying'?'g':i==='selling'?'b':'a';}
+function dot(s){return`<span style="color:${s==='available'?'var(--gr)':s==='busy'?'var(--am)':'var(--mu)'}">●</span>`;}
+function copyText(t){navigator.clipboard.writeText(t).then(()=>toast('Copied'));}
+function toast(msg, ok=true) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (ok ? 'green' : 'red');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2800);
+}
+</script>
+</body>
+</html>
