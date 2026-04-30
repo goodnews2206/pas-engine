@@ -18,6 +18,32 @@ from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("pas.brokerage")
 
+# Default feature set — all enabled; admin can disable per brokerage
+_FEATURE_DEFAULTS: dict = {
+    "simulation_enabled":    True,
+    "analytics_enabled":     True,
+    "insights_enabled":      True,
+    "reports_enabled":       False,
+    "self_training_enabled": True,
+    "booking_enabled":       True,
+    "transfer_enabled":      True,
+    "sms_enabled":           True,
+    "email_notifications":   True,
+    "slack_notifications":   False,
+    "call_recording":        False,
+    "crm_sync":              False,
+}
+
+_NOTIFICATION_DEFAULTS: dict = {
+    "notify_on_booking":   True,
+    "notify_on_transfer":  True,
+    "notify_on_high_intent": False,
+    "notify_on_failure":   True,
+    "daily_summary":       False,
+    "weekly_report":       True,
+    "channels":            ["email"],
+}
+
 _DEFAULT_BROKERAGE: dict = {
     "id": "demo",
     "name": "ORVN Realty",
@@ -33,10 +59,44 @@ _DEFAULT_BROKERAGE: dict = {
     "call_count": 0,
     "training_version": 0,
     "training_config": {},
+    # Owner / account
+    "owner_name": "",
+    "owner_email": "",
+    "owner_phone": "",
+    "company_website": "",
+    "crm_used": "",
+    "plan": "trial",
+    "billing_status": "trial",
+    "trial_ends_at": None,
+    "setup_fee_paid": False,
+    "internal_notes": "",
+    # Operational config with safe defaults
+    "transfer_enabled": True,
+    "booking_enabled": True,
+    "ai_disclosure_enabled": True,
+    "max_objection_attempts": 2,
+    "tone": "professional",
+    "script_style": "default",
+    "market_location": "",
+    "business_hours": {},
+    "after_hours_behavior": "callback",
+    "calcom_event_type_id": 0,
+    # Feature flags & notification config
+    "features": dict(_FEATURE_DEFAULTS),
+    "notification_config": dict(_NOTIFICATION_DEFAULTS),
 }
 
 
 def _row(row: dict) -> dict:
+    # Unpack the config JSONB for operational settings
+    config = row.get("config") or {}
+    # Merge feature flags with defaults (new flags are enabled by default)
+    raw_features = row.get("features") or {}
+    features = {**_FEATURE_DEFAULTS, **raw_features}
+    # Merge notification config with defaults
+    raw_notif = row.get("notification_config") or {}
+    notification_config = {**_NOTIFICATION_DEFAULTS, **raw_notif}
+
     return {
         "id": row.get("id", "demo"),
         "name": row.get("name", "ORVN Realty"),
@@ -52,6 +112,32 @@ def _row(row: dict) -> dict:
         "call_count": row.get("call_count", 0),
         "training_version": row.get("training_version", 0),
         "training_config": row.get("training_config") or {},
+        # Owner / account fields
+        "owner_name": row.get("owner_name", ""),
+        "owner_email": row.get("owner_email", ""),
+        "owner_phone": row.get("owner_phone", ""),
+        "company_website": row.get("company_website", ""),
+        "crm_used": row.get("crm_used", ""),
+        "plan": row.get("plan", "trial"),
+        "billing_status": row.get("billing_status", "trial"),
+        "trial_ends_at": row.get("trial_ends_at"),
+        "setup_fee_paid": row.get("setup_fee_paid", False),
+        "internal_notes": row.get("internal_notes", ""),
+        "created_at": row.get("created_at"),
+        # Operational config — from config JSONB
+        "transfer_enabled": config.get("transfer_enabled", True),
+        "booking_enabled": config.get("booking_enabled", True),
+        "ai_disclosure_enabled": config.get("ai_disclosure_enabled", True),
+        "max_objection_attempts": config.get("max_objection_attempts", 2),
+        "tone": config.get("tone", "professional"),
+        "script_style": config.get("script_style", "default"),
+        "market_location": config.get("market_location", ""),
+        "business_hours": config.get("business_hours", {}),
+        "after_hours_behavior": config.get("after_hours_behavior", "callback"),
+        "calcom_event_type_id": config.get("calcom_event_type_id", 0),
+        # Feature flags and notification prefs
+        "features": features,
+        "notification_config": notification_config,
     }
 
 
@@ -125,6 +211,20 @@ def create_brokerage(data: dict) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     api_key = "pas_" + secrets.token_urlsafe(32)
 
+    # Build the config JSONB from any operational config fields passed in
+    config = {
+        "transfer_enabled": data.get("transfer_enabled", True),
+        "booking_enabled": data.get("booking_enabled", True),
+        "ai_disclosure_enabled": data.get("ai_disclosure_enabled", True),
+        "max_objection_attempts": data.get("max_objection_attempts", 2),
+        "tone": data.get("tone", "professional"),
+        "script_style": data.get("script_style", "default"),
+        "market_location": data.get("market_location", ""),
+        "business_hours": data.get("business_hours", {}),
+        "after_hours_behavior": data.get("after_hours_behavior", "callback"),
+        "calcom_event_type_id": data.get("calcom_event_type_id", 0),
+    }
+
     payload = {
         "id": data["id"],
         "name": data["name"],
@@ -136,6 +236,7 @@ def create_brokerage(data: dict) -> dict:
         "slack_signing_secret": data.get("slack_signing_secret", ""),
         "api_key": api_key,
         "featured_properties": data.get("featured_properties", []),
+        "config": config,
         "active": True,
         "call_count": 0,
         "training_version": 0,

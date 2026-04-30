@@ -15,9 +15,18 @@ import anthropic
 from app.config import get_settings
 
 logger = logging.getLogger("pas.llm")
-settings = get_settings()
 
-client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+_client: anthropic.AsyncAnthropic | None = None
+
+
+def _get_client() -> anthropic.AsyncAnthropic | None:
+    global _client
+    if _client is None:
+        key = get_settings().ANTHROPIC_API_KEY
+        if not key:
+            return None
+        _client = anthropic.AsyncAnthropic(api_key=key)
+    return _client
 
 OBJECTION_SYSTEM_PROMPT = """You are a professional real estate AI assistant handling a live phone call.
 Your ONLY job is to respond to objections and steer the conversation back toward booking a consultation.
@@ -56,6 +65,9 @@ async def handle_objection(
     )
 
     try:
+        client = _get_client()
+        if client is None:
+            raise RuntimeError("ANTHROPIC_API_KEY not configured")
         response = await client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=100,

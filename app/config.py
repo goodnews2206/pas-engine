@@ -8,28 +8,28 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Twilio
-    TWILIO_ACCOUNT_SID: str
-    TWILIO_AUTH_TOKEN: str
-    TWILIO_PHONE_NUMBER: str
+    # Twilio (voice calls — optional in simulation/demo mode)
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
 
-    # Deepgram
-    DEEPGRAM_API_KEY: str
+    # Deepgram (STT — optional in simulation/demo mode)
+    DEEPGRAM_API_KEY: str = ""
 
-    # ElevenLabs
-    ELEVENLABS_API_KEY: str
+    # ElevenLabs (TTS — optional in simulation/demo mode)
+    ELEVENLABS_API_KEY: str = ""
     ELEVENLABS_VOICE_ID: str = "21m00Tcm4TlvDq8ikWAM"  # Rachel — professional, warm
 
-    # Anthropic
-    ANTHROPIC_API_KEY: str
+    # Anthropic (objection handling — optional, has safe fallback)
+    ANTHROPIC_API_KEY: str = ""
 
-    # Supabase
-    SUPABASE_URL: str
-    SUPABASE_SERVICE_KEY: str
+    # Supabase (persistence — optional, logs a warning when missing)
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
 
-    # Cal.com
-    CALCOM_API_KEY: str
-    CALCOM_EVENT_TYPE_ID: int  # get from Cal.com dashboard
+    # Cal.com (booking — optional, returns simulated booking when missing)
+    CALCOM_API_KEY: str = ""
+    CALCOM_EVENT_TYPE_ID: int = 0
 
     # Notifications
     RESEND_API_KEY: str = ""          # resend.com — leave blank to disable email
@@ -39,14 +39,12 @@ class Settings(BaseSettings):
     ADMIN_API_KEY: str = ""           # set a strong secret — required to use /admin/* routes
 
     # Twilio Browser Calling (for the website "Talk to Alex" demo widget)
-    # Setup: console.twilio.com/project/api-keys → create Standard key → save SID + Secret
-    #        console.twilio.com/voice/twiml/apps → create app → Voice URL = BASE_URL/demo/call
-    TWILIO_API_KEY_SID: str = ""      # e.g. SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    TWILIO_API_SECRET: str = ""       # shown once when creating the API key
-    TWILIO_TWIML_APP_SID: str = ""    # e.g. APxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    TWILIO_API_KEY_SID: str = ""
+    TWILIO_API_SECRET: str = ""
+    TWILIO_TWIML_APP_SID: str = ""
 
     # App
-    BASE_URL: str  # e.g. https://your-app.up.railway.app
+    BASE_URL: str = "http://localhost:8000"
     ENVIRONMENT: str = "development"
 
     class Config:

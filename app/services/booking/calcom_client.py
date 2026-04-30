@@ -7,6 +7,7 @@ Uses Cal.com v2 API to create a booking.
 
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import httpx
 
@@ -23,11 +24,47 @@ async def book_appointment(
     name: str,
     notes: str,
     email: str = "",
+    brokerage_id: Optional[str] = None,
+    call_sid: Optional[str] = None,
 ) -> dict:
     """
     Creates a Cal.com booking for the next available slot.
-    Returns {"success": bool, "booking_url": str, "booking_id": str}
+    Returns {"success": bool, "booking_url": str, "booking_id": str, "slot": str}
+
+    Falls back to a simulated booking if Cal.com is not configured — so demos
+    and simulation mode work end-to-end without external credentials.
+
+    If brokerage_id and call_sid are provided, the booking is persisted to the
+    bookings table regardless of whether Cal.com is real or simulated.
     """
+    import secrets
+    from app.db.booking_store import create_booking
+
+    if not settings.CALCOM_API_KEY or not settings.CALCOM_EVENT_TYPE_ID:
+        slot = (datetime.now(timezone.utc) + timedelta(days=1)).strftime(
+            "%Y-%m-%dT10:00:00+00:00"
+        )
+        booking_id = f"DEMO-{secrets.token_hex(4).upper()}"
+        logger.warning("Cal.com not configured — returning simulated booking for demo")
+        result = {
+            "success": True,
+            "booking_id": booking_id,
+            "booking_url": "",
+            "slot": slot,
+        }
+        if brokerage_id and call_sid:
+            create_booking(
+                booking_id=booking_id,
+                brokerage_id=brokerage_id,
+                call_sid=call_sid,
+                slot_time=slot,
+                lead_name=name,
+                lead_phone=phone,
+                lead_email=email,
+                notes=notes,
+            )
+        return result
+
     try:
         # Step 1: Get next available slot
         slot = await _get_next_available_slot()
@@ -68,16 +105,32 @@ async def book_appointment(
             resp.raise_for_status()
             data = resp.json()
 
-        booking_id = data.get("data", {}).get("id", "")
+        booking_id = str(data.get("data", {}).get("id", ""))
         booking_url = data.get("data", {}).get("meetingUrl", "")
 
         logger.info(f"Cal.com booking created | id={booking_id} | slot={slot['start']}")
-        return {
+
+        result = {
             "success": True,
-            "booking_id": str(booking_id),
+            "booking_id": booking_id,
             "booking_url": booking_url,
             "slot": slot["start"],
         }
+
+        if brokerage_id and call_sid and booking_id:
+            create_booking(
+                booking_id=booking_id,
+                brokerage_id=brokerage_id,
+                call_sid=call_sid,
+                slot_time=slot["start"],
+                lead_name=name,
+                lead_phone=phone,
+                lead_email=email,
+                notes=notes,
+                calcom_url=booking_url,
+            )
+
+        return result
 
     except httpx.HTTPStatusError as e:
         logger.error(f"Cal.com HTTP error: {e.response.status_code} — {e.response.text}")

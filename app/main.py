@@ -20,6 +20,9 @@ from app.routes.admin import router as admin_router
 from app.routes.agents import router as agents_router
 from app.routes.portal import router as portal_router
 from app.routes.demo import router as demo_router
+from app.routes.simulate import router as simulate_router
+from app.routes.onboarding import router as onboarding_router
+from app.routes.system import router as system_router
 from app.db.supabase_client import init_supabase
 from app.config import get_settings
 
@@ -54,6 +57,26 @@ async def lifespan(app: FastAPI):
 
     if settings.ENVIRONMENT == "development":
         logger.warning("SECURITY: Running in DEVELOPMENT mode — Twilio signature verification is DISABLED.")
+
+    # Warn about missing external service keys (but never block startup)
+    _warn_missing = []
+    if not settings.TWILIO_ACCOUNT_SID:
+        _warn_missing.append("TWILIO_ACCOUNT_SID")
+    if not settings.DEEPGRAM_API_KEY:
+        _warn_missing.append("DEEPGRAM_API_KEY")
+    if not settings.ELEVENLABS_API_KEY:
+        _warn_missing.append("ELEVENLABS_API_KEY")
+    if not settings.ANTHROPIC_API_KEY:
+        _warn_missing.append("ANTHROPIC_API_KEY")
+    if not settings.CALCOM_API_KEY:
+        _warn_missing.append("CALCOM_API_KEY")
+    if _warn_missing:
+        logger.warning(
+            f"DEMO/SIMULATION MODE: the following keys are not set — "
+            f"voice calls will not work, but /simulate-call will: {', '.join(_warn_missing)}"
+        )
+    else:
+        logger.info("All external API keys configured — full voice mode active.")
 
     try:
         init_supabase()
@@ -96,8 +119,11 @@ app.include_router(outbound_router, prefix="/outbound", tags=["Outbound"])
 app.include_router(slack_router, prefix="/slack", tags=["Slack"])
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 app.include_router(agents_router, prefix="/admin", tags=["Agents"])
+app.include_router(system_router, prefix="/admin", tags=["System"])
 app.include_router(portal_router, prefix="/portal", tags=["Portal"])
 app.include_router(demo_router, prefix="/demo", tags=["Demo"])
+app.include_router(simulate_router, tags=["Simulation"])
+app.include_router(onboarding_router, prefix="/onboarding", tags=["Onboarding"])
 
 # Serve the brokerage client dashboard at /dashboard
 _dashboard_dir = os.path.join(os.path.dirname(__file__), "static", "dashboard")

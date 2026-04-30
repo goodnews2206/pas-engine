@@ -2,8 +2,8 @@
 Call Logger — Supabase CRUD for the `calls` table
 
 Lifecycle:
-  create_call_record()   → on call start (from Twilio webhook)
-  update_call_outcome()  → on WebSocket close (outcome known)
+  create_call_record()      → on call start
+  update_call_outcome()     → on call end (outcome + transcript + metadata)
   finalize_call_on_hangup() → on Twilio status callback (duration finalized)
 """
 
@@ -47,11 +47,13 @@ async def update_call_outcome(
     transcript: Optional[str] = None,
     metadata: Optional[dict] = None,
     summary: Optional[str] = None,
+    call_status: Optional[str] = None,
+    duration_seconds: Optional[int] = None,
 ):
-    """Update outcome + transcript + summary when WebSocket closes."""
+    """Update outcome + transcript + summary + optional status when a call ends."""
     try:
         db = get_supabase()
-        payload = {
+        payload: dict = {
             "outcome": outcome,
             "end_time": datetime.now(timezone.utc).isoformat(),
         }
@@ -61,6 +63,10 @@ async def update_call_outcome(
             payload["metadata"] = metadata
         if summary:
             payload["summary"] = summary
+        if call_status:
+            payload["call_status"] = call_status
+        if duration_seconds is not None:
+            payload["duration_seconds"] = duration_seconds
 
         db.table("calls").update(payload).eq("id", call_sid).execute()
         logger.info(f"[{call_sid}] Outcome updated: {outcome}")
@@ -74,7 +80,6 @@ async def finalize_call_on_hangup(
     raw_status: str,
 ):
     """Finalize duration + status from Twilio status callback."""
-    # Map Twilio status to our schema
     status_map = {
         "completed": "completed",
         "busy": "failed",

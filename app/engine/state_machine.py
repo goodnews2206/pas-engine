@@ -65,6 +65,7 @@ class EngineState:
     transcript_log: list = field(default_factory=list)
     outcome: str = "not_booked"
     objection_count: dict = field(default_factory=dict)
+    states_visited: list = field(default_factory=lambda: ["GREETING"])
 
 
 class PASEngine:
@@ -94,6 +95,12 @@ class PASEngine:
         self.trained_objection_prompt: str = training.get("objection_system_prompt", "")
         self.training_version: int = brokerage.get("training_version", 0)
 
+        # Brokerage operational config — controls call behaviour per tenant
+        self.transfer_enabled: bool = brokerage.get("transfer_enabled", True)
+        self.booking_enabled: bool = brokerage.get("booking_enabled", True)
+        self.ai_disclosure_enabled: bool = brokerage.get("ai_disclosure_enabled", True)
+        self.max_objection_attempts: int = brokerage.get("max_objection_attempts", 2)
+
         # Lead context — from outbound form data or inbound memory lookup
         if lead_context:
             self.state.lead.name = lead_context.get("name", "")
@@ -119,7 +126,7 @@ class PASEngine:
     # ───────────── PUBLIC ─────────────
 
     def get_greeting(self) -> str:
-        disclosure = "Just so you know, this call may be recorded for quality purposes. "
+        disclosure = "Just so you know, this call may be recorded for quality purposes. " if self.ai_disclosure_enabled else ""
         name = self.state.lead.name
         returning = self.state.lead.source == "returning"
 
@@ -281,6 +288,14 @@ class PASEngine:
         return booking_prompt, True
 
     async def _handle_booking(self, text):
+        if not self.booking_enabled:
+            self.state.outcome = "not_booked"
+            return (
+                "Sounds great — one of our agents will reach out to you shortly "
+                "to discuss next steps. Have a great day!",
+                True,
+            )
+
         lowered = text.lower()
 
         # Soft objections at booking stage
@@ -305,7 +320,9 @@ class PASEngine:
                     f"{self.state.lead.budget}, "
                     f"{self.state.lead.timeline}"
                     + (f", {self.state.lead.property_interest}" if self.state.lead.property_interest else "")
-                )
+                ),
+                brokerage_id=self.brokerage_id,
+                call_sid=self.call_sid,
             )
 
             if result.get("success"):
@@ -402,9 +419,9 @@ class PASEngine:
         )
 
         # Any "remove/stop" category ends the call immediately, no second chance.
-        # For all other categories, end after 2 total objections (any mix of types).
+        # For all other categories, end after max_objection_attempts total objections.
         total_objections = sum(self.state.objection_count.values())
-        if category == "remove" or total_objections >= 2:
+        if category == "remove" or total_objections >= self.max_objection_attempts:
             self.state.outcome = "not_booked"
             self.state.current = State.DONE
             return "Understood — I won't contact you again. Take care.", True
@@ -425,6 +442,8 @@ class PASEngine:
         return self.prompts.get(self.state.current, "how can I help?")
 
     def _is_transfer_request(self, text: str) -> bool:
+        if not self.transfer_enabled:
+            return False
         lowered = text.lower()
         triggers = [
             "speak to a human", "speak to someone", "talk to a person",
@@ -437,6 +456,7 @@ class PASEngine:
 
     def _handle_transfer_request(self) -> str:
         self.pending_transfer = True
+        self.state.outcome = "transferred"
         return (
             "Of course — let me connect you with one of our agents right now. "
             "Please hold for just a moment."
@@ -480,6 +500,9 @@ class PASEngine:
         idx = STATE_ORDER.index(self.state.current)
         if idx + 1 < len(STATE_ORDER):
             self.state.current = STATE_ORDER[idx + 1]
+            state_name = self.state.current.value
+            if state_name not in self.state.states_visited:
+                self.state.states_visited.append(state_name)
             self.state.attempt_count = 0
             self._skip_if_prefilled()
 
@@ -551,4 +574,10 @@ class PASEngine:
             "final_state": self.state.current.value,
             "is_outbound": self.is_outbound,
             "duration_seconds": (datetime.now(timezone.utc) - self.start_time).seconds,
+            "states_visited": self.state.states_visited,
+            "objections_detected": [
+                {"category": k, "count": v}
+                for k, v in self.state.objection_count.items()
+            ],
+            "brokerage_id": self.brokerage_id,
         }

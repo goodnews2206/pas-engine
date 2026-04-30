@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS brokerages (
     featured_properties  JSONB    DEFAULT '[]',
     active               BOOLEAN  NOT NULL DEFAULT true,
 
+    -- Operational config (see migrate_v2.sql for shape)
+    config               JSONB    DEFAULT '{}',
+
     -- Self-training
     call_count           INTEGER  NOT NULL DEFAULT 0,
     training_version     INTEGER  NOT NULL DEFAULT 0,
@@ -88,20 +91,21 @@ CREATE TABLE IF NOT EXISTS leads (
 
 -- ─── CALLS ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS calls (
-    id               TEXT        PRIMARY KEY,         -- Twilio CallSid
+    id               TEXT        PRIMARY KEY,         -- Twilio CallSid or SIM-xxx
     brokerage_id     TEXT        REFERENCES brokerages(id),
     phone_number     TEXT        NOT NULL,
     email            TEXT,
-    source           TEXT        NOT NULL DEFAULT 'inbound',
+    source           TEXT        NOT NULL DEFAULT 'inbound',   -- inbound | outbound | simulated
+    call_type        TEXT        NOT NULL DEFAULT 'inbound',   -- inbound | outbound | simulated
     start_time       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     end_time         TIMESTAMPTZ,
     duration_seconds INTEGER,
-    call_status      TEXT        NOT NULL DEFAULT 'active',
-    outcome          TEXT        NOT NULL DEFAULT 'pending',
-    agent_id         UUID        REFERENCES agents(id),  -- assigned agent for this call's booking
+    call_status      TEXT        NOT NULL DEFAULT 'active',    -- active | completed | failed | dropped
+    outcome          TEXT        NOT NULL DEFAULT 'pending',   -- pending | booked | not_booked | transferred
+    agent_id         UUID        REFERENCES agents(id),        -- assigned agent (booking or transfer)
     summary          TEXT,
     transcript       TEXT,
-    metadata         JSONB,
+    metadata         JSONB,      -- {lead, final_state, is_outbound, states_visited, objections_detected, ...}
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -125,6 +129,7 @@ CREATE INDEX IF NOT EXISTS idx_calls_brokerage      ON calls(brokerage_id);
 CREATE INDEX IF NOT EXISTS idx_calls_outcome        ON calls(outcome);
 CREATE INDEX IF NOT EXISTS idx_calls_start_time     ON calls(start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_calls_phone          ON calls(phone_number);
+CREATE INDEX IF NOT EXISTS idx_calls_type           ON calls(call_type);
 CREATE INDEX IF NOT EXISTS idx_leads_brokerage      ON leads(brokerage_id);
 CREATE INDEX IF NOT EXISTS idx_leads_phone          ON leads(phone_number);
 CREATE INDEX IF NOT EXISTS idx_training_logs_broker ON training_logs(brokerage_id, created_at DESC);

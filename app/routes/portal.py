@@ -5,12 +5,20 @@ Auth: X-API-Key header matching the brokerage's api_key field in Supabase.
 No admin key required — each brokerage only sees its own data.
 
 Routes (all prefixed /portal):
-  GET /portal/overview          → KPI summary (calls, booking rate, best agent)
-  GET /portal/calls             → paginated call history
-  GET /portal/leads             → paginated lead memory
-  GET /portal/agents            → agent leaderboard + availability
-  GET /portal/calculator-prefill → real data to pre-fill the revenue calculator
-  GET /portal/training          → self-training history + current insights
+  GET   /portal/overview              → KPI summary (calls, booking rate, best agent)
+  GET   /portal/calls                 → paginated call history
+  GET   /portal/leads                 → paginated lead memory
+  PATCH /portal/leads/{lead_id}/status → update lead status
+  GET   /portal/agents                → agent leaderboard + availability
+  GET   /portal/bookings              → upcoming/past appointment list
+  GET   /portal/insights              → intelligence cards (objections, intent, booking trend)
+  GET   /portal/calculator-prefill    → real data to pre-fill the revenue calculator
+  GET   /portal/training              → self-training history + current insights
+  GET   /portal/settings              → current editable config
+  PATCH /portal/settings              → update agent name, phone, Slack webhook
+  GET   /portal/notifications         → notification preferences
+  PATCH /portal/notifications         → update notification preferences
+  POST  /portal/control               → pause | resume | add_property | remove_property
 """
 
 import logging
@@ -21,6 +29,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header, Query
 
 from pydantic import BaseModel
 
+from app.db.booking_store import list_bookings
 from app.db.brokerage_store import (
     get_brokerage_by_api_key,
     update_brokerage,
@@ -46,6 +55,20 @@ class PortalControlBody(BaseModel):
     action: str                          # pause | resume | add_property | remove_property
     property_data: Optional[dict] = None # for add_property
     remove_index: Optional[int] = None   # for remove_property
+
+
+class LeadStatusUpdate(BaseModel):
+    status: str   # new | qualified | booked | transferred | nurture | not_ready | not_interested | do_not_call | closed
+
+
+class NotificationConfigUpdate(BaseModel):
+    notify_on_booking: Optional[bool] = None
+    notify_on_transfer: Optional[bool] = None
+    notify_on_high_intent: Optional[bool] = None
+    notify_on_failure: Optional[bool] = None
+    daily_summary: Optional[bool] = None
+    weekly_report: Optional[bool] = None
+    channels: Optional[list] = None
 
 
 # ───────────── AUTH ─────────────
@@ -301,3 +324,354 @@ async def portal_control(body: PortalControlBody, brokerage=Depends(require_brok
 
     else:
         raise HTTPException(status_code=400, detail=f"Unknown action '{body.action}'. Valid: pause | resume | add_property | remove_property")
+
+
+# ───────────── BOOKINGS ─────────────
+
+@router.get("/bookings")
+async def portal_bookings(
+    status: Optional[str] = Query(default=None),
+    limit: int = Query(default=20, le=50),
+    offset: int = Query(default=0),
+    brokerage=Depends(require_brokerage),
+):
+    """
+    Upcoming and past appointments booked by PAS.
+    Filter by status: scheduled | completed | cancelled | no_show | rescheduled
+    """
+    brokerage_id = brokerage["id"]
+    features = brokerage.get("features") or {}
+    if not features.get("booking_enabled", True):
+        raise HTTPException(status_code=403, detail="Booking feature is not enabled for this account.")
+
+    bookings = list_bookings(brokerage_id, status=status, limit=limit, offset=offset)
+    return {"bookings": bookings, "offset": offset, "limit": limit}
+
+
+# ───────────── INSIGHTS ─────────────
+
+@router.get("/insights")
+async def portal_insights(brokerage=Depends(require_brokerage)):
+    """
+    AI intelligence cards — the brain of the brokerage dashboard.
+
+    Returns:
+      - top_objections: which objections PAS heard most
+      - intent_breakdown: how many leads are high/medium/low intent
+      - best_call_hours: hour-of-day breakdown of completed calls
+      - booking_trend: daily booking count for the last 14 days
+      - recent_training_insight: latest insight Claude produced
+    """
+    brokerage_id = brokerage["id"]
+    features = brokerage.get("features") or {}
+    if not features.get("insights_enabled", True):
+        raise HTTPException(status_code=403, detail="Insights feature is not enabled for this account.")
+
+    try:
+        db = get_supabase()
+        now = datetime.now(timezone.utc)
+        two_weeks_ago = (now - timedelta(days=14)).isoformat()
+
+        # Pull recent calls for analysis
+        calls = (
+            db.table("calls")
+            .select("outcome, call_status, metadata, start_time, duration_seconds")
+            .eq("brokerage_id", brokerage_id)
+            .gte("start_time", two_weeks_ago)
+            .execute()
+            .data or []
+        )
+
+        # Top objections
+        from collections import Counter
+        objection_counter: Counter = Counter()
+        intent_counter: Counter = Counter()
+        hour_counter: Counter = Counter()
+
+        for call in calls:
+            meta = call.get("metadata") or {}
+            for obj in meta.get("objections_detected") or []:
+                cat = obj.get("category", "other")
+                objection_counter[cat] += obj.get("count", 1)
+            intent = meta.get("intent_level")
+            if intent:
+                intent_counter[intent] += 1
+            if call.get("start_time"):
+                try:
+                    hour = datetime.fromisoformat(call["start_time"].replace("Z", "+00:00")).hour
+                    hour_counter[hour] += 1
+                except Exception:
+                    pass
+
+        top_objections = [
+            {"category": c, "count": n}
+            for c, n in objection_counter.most_common(5)
+        ]
+
+        # Booking trend: daily count over last 14 days
+        bookings_14d = (
+            db.table("bookings")
+            .select("slot_time")
+            .eq("brokerage_id", brokerage_id)
+            .gte("slot_time", two_weeks_ago)
+            .execute()
+            .data or []
+        )
+        booking_by_day: Counter = Counter()
+        for b in bookings_14d:
+            if b.get("slot_time"):
+                try:
+                    day = b["slot_time"][:10]
+                    booking_by_day[day] += 1
+                except Exception:
+                    pass
+        booking_trend = [
+            {"date": d, "bookings": booking_by_day[d]}
+            for d in sorted(booking_by_day)
+        ]
+
+        # Latest Claude insight from training
+        training_config = brokerage.get("training_config") or {}
+        latest_insight = training_config.get("insights", {})
+
+        return {
+            "brokerage_id": brokerage_id,
+            "period_days": 14,
+            "top_objections": top_objections,
+            "intent_breakdown": dict(intent_counter),
+            "best_call_hours": [
+                {"hour": h, "calls": hour_counter[h]}
+                for h in sorted(hour_counter, key=lambda x: -hour_counter[x])[:6]
+            ],
+            "booking_trend": booking_trend,
+            "latest_training_insight": latest_insight,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"portal_insights error for {brokerage_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load insights")
+
+
+# ───────────── LEAD STATUS ─────────────
+
+# ───────────── CALL DETAIL ─────────────
+
+@router.get("/calls/{call_id}")
+async def portal_call_detail(call_id: str, brokerage=Depends(require_brokerage)):
+    """Full call record (transcript, summary, metadata) scoped to the authenticated brokerage."""
+    try:
+        db = get_supabase()
+        result = (
+            db.table("calls")
+            .select("*")
+            .eq("id", call_id)
+            .eq("brokerage_id", brokerage["id"])
+            .limit(1)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Call not found")
+        return {"call": result.data[0]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"portal_call_detail error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load call")
+
+
+# ───────────── LEAD DETAIL ─────────────
+
+@router.get("/leads/{lead_id}")
+async def portal_lead_detail(lead_id: str, brokerage=Depends(require_brokerage)):
+    """Lead detail with call history for the authenticated brokerage."""
+    try:
+        db = get_supabase()
+        result = (
+            db.table("leads")
+            .select("*")
+            .eq("id", lead_id)
+            .eq("brokerage_id", brokerage["id"])
+            .limit(1)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        lead = result.data[0]
+        calls_result = (
+            db.table("calls")
+            .select("id, outcome, call_status, duration_seconds, summary, start_time")
+            .eq("brokerage_id", brokerage["id"])
+            .eq("phone_number", lead["phone_number"])
+            .order("start_time", desc=True)
+            .limit(10)
+            .execute()
+        )
+        return {"lead": lead, "calls": calls_result.data or []}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"portal_lead_detail error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load lead")
+
+
+# ───────────── AGENT CRUD (portal-scoped) ─────────────
+
+class PortalAgentCreate(BaseModel):
+    name: str
+    phone: str = ""
+    email: str = ""
+    slack_member_id: str = ""
+    specialties: list = []
+    areas: list = []
+    languages: list = ["en"]
+    role: str = "agent"
+
+
+class PortalAgentUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    slack_member_id: Optional[str] = None
+    specialties: Optional[list] = None
+    areas: Optional[list] = None
+    languages: Optional[list] = None
+    role: Optional[str] = None
+
+
+class PortalAgentStatusUpdate(BaseModel):
+    status: str  # available | busy | offline
+
+
+@router.post("/agents", status_code=201)
+async def portal_add_agent(body: PortalAgentCreate, brokerage=Depends(require_brokerage)):
+    """Add a new agent to the authenticated brokerage."""
+    from app.db.agent_store import create_agent
+    try:
+        agent = create_agent(brokerage["id"], body.model_dump())
+        logger.info(f"Portal agent created | brokerage={brokerage['id']} | name={body.name}")
+        return {"agent": agent}
+    except Exception as e:
+        logger.error(f"portal_add_agent error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create agent")
+
+
+@router.patch("/agents/{agent_id}")
+async def portal_update_agent(agent_id: str, body: PortalAgentUpdate, brokerage=Depends(require_brokerage)):
+    """Update an agent's profile. Only fields provided are changed."""
+    from app.db.agent_store import update_agent, get_agent
+    agent = get_agent(agent_id)
+    if not agent or agent.get("brokerage_id") != brokerage["id"]:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    ok = update_agent(agent_id, updates)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Update failed")
+    return {"status": "updated", "agent_id": agent_id}
+
+
+@router.delete("/agents/{agent_id}")
+async def portal_delete_agent(agent_id: str, brokerage=Depends(require_brokerage)):
+    """Remove an agent from the authenticated brokerage."""
+    from app.db.agent_store import delete_agent, get_agent
+    agent = get_agent(agent_id)
+    if not agent or agent.get("brokerage_id") != brokerage["id"]:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    ok = delete_agent(agent_id)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Delete failed")
+    return {"status": "deleted", "agent_id": agent_id}
+
+
+@router.patch("/agents/{agent_id}/status")
+async def portal_set_agent_status(
+    agent_id: str,
+    body: PortalAgentStatusUpdate,
+    brokerage=Depends(require_brokerage),
+):
+    """Set agent availability: available | busy | offline."""
+    from app.db.agent_store import set_agent_status, get_agent
+    if body.status not in ("available", "busy", "offline"):
+        raise HTTPException(status_code=400, detail="status must be: available | busy | offline")
+    agent = get_agent(agent_id)
+    if not agent or agent.get("brokerage_id") != brokerage["id"]:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    ok = set_agent_status(agent_id, body.status)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Status update failed")
+    return {"status": "updated", "agent_id": agent_id, "new_status": body.status}
+
+
+_VALID_LEAD_STATUSES = {
+    "new", "qualified", "booked", "transferred",
+    "nurture", "not_ready", "not_interested", "do_not_call", "closed",
+}
+
+
+@router.patch("/leads/{lead_id}/status")
+async def portal_update_lead_status(
+    lead_id: str,
+    body: LeadStatusUpdate,
+    brokerage=Depends(require_brokerage),
+):
+    """Update the qualification status of a lead in the brokerage's CRM memory."""
+    if body.status not in _VALID_LEAD_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status '{body.status}'. Valid: {', '.join(sorted(_VALID_LEAD_STATUSES))}",
+        )
+    try:
+        db = get_supabase()
+        result = db.table("leads").select("id").eq("id", lead_id).eq("brokerage_id", brokerage["id"]).limit(1).execute()
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        db.table("leads").update({
+            "status": body.status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", lead_id).execute()
+        logger.info(f"Lead {lead_id} status set to {body.status} | brokerage={brokerage['id']}")
+        return {"status": "updated", "lead_id": lead_id, "new_status": body.status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"portal_update_lead_status error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update lead status")
+
+
+# ───────────── NOTIFICATIONS ─────────────
+
+@router.get("/notifications")
+async def portal_get_notifications(brokerage=Depends(require_brokerage)):
+    """Return the brokerage's current notification preferences."""
+    return {
+        "brokerage_id": brokerage["id"],
+        "notification_config": brokerage.get("notification_config") or {},
+    }
+
+
+@router.patch("/notifications")
+async def portal_update_notifications(body: NotificationConfigUpdate, brokerage=Depends(require_brokerage)):
+    """
+    Update notification preferences. Only provided fields are changed.
+    Changes take effect on the next qualifying event (booking, transfer, etc.).
+    """
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields provided.")
+
+    existing = brokerage.get("notification_config") or {}
+    merged = {**existing, **updates}
+
+    ok = update_brokerage(brokerage["id"], {"notification_config": merged})
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to save notification preferences.")
+
+    logger.info(f"Notification config updated | brokerage={brokerage['id']} | fields={list(updates.keys())}")
+    return {
+        "status": "updated",
+        "brokerage_id": brokerage["id"],
+        "notification_config": merged,
+    }
