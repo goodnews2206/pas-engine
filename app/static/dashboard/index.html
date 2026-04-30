@@ -3,988 +3,1616 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PAS Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<title>ORVN Portal — PAS Command Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#060410;--bg2:#0C0820;--bg3:#120E2C;--bg4:#181438;
-  --p:#5B3FD4;--pl:#7B5FEA;--pd:#3A28A8;
-  --w:#F0ECFF;--off:#C8C0E4;--mu:#58507A;--dim:#1E1A32;
-  --bo:rgba(91,63,212,0.2);
-  --gr:#22C55E;--am:#F59E0B;--re:#EF4444;--bl:#3B82F6;
+:root {
+  --bg:    #F8F8FC;
+  --bg2:   #FFFFFF;
+  --bg3:   #F2F2F8;
+  --bg4:   #EAEAF4;
+  --p:     #5B3FD4;
+  --pl:    #7B5FEA;
+  --pd:    #3A28A8;
+  --text:  #111111;
+  --text2: #1A1A1A;
+  --mu:    #6B7280;
+  --bo:    #E4E4EF;
+  --bo2:   rgba(91,63,212,0.18);
+  --sh:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --sh-md: 0 4px 16px rgba(0,0,0,0.08);
+  --gr:    #16A34A;
+  --gr-bg: #F0FDF4;
+  --am:    #D97706;
+  --am-bg: #FFFBEB;
+  --re:    #DC2626;
+  --re-bg: #FEF2F2;
+  --bl:    #2563EB;
+  --bl-bg: #EFF6FF;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--w);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.7;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg3)}
+::-webkit-scrollbar-thumb{background:var(--bo);border-radius:3px}
 
 /* ── LOGIN ── */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(91,63,212,.15) 0%,transparent 70%)}
-.login-card{background:var(--bg2);border:1px solid var(--bo);border-radius:14px;padding:44px;max-width:440px;width:100%}
-.login-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--pl);margin-bottom:4px}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 60% 0%,rgba(91,63,212,0.07) 0%,transparent 60%)}
+.login-card{background:var(--bg2);border:1px solid var(--bo);border-radius:16px;padding:48px 44px;max-width:420px;width:100%;box-shadow:var(--sh-md)}
+.login-lockup{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.login-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--p)}
+.login-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--mu);padding:3px 8px;border:1px solid var(--bo);border-radius:4px}
 .login-tagline{font-size:13px;color:var(--mu);margin-bottom:32px}
-.login-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:6px}
-.login-input{width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-family:'DM Mono',monospace;font-size:13px;padding:12px 14px;outline:none;transition:border-color .2s}
-.login-input:focus{border-color:var(--pl)}
-.login-btn{width:100%;margin-top:14px;background:var(--p);color:#fff;border:none;border-radius:7px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
-.login-btn:hover{background:var(--pl);transform:translateY(-1px)}
-.login-btn:disabled{opacity:.5;cursor:default;transform:none}
-.login-err{color:var(--re);font-size:12px;margin-top:10px;display:none;font-family:'DM Mono',monospace}
-.login-note{font-size:11px;color:var(--mu);margin-top:20px;text-align:center}
+.fl{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fl label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+.fi{width:100%;border:1px solid var(--bo);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:12px 14px;outline:none;transition:border-color .2s;background:var(--bg)}
+.fi:focus{border-color:var(--p)}
+.login-btn{width:100%;margin-top:8px;background:var(--p);color:#fff;border:none;border-radius:8px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s}
+.login-btn:hover{background:var(--pl)}
+.login-btn:disabled{opacity:.5;cursor:default}
+.login-err{display:none;color:var(--re);font-size:12px;margin-top:10px;font-family:'DM Mono',monospace}
+.login-note{font-size:11px;color:var(--mu);margin-top:18px;text-align:center}
 
-/* ── SHELL ── */
-.app{display:none;min-height:100vh}
-.topbar{position:sticky;top:0;z-index:900;background:rgba(6,4,16,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--bo);height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
-.topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--pl);flex-shrink:0}
-.topbar-name{font-size:12px;color:var(--mu);border-left:1px solid var(--bo);padding-left:14px;flex:1}
-.topbar-badge{font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;letter-spacing:.08em}
-.badge-admin{background:rgba(245,158,11,.15);color:var(--am);border:1px solid rgba(245,158,11,.25)}
-.badge-brok{background:rgba(91,63,212,.18);color:var(--pl);border:1px solid var(--bo)}
-.logout-btn{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;border:1px solid var(--bo);border-radius:4px;padding:4px 10px;background:transparent;transition:all .2s}
-.logout-btn:hover{color:var(--w);border-color:var(--pl)}
-.tabs{border-bottom:1px solid var(--bo);background:var(--bg2);display:flex;padding:0 24px;overflow-x:auto}
-.tab{padding:0 16px;height:44px;display:flex;align-items:center;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--mu);border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .2s;flex-shrink:0}
-.tab.on{color:var(--w);border-bottom-color:var(--pl)}
-.tab:hover:not(.on){color:var(--off)}
-.pg{display:none}.pg.on{display:block}
-.wrap{max-width:1040px;margin:0 auto;padding:32px 24px 80px}
+/* ── APP SHELL ── */
+.app{display:none;min-height:100vh;flex-direction:column}
+.app.visible{display:flex}
 
-/* ── LAYOUT ── */
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.sh{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(18px,2.5vw,26px);letter-spacing:-.02em;margin-bottom:6px}
-.sub{font-size:13px;color:var(--mu);margin-bottom:22px}
-.card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:20px}
-.section-head{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--pl);margin-bottom:12px}
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:900;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--bo);height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--p);flex-shrink:0}
+.topbar-sep{width:1px;height:18px;background:var(--bo);flex-shrink:0}
+.topbar-name{font-size:12px;color:var(--mu);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-badge{font-family:'DM Mono',monospace;font-size:9px;padding:3px 9px;border-radius:4px;letter-spacing:.07em;font-weight:500;flex-shrink:0}
+.badge-admin{background:rgba(217,119,6,0.1);color:var(--am);border:1px solid rgba(217,119,6,0.2)}
+.badge-client{background:rgba(91,63,212,0.1);color:var(--p);border:1px solid rgba(91,63,212,0.2)}
+.logout-btn{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;border:1px solid var(--bo);border-radius:5px;padding:5px 12px;background:transparent;transition:all .2s;flex-shrink:0}
+.logout-btn:hover{color:var(--text);border-color:var(--p)}
 
-/* ── TAGS ── */
-.tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;padding:2px 8px;border-radius:3px;display:inline-block}
-.tag-g{background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.22)}
-.tag-a{background:rgba(245,158,11,.12);color:var(--am);border:1px solid rgba(245,158,11,.2)}
-.tag-r{background:rgba(239,68,68,.12);color:var(--re);border:1px solid rgba(239,68,68,.2)}
-.tag-b{background:rgba(59,130,246,.12);color:var(--bl);border:1px solid rgba(59,130,246,.2)}
-.tag-p{background:rgba(91,63,212,.18);color:var(--pl);border:1px solid var(--bo)}
+/* ── TABBAR ── */
+.tabbar{border-bottom:1px solid var(--bo);background:var(--bg2);display:flex;padding:0 24px;overflow-x:auto;scrollbar-width:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{padding:0 16px;height:44px;display:flex;align-items:center;font-size:12.5px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--mu);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;flex-shrink:0;font-family:'DM Sans',sans-serif}
+.tab.on{color:var(--p);border-bottom-color:var(--p)}
+.tab:hover:not(.on){color:var(--text)}
 
-/* ── CALLOUT ── */
-.callout{border-radius:8px;padding:14px 18px;margin:14px 0}
-.c-p{background:rgba(91,63,212,.1);border:1px solid var(--bo);border-left:3px solid var(--pl)}
-.c-g{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-left:3px solid var(--gr)}
-.c-a{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-left:3px solid var(--am)}
-.c-r{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-left:3px solid var(--re)}
-.callout-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
-.cl-p{color:var(--pl)}.cl-g{color:var(--gr)}.cl-a{color:var(--am)}.cl-r{color:var(--re)}
-.callout p{font-size:13px;color:#B0A8C8;line-height:1.72}
-.callout strong{color:var(--w)}
+/* ── PAGES ── */
+.pg{display:none}
+.pg.on{display:block}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 24px 80px}
+
+/* ── TYPOGRAPHY ── */
+.pg-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(20px,3vw,26px);letter-spacing:-.02em;margin-bottom:6px;color:var(--text)}
+.pg-sub{font-size:13px;color:var(--mu);margin-bottom:28px}
+.sec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mu);margin-bottom:12px;display:block}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--bo);border-radius:12px;padding:22px;box-shadow:var(--sh)}
+.card+.card{margin-top:16px}
+
+/* ── GRID ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 
 /* ── STAT CARDS ── */
-.stat-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:18px}
-.stat-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:8px}
-.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;line-height:1;margin-bottom:4px}
+.stat-card{background:var(--bg2);border:1px solid var(--bo);border-radius:12px;padding:20px;box-shadow:var(--sh)}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:8px}
+.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;line-height:1;color:var(--text);margin-bottom:4px}
+.stat-val.green{color:var(--gr)}
+.stat-val.purple{color:var(--p)}
+.stat-val.red{color:var(--re)}
 .stat-sub{font-size:11px;color:var(--mu)}
 
-/* ── BEST AGENT ── */
-.best-card{background:linear-gradient(135deg,rgba(91,63,212,.15),rgba(91,63,212,.05));border:1px solid var(--bo);border-radius:10px;padding:20px}
-.best-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--pl);margin-bottom:6px}
-.best-name{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin-bottom:2px}
-.best-rate{font-family:'Syne',sans-serif;font-weight:800;font-size:40px;color:var(--gr);line-height:1}
-.best-sub{font-size:12px;color:var(--mu);margin-top:4px}
-.qa-btn{display:block;width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:6px;padding:11px 14px;color:var(--w);font-size:13px;cursor:pointer;text-align:left;margin-bottom:8px;transition:all .2s;font-family:'DM Sans',sans-serif}
-.qa-btn:hover{border-color:var(--pl);background:var(--dim)}
-.qa-btn:last-child{margin-bottom:0}
+/* ── TAGS ── */
+.tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;display:inline-block;font-weight:500}
+.tag-green{background:var(--gr-bg);color:var(--gr);border:1px solid rgba(22,163,74,.2)}
+.tag-amber{background:var(--am-bg);color:var(--am);border:1px solid rgba(217,119,6,.2)}
+.tag-red{background:var(--re-bg);color:var(--re);border:1px solid rgba(220,38,38,.2)}
+.tag-blue{background:var(--bl-bg);color:var(--bl);border:1px solid rgba(37,99,235,.2)}
+.tag-purple{background:rgba(91,63,212,.1);color:var(--p);border:1px solid rgba(91,63,212,.2)}
+.tag-gray{background:var(--bg3);color:var(--mu);border:1px solid var(--bo)}
 
-/* ── TABLE ── */
-.tbl-wrap{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;overflow:hidden}
-.tbl{width:100%;border-collapse:collapse}
-.tbl thead tr{background:var(--bg3)}
-.tbl th{padding:10px 14px;text-align:left;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
-.tbl td{padding:11px 14px;border-bottom:1px solid rgba(91,63,212,.07);font-size:12.5px;color:#B0A8C8;vertical-align:middle}
-.tbl td:first-child{color:var(--w)}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:rgba(91,63,212,.04)}
-.pager{display:flex;gap:8px;margin-top:14px;align-items:center;justify-content:flex-end}
-.pager-btn{background:var(--bg2);border:1px solid var(--bo);border-radius:5px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--mu);cursor:pointer;transition:all .2s}
-.pager-btn:hover:not(:disabled){border-color:var(--pl);color:var(--w)}
-.pager-btn:disabled{opacity:.35;cursor:default}
-.pager-info{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);flex:1;text-align:center}
-.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.filter-btn{background:var(--bg2);border:1px solid var(--bo);border-radius:5px;padding:5px 14px;font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;transition:all .2s}
-.filter-btn.on{color:var(--w);border-color:var(--pl);background:rgba(91,63,212,.12)}
-
-/* ── AGENTS ── */
-.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.agent-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:18px}
-.agent-rank{font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);margin-bottom:4px;display:flex;align-items:center;gap:6px}
-.agent-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:10px}
-.agent-stats{display:flex;gap:16px;margin-bottom:10px}
-.a-stat-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--pl)}
-.a-stat-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.08em;text-transform:uppercase}
-
-/* ── TRAINING ── */
-.training-item{background:var(--bg2);border:1px solid var(--bo);border-radius:9px;padding:16px;margin-bottom:10px}
-.training-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
-.training-v{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--pl)}
-.training-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);margin-left:auto}
-
-/* ── CALCULATOR ── */
-.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-.lc-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:5px}
-.lc-live{color:var(--gr)}.lc-req{color:var(--re)}
-.lc-input{width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s}
-.lc-input:focus{border-color:var(--pl)}
-input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--p);border:2px solid var(--pl);cursor:pointer}
-.rv{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;text-align:center;color:var(--w);margin-top:3px}
-.rhl{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);margin-top:1px}
-
-/* ── FORMS ── */
-.form-group{margin-bottom:16px}
-.form-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:6px}
-.form-hint{font-size:11px;color:var(--mu);margin-top:4px}
-.form-input{width:100%;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-family:'DM Mono',monospace;font-size:13px;padding:11px 14px;outline:none;transition:border-color .2s}
-.form-input:focus{border-color:var(--pl)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* ── DOT ── */
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--gr)}
+.dot-amber{background:var(--am)}
+.dot-red{background:var(--re)}
+.dot-gray{background:var(--mu)}
 
 /* ── BUTTONS ── */
-.btn{border:none;border-radius:7px;padding:11px 20px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s}
-.btn-primary{background:var(--p);color:#fff}.btn-primary:hover{background:var(--pl)}
-.btn-danger{background:rgba(239,68,68,.15);color:var(--re);border:1px solid rgba(239,68,68,.25)}.btn-danger:hover{background:rgba(239,68,68,.25)}
-.btn-ghost{background:var(--bg3);color:var(--w);border:1px solid var(--bo)}.btn-ghost:hover{border-color:var(--pl)}
-.btn-sm{padding:6px 14px;font-size:12px}
-.btn-full{width:100%}
-.btn:disabled{opacity:.5;cursor:default}
+.btn{border:none;border-radius:8px;padding:10px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--p);color:#fff}
+.btn-primary:hover{background:var(--pl)}
+.btn-ghost{background:var(--bg);color:var(--text);border:1px solid var(--bo)}
+.btn-ghost:hover{border-color:var(--p);color:var(--p)}
+.btn-danger{background:var(--re-bg);color:var(--re);border:1px solid rgba(220,38,38,.25)}
+.btn-danger:hover{background:rgba(220,38,38,.15)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 10px;font-size:11px}
+.btn-full{width:100%;justify-content:center}
+.btn:disabled{opacity:.45;cursor:default}
 
-/* ── CONTROL TAB ── */
-.status-widget{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.sw-left .sw-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);margin-bottom:6px}
-.sw-status{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;display:flex;align-items:center;gap:8px}
-.dot-active{color:var(--gr)}.dot-paused{color:var(--re)}
-.prop-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
-.prop-item{background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.prop-body .prop-addr{font-weight:600;color:var(--w);margin-bottom:2px}
-.prop-body .prop-meta{font-size:12px;color:var(--mu)}
-.prop-remove{background:transparent;border:1px solid var(--bo);border-radius:4px;color:var(--mu);padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0;transition:all .2s;font-family:'DM Mono',monospace}
-.prop-remove:hover{border-color:var(--re);color:var(--re)}
-.add-prop-form{background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:18px}
+/* ── COPY BTN ── */
+.copy-btn{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;border:1px solid var(--bo);border-radius:5px;padding:4px 10px;background:transparent;transition:all .2s}
+.copy-btn:hover{color:var(--p);border-color:var(--p)}
 
-/* ── ADMIN ── */
-.brok-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.brok-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:18px}
-.brok-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-.brok-id{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);margin-bottom:10px}
-.brok-stats{display:flex;gap:14px;margin-bottom:12px;font-size:12px;color:var(--mu)}
-.brok-stats strong{color:var(--w)}
-.api-key-row{background:var(--bg3);border:1px solid var(--bo);border-radius:6px;padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.api-key-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--off);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.copy-btn{background:transparent;border:1px solid var(--bo);border-radius:4px;color:var(--mu);padding:3px 10px;font-size:10px;cursor:pointer;flex-shrink:0;transition:all .2s;font-family:'DM Mono',monospace}
-.copy-btn:hover{border-color:var(--pl);color:var(--pl)}
-.edit-panel{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:24px;margin-top:14px;display:none;animation:fu .3s ease both}
-.edit-panel.show{display:block}
-@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.success-box{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:18px;margin-top:16px;display:none;animation:fu .3s ease both}
-.success-box.show{display:block}
-.api-reveal{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:var(--gr);word-break:break-all;margin:8px 0}
-.ms-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(91,63,212,.08);font-size:12.5px}
-.ms-row:last-child{border-bottom:none}
-.ms-label{color:var(--mu)}.ms-val{font-family:'DM Mono',monospace;color:var(--w)}
-
-/* ── LOADING ── */
-.loading{text-align:center;padding:60px 20px;color:var(--mu);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--bo);border-top-color:var(--pl);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+/* ── LOADING / EMPTY ── */
+.loading-box{text-align:center;padding:56px 24px;color:var(--mu)}
+.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--bo);border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:14px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--bo);border-radius:8px;padding:12px 18px;font-size:13px;color:var(--w);z-index:9999;animation:fu .3s ease both;pointer-events:none}
-.toast.green{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08);color:var(--gr)}
-.toast.red{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--re)}
+.empty-box{text-align:center;padding:64px 24px}
+.empty-icon{font-size:40px;margin-bottom:14px;opacity:.6}
+.empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;margin-bottom:6px;color:var(--text)}
+.empty-sub{font-size:13px;color:var(--mu);max-width:360px;margin:0 auto}
+.demo-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;background:var(--am-bg);color:var(--am);border:1px solid rgba(217,119,6,.2);border-radius:4px;padding:3px 8px;margin-bottom:12px}
 
-@media(max-width:700px){
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;pointer-events:none;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast-item{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);box-shadow:var(--sh-md);animation:toastIn .25s ease;max-width:320px}
+.toast-ok{border-color:rgba(22,163,74,.3);background:var(--gr-bg);color:var(--gr)}
+.toast-err{border-color:rgba(220,38,38,.3);background:var(--re-bg);color:var(--re)}
+.toast-info{border-color:var(--bo2);background:rgba(91,63,212,.06);color:var(--p)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── CALLOUT ── */
+.callout{border-radius:10px;padding:14px 18px;margin-bottom:18px}
+.callout-purple{background:rgba(91,63,212,.06);border:1px solid rgba(91,63,212,.2);border-left:3px solid var(--p)}
+.callout-green{background:var(--gr-bg);border:1px solid rgba(22,163,74,.2);border-left:3px solid var(--gr)}
+.callout-amber{background:var(--am-bg);border:1px solid rgba(217,119,6,.2);border-left:3px solid var(--am)}
+.callout p{font-size:13px;color:var(--text);line-height:1.6}
+.callout-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.cl-purple{color:var(--p)}.cl-green{color:var(--gr)}.cl-amber{color:var(--am)}
+
+/* ── FORMS ── */
+.fg{margin-bottom:18px}
+.fg label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);display:block;margin-bottom:6px}
+.fg-hint{font-size:11px;color:var(--mu);margin-top:4px}
+.form-input{width:100%;border:1px solid var(--bo);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 13px;outline:none;transition:border-color .2s;background:var(--bg)}
+.form-input:focus{border-color:var(--p)}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── TOGGLE ── */
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--bo);border-radius:11px;cursor:pointer;transition:all .2s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:var(--mu);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--p);border-color:var(--p)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);background:#fff}
+
+/* ── SUCCESS BOX ── */
+.success-box{display:none;background:var(--gr-bg);border:1px solid rgba(22,163,74,.25);border-radius:10px;padding:18px;margin-top:16px}
+.success-box.show{display:block}
+.key-reveal{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--gr);word-break:break-all;margin:8px 0;padding:10px;background:rgba(255,255,255,.7);border-radius:6px;border:1px solid rgba(22,163,74,.2)}
+
+/* ── TABLES ── */
+.tbl-wrap{background:var(--bg2);border:1px solid var(--bo);border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead tr{background:var(--bg3)}
+.tbl th{padding:10px 16px;text-align:left;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);font-weight:400;white-space:nowrap}
+.tbl td{padding:12px 16px;border-bottom:1px solid var(--bo);font-size:13px;color:var(--mu);vertical-align:middle}
+.tbl td:first-child{color:var(--text)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(91,63,212,.02);cursor:pointer}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
   .g4{grid-template-columns:1fr 1fr}
-  .g3,.g2,.calc-grid,.form-row{grid-template-columns:1fr}
-  .topbar,.wrap{padding-left:14px;padding-right:14px}
-  .tabs{padding:0 12px}
+  .g3,.g2,.form-row{grid-template-columns:1fr}
+  .wrap{padding:20px 14px 60px}
+  .topbar,.tabbar{padding-left:14px;padding-right:14px}
+  .login-card{padding:32px 24px}
+}
+@media(max-width:420px){
+  .g4{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- ════════ LOGIN ════════ -->
-<div class="login-wrap" id="loginView">
+<!-- ══════════════════════════════════════════
+     LOGIN
+══════════════════════════════════════════ -->
+<div class="login-screen" id="loginView">
   <div class="login-card">
-    <div class="login-logo">PAS Portal</div>
-    <div class="login-tagline">Brokerage command centre — powered by ORVN.</div>
-    <label class="login-label">API Key</label>
-    <input class="login-input" id="keyInput" type="password" placeholder="pas_..." autocomplete="off">
-    <div class="login-err" id="loginErr">Invalid key. Contact your ORVN account manager.</div>
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Dashboard →</button>
-    <p class="login-note">Enter your brokerage API key — or ORVN admin key to manage accounts.</p>
+    <div class="login-lockup">
+      <div class="login-logo">ORVN</div>
+      <span class="login-sub">PAS PORTAL</span>
+    </div>
+    <p class="login-tagline">AI first-touch infrastructure for real estate brokerages.</p>
+    <div class="fl">
+      <label>API Key</label>
+      <input class="fi" id="keyInput" type="password" placeholder="Enter brokerage key or admin key…" autocomplete="off">
+    </div>
+    <div class="login-err" id="loginErr">Invalid key — check with your ORVN account manager.</div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Portal →</button>
+    <p class="login-note">Brokerage API key or ORVN admin key accepted.</p>
   </div>
 </div>
 
-<!-- ════════ BROKERAGE APP ════════ -->
-<div class="app" id="brokerageApp">
-  <div class="topbar">
-    <div class="topbar-logo">PAS</div>
-    <div class="topbar-name" id="bTopName">—</div>
-    <span class="topbar-badge badge-brok">BROKERAGE</span>
-    <button class="logout-btn" onclick="doLogout()">Sign out</button>
-  </div>
-  <div class="tabs" id="bTabs">
-    <button class="tab on" onclick="bGo('overview',this)">Overview</button>
-    <button class="tab" onclick="bGo('control',this)">Control</button>
-    <button class="tab" onclick="bGo('calls',this)">Calls</button>
-    <button class="tab" onclick="bGo('leads',this)">Leads</button>
-    <button class="tab" onclick="bGo('agents',this)">Agents</button>
-    <button class="tab" onclick="bGo('calculator',this)">Revenue Audit</button>
-    <button class="tab" onclick="bGo('settings',this)">Settings</button>
-    <button class="tab" onclick="bGo('training',this)">Self-Training</button>
-  </div>
-
-  <div class="pg on" id="bpg-overview"><div class="wrap"><div id="overviewContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div></div>
-
-  <!-- CONTROL -->
-  <div class="pg" id="bpg-control">
-    <div class="wrap">
-      <h2 class="sh">PAS Control</h2>
-      <p class="sub">Pause, resume, and manage what PAS says on every call — no backend access needed.</p>
-      <div id="controlContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-
-  <div class="pg" id="bpg-calls">
-    <div class="wrap">
-      <h2 class="sh">Call History</h2>
-      <p class="sub">Every call PAS processed — inbound and outbound.</p>
-      <div class="filter-bar">
-        <button class="filter-btn on" onclick="filterCalls(null,this)">All</button>
-        <button class="filter-btn" onclick="filterCalls('booked',this)">Booked</button>
-        <button class="filter-btn" onclick="filterCalls('not_interested',this)">Not Interested</button>
-        <button class="filter-btn" onclick="filterCalls('incomplete',this)">Incomplete</button>
-      </div>
-      <div id="callsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-
-  <div class="pg" id="bpg-leads">
-    <div class="wrap">
-      <h2 class="sh">Lead Memory</h2>
-      <p class="sub">Every prospect PAS has spoken with. Memory persists across all calls.</p>
-      <div id="leadsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-
-  <div class="pg" id="bpg-agents">
-    <div class="wrap">
-      <h2 class="sh">Agent Leaderboard</h2>
-      <p class="sub">Ranked by close rate. PAS routes bookings to the best available agent automatically.</p>
-      <div id="agentsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- CALCULATOR -->
-  <div class="pg" id="bpg-calculator">
-    <div class="wrap">
-      <h2 class="sh">Revenue Audit Calculator</h2>
-      <p class="sub">Pre-filled with your live data. Add commission and ISA cost to see the full picture.</p>
-      <div class="card" style="margin-bottom:20px">
-        <div class="calc-grid">
-          <div>
-            <label class="lc-lbl">Monthly Leads <span class="lc-live">● live</span></label>
-            <input type="number" class="lc-input" id="cLeads" placeholder="Loading...">
-          </div>
-          <div>
-            <label class="lc-lbl">Avg Commission ($) <span class="lc-req">* manual</span></label>
-            <input type="number" class="lc-input" id="cComm" placeholder="12000">
-          </div>
-          <div>
-            <label class="lc-lbl">Close Rate: <span id="cCloseV" style="color:var(--pl)">8%</span> <span class="lc-live">● agents</span></label>
-            <input type="range" id="cClose" min="1" max="30" value="8" oninput="document.getElementById('cCloseV').textContent=this.value+'%'">
-            <div class="rhl"><span>1%</span><span>avg 8%</span><span>30%</span></div>
-          </div>
-          <div>
-            <label class="lc-lbl">Response Time: <span id="cRespV" style="color:var(--pl)">3 sec (PAS)</span></label>
-            <input type="range" id="cResp" min="1" max="480" value="1" oninput="updateCResp(this)">
-            <div class="rhl"><span>&lt;1 min</span><span>1 hr</span><span>8 hrs</span></div>
-          </div>
-          <div>
-            <label class="lc-lbl">CRM Size <span class="lc-live">● live</span></label>
-            <input type="number" class="lc-input" id="cCRM" placeholder="Loading...">
-          </div>
-          <div>
-            <label class="lc-lbl">ISA Annual Cost ($) <span class="lc-req">* manual</span></label>
-            <input type="number" class="lc-input" id="cISA" placeholder="85000">
-          </div>
-        </div>
-        <button class="btn btn-primary btn-full" onclick="runCalc()">Calculate Revenue Opportunity</button>
-        <div id="calcResults" style="display:none;margin-top:20px"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SETTINGS -->
-  <div class="pg" id="bpg-settings">
-    <div class="wrap">
-      <h2 class="sh">Settings</h2>
-      <p class="sub">Changes take effect on the next call. Contact your account manager to update your Twilio number.</p>
-      <div id="settingsContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-
-  <div class="pg" id="bpg-training">
-    <div class="wrap">
-      <h2 class="sh">Self-Training History</h2>
-      <p class="sub">Claude analyses your transcripts every 25 calls and rewrites PAS scripts for better conversion.</p>
-      <div id="trainingContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════ ADMIN APP ════════ -->
+<!-- ══════════════════════════════════════════
+     ADMIN APP
+══════════════════════════════════════════ -->
 <div class="app" id="adminApp">
   <div class="topbar">
-    <div class="topbar-logo">PAS</div>
-    <div class="topbar-name">ORVN Admin</div>
+    <div class="topbar-logo">ORVN</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-name" id="adminTopName">Admin Portal</div>
     <span class="topbar-badge badge-admin">ADMIN</span>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
   </div>
-  <div class="tabs">
-    <button class="tab on" onclick="aGo('brokerages',this)">All Brokerages</button>
-    <button class="tab" onclick="aGo('create',this)">+ Onboard Client</button>
+  <div class="tabbar" id="adminTabbar">
+    <button class="tab on"  data-tab="a-dashboard"  onclick="adminGo(this)">Dashboard</button>
+    <button class="tab"     data-tab="a-brokerages" onclick="adminGo(this)">Brokerages</button>
+    <button class="tab"     data-tab="a-calls"      onclick="adminGo(this)">Calls</button>
+    <button class="tab"     data-tab="a-errors"     onclick="adminGo(this)">Errors</button>
+    <button class="tab"     data-tab="a-simulate"   onclick="adminGo(this)">Simulate</button>
+    <button class="tab"     data-tab="a-onboard"    onclick="adminGo(this)">Onboard</button>
   </div>
-
-  <!-- BROKERAGES LIST -->
-  <div class="pg on" id="apg-brokerages">
-    <div class="wrap">
-      <h2 class="sh">All Brokerage Accounts</h2>
-      <p class="sub">Click "Edit" on any brokerage to update their config or view their API key.</p>
-      <div id="brokeragesContent"><div class="loading"><div class="spinner"></div><br>Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- CREATE BROKERAGE -->
-  <div class="pg" id="apg-create">
-    <div class="wrap">
-      <h2 class="sh">Onboard New Client</h2>
-      <p class="sub">Creates the brokerage account and generates their API key. Share the key with the client securely.</p>
-      <div class="card" style="max-width:600px">
-        <div class="section-head">Account Details</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Brokerage ID (slug) *</label>
-            <input class="form-input" id="cId" placeholder="remax-miami">
-            <div class="form-hint">URL-safe, lowercase, hyphens only. Cannot be changed later.</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Full Name *</label>
-            <input class="form-input" id="cName" placeholder="RE/MAX Miami">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Agent Name (PAS identity)</label>
-            <input class="form-input" id="cAgentName" placeholder="Alex" value="Alex">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Twilio Phone</label>
-            <input class="form-input" id="cTwilioPhone" placeholder="+13051234567">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Agent Backup Phone (SMS)</label>
-            <input class="form-input" id="cAgentPhone" placeholder="+13059876543">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Slack Webhook URL</label>
-            <input class="form-input" id="cSlack" placeholder="https://hooks.slack.com/...">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Slack Team ID</label>
-          <input class="form-input" id="cSlackTeam" placeholder="T012AB3CD">
-          <div class="form-hint">Found in Slack workspace settings. Required for /pas slash commands.</div>
-        </div>
-        <button class="btn btn-primary btn-full" id="createBrokBtn" onclick="createBrokerage()" style="margin-top:6px">Create Brokerage Account</button>
-        <div class="success-box" id="createSuccess">
-          <div class="callout-lbl cl-g" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px">Account Created</div>
-          <p style="font-size:13px;color:#B0A8C8;margin-bottom:10px">Save this API key and share it with the client. <strong style="color:var(--w)">It will not be shown again.</strong></p>
-          <div class="api-reveal" id="newApiKey">—</div>
-          <button class="btn btn-ghost btn-sm" onclick="copyText(document.getElementById('newApiKey').textContent)">Copy Key</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="pg on" id="a-dashboard"><div class="wrap" id="aDashContent"><div class="loading-box"><div class="spinner"></div><br>Loading fleet data…</div></div></div>
+  <div class="pg"    id="a-brokerages"><div class="wrap" id="aBrokContent"><div class="loading-box"><div class="spinner"></div><br>Loading brokerages…</div></div></div>
+  <div class="pg"    id="a-calls"><div class="wrap" id="aCallsContent"></div></div>
+  <div class="pg"    id="a-errors"><div class="wrap" id="aErrContent"><div class="loading-box"><div class="spinner"></div><br>Loading error logs…</div></div></div>
+  <div class="pg"    id="a-simulate"><div class="wrap" id="aSimContent"></div></div>
+  <div class="pg"    id="a-onboard"><div class="wrap" id="aOnboardContent"></div></div>
 </div>
 
-<!-- EDIT BROKERAGE PANEL (admin) -->
-<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;display:none;align-items:center;justify-content:center;padding:24px" id="editOverlay" onclick="if(event.target===this)closeEdit()">
-  <div style="background:var(--bg2);border:1px solid var(--bo);border-radius:14px;padding:32px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px" id="editTitle">Edit Brokerage</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeEdit()">✕ Close</button>
-    </div>
-    <input type="hidden" id="editId">
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" id="eName">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Agent Name</label>
-        <input class="form-input" id="eAgentName">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Twilio Phone</label>
-        <input class="form-input" id="eTwilioPhone">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Agent Backup Phone</label>
-        <input class="form-input" id="eAgentPhone">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Slack Webhook URL</label>
-      <input class="form-input" id="eSlack">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Slack Team ID</label>
-      <input class="form-input" id="eSlackTeam">
-    </div>
-    <div style="display:flex;gap:10px;margin-top:6px">
-      <button class="btn btn-primary" style="flex:1" onclick="saveEdit()">Save Changes</button>
-      <button class="btn btn-danger" onclick="toggleActive()" id="toggleActiveBtn">Pause Account</button>
-    </div>
+<!-- ══════════════════════════════════════════
+     CLIENT APP
+══════════════════════════════════════════ -->
+<div class="app" id="clientApp">
+  <div class="topbar">
+    <div class="topbar-logo">PAS</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-name" id="clientTopName">Loading…</div>
+    <span class="topbar-badge badge-client">BROKERAGE</span>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
   </div>
+  <div class="tabbar" id="clientTabbar">
+    <button class="tab on"  data-tab="c-dashboard" onclick="clientGo(this)">Dashboard</button>
+    <button class="tab"     data-tab="c-calls"      onclick="clientGo(this)">Calls</button>
+    <button class="tab"     data-tab="c-leads"      onclick="clientGo(this)">Leads</button>
+    <button class="tab"     data-tab="c-bookings"   onclick="clientGo(this)">Bookings</button>
+    <button class="tab"     data-tab="c-agents"     onclick="clientGo(this)">Agents</button>
+    <button class="tab"     data-tab="c-insights"   onclick="clientGo(this)">Insights</button>
+    <button class="tab"     data-tab="c-billing"    onclick="clientGo(this)">Billing</button>
+    <button class="tab"     data-tab="c-support"    onclick="clientGo(this)">Support</button>
+    <button class="tab"     data-tab="c-settings"   onclick="clientGo(this)">Settings</button>
+  </div>
+  <div class="pg on" id="c-dashboard"><div class="wrap" id="cDashContent"><div class="loading-box"><div class="spinner"></div><br>Loading dashboard…</div></div></div>
+  <div class="pg"    id="c-calls"><div class="wrap" id="cCallsContent"></div></div>
+  <div class="pg"    id="c-leads"><div class="wrap" id="cLeadsContent"></div></div>
+  <div class="pg"    id="c-bookings"><div class="wrap" id="cBookContent"></div></div>
+  <div class="pg"    id="c-agents"><div class="wrap" id="cAgentsContent"></div></div>
+  <div class="pg"    id="c-insights"><div class="wrap" id="cInsContent"></div></div>
+  <div class="pg"    id="c-billing"><div class="wrap" id="cBillContent"></div></div>
+  <div class="pg"    id="c-support"><div class="wrap" id="cSuppContent"></div></div>
+  <div class="pg"    id="c-settings"><div class="wrap" id="cSetContent"></div></div>
 </div>
+
+<!-- toast container -->
+<div id="toast"></div>
 
 <script>
-const BASE = window.location.origin;
-let API_KEY = '', ADMIN_KEY = '', MODE = '';
-let callsOffset = 0, callsOutcome = null, leadsOffset = 0;
-let calcPrefilled = false, settingsLoaded = false, controlLoaded = false;
-let editActiveCurrent = true;
+/* ═══════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════ */
+var API = 'http://localhost:8000';
+var ADMIN_KEY_LS  = 'pas_admin_key';
+var CLIENT_KEY_LS = 'pas_portal_key';
 
-// ════ AUTH ════
-async function doLogin() {
-  const key = document.getElementById('keyInput').value.trim();
-  if (!key) return;
-  const btn = document.getElementById('loginBtn');
-  btn.textContent = 'Connecting...'; btn.disabled = true;
-  document.getElementById('loginErr').style.display = 'none';
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+var S = {
+  portalType:    null,
+  adminKey:      '',
+  clientKey:     '',
+  brokerageId:   null,
+  brokerageName: null,
+  sessionId:     (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)),
+  currentTab:    null,
+  tabEntered:    Date.now(),
+  loaded:        {}
+};
 
+/* feature flags */
+var FF = {
+  showAdvancedAnalytics:     false,
+  showAgentPerformance:      false,
+  showObjectionIntelligence: true,
+  showAfterHoursInsights:    true,
+  showLeadRecovery:          false,
+  showWeeklyReports:         false,
+  showCreditUsage:           true,
+  showCallQualityScore:      false
+};
+
+/* ═══════════════════════════════════════════════
+   ANALYTICS — Brokerage Engagement Intelligence
+═══════════════════════════════════════════════ */
+function trackEvent(name, meta) {
+  meta = meta || {};
   try {
-    // Try brokerage portal first
-    let r = await fetch(BASE + '/portal/overview', {headers: {'X-API-Key': key}});
-    if (r.ok) {
-      API_KEY = key; MODE = 'brokerage';
-      localStorage.setItem('pas_portal_key', key);
-      startBrokerageApp(await r.json());
-      btn.textContent = 'Access Dashboard →'; btn.disabled = false;
-      return;
-    }
-    // Try admin key
-    r = await fetch(BASE + '/admin/brokerages', {headers: {'X-Admin-Key': key}});
-    if (r.ok) {
-      ADMIN_KEY = key; MODE = 'admin';
-      localStorage.setItem('pas_admin_key', key);
-      startAdminApp(await r.json());
-      btn.textContent = 'Access Dashboard →'; btn.disabled = false;
-      return;
-    }
-    document.getElementById('loginErr').style.display = 'block';
-  } catch(e) {
-    document.getElementById('loginErr').textContent = 'Cannot reach PAS server.';
-    document.getElementById('loginErr').style.display = 'block';
+    var ev = {
+      event_name:   name,
+      portal_type:  S.portalType,
+      brokerage_id: S.brokerageId,
+      session_id:   S.sessionId,
+      current_tab:  S.currentTab,
+      timestamp:    new Date().toISOString()
+    };
+    Object.keys(meta).forEach(function(k){ ev[k] = meta[k]; });
+    try {
+      var key = 'pas_eng_events';
+      var existing = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.unshift(ev);
+      localStorage.setItem(key, JSON.stringify(existing.slice(0, 50)));
+    } catch(_) {}
+    /* TODO: POST to /analytics/events when backend endpoint exists */
+  } catch(_) {}
+}
+
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+function toast(msg, type) {
+  type = type || 'info';
+  var el = document.createElement('div');
+  el.className = 'toast-item toast-' + type;
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 3800);
+}
+
+function loadingHtml(msg) {
+  msg = msg || 'Loading…';
+  return '<div class="loading-box"><div class="spinner"></div><br>' + msg + '</div>';
+}
+
+function emptyHtml(icon, title, sub, action) {
+  action = action || '';
+  return '<div class="empty-box">'
+    + '<div class="empty-icon">' + icon + '</div>'
+    + '<div class="empty-title">' + title + '</div>'
+    + '<div class="empty-sub">' + sub + '</div>'
+    + (action ? '<div style="margin-top:18px">' + action + '</div>' : '')
+    + '</div>';
+}
+
+function tagHtml(label, type) {
+  type = type || 'gray';
+  return '<span class="tag tag-' + type + '">' + label + '</span>';
+}
+
+function dotHtml(type) {
+  type = type || 'gray';
+  return '<span class="dot dot-' + type + '"></span>';
+}
+
+function maskPhone(p) {
+  if (!p) return '—';
+  var s = String(p).replace(/\D/g, '');
+  if (s.length < 7) return p;
+  return s.slice(0, -4).replace(/./g, '•') + s.slice(-4);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  } catch(_) { return d; }
+}
+
+function fmtDuration(s) {
+  if (s == null || s === '') return '—';
+  var m = Math.floor(s / 60), sec = s % 60;
+  return m > 0 ? m + 'm ' + sec + 's' : sec + 's';
+}
+
+function fmtPct(n) {
+  if (n == null || n === '') return '—';
+  return Number(n).toFixed(1) + '%';
+}
+
+function outcomeTagHtml(outcome) {
+  var map = {
+    booked:         ['green',  'Booked'],
+    transferred:    ['blue',   'Transferred'],
+    qualified:      ['purple', 'Qualified'],
+    not_interested: ['gray',   'Not Interested'],
+    incomplete:     ['amber',  'Incomplete'],
+    pending:        ['amber',  'Pending'],
+    failed:         ['red',    'Failed'],
+    dropped:        ['red',    'Dropped']
+  };
+  var pair = map[outcome] || ['gray', outcome || 'Unknown'];
+  return tagHtml(pair[1], pair[0]);
+}
+
+function statusTagHtml(active) {
+  return active ? tagHtml('Active','green') : tagHtml('Paused','amber');
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      function(){ toast('Copied to clipboard', 'ok'); },
+      function(){ toast('Copy failed — select manually', 'err'); }
+    );
+  } else {
+    toast('Copy not supported — select and copy manually', 'err');
   }
-  btn.textContent = 'Access Dashboard →'; btn.disabled = false;
+  trackEvent('copy_api_key_clicked');
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════════════════════════════════════════
+   API FETCH
+═══════════════════════════════════════════════ */
+function apiFetch(path, opts) {
+  opts = opts || {};
+  var headers = { 'Content-Type': 'application/json' };
+  if (opts.headers) Object.keys(opts.headers).forEach(function(k){ headers[k] = opts.headers[k]; });
+
+  if (path.indexOf('/portal/') === 0) {
+    if (S.clientKey) headers['X-API-Key'] = S.clientKey;
+  } else {
+    if (S.adminKey) headers['X-Admin-Key'] = S.adminKey;
+    else if (S.clientKey) headers['X-API-Key'] = S.clientKey;
+  }
+
+  return fetch(API + path, {
+    method:  opts.method || 'GET',
+    headers: headers,
+    body:    opts.body || undefined
+  }).then(function(res) {
+    if (!res.ok) {
+      return res.text().then(function(body) {
+        throw new Error(res.status + ': ' + body.slice(0, 200));
+      });
+    }
+    return res.json();
+  }).catch(function(e) {
+    trackEvent('api_request_failed', { path: path, error: e.message });
+    throw e;
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════ */
+function doLogin() {
+  var key = document.getElementById('keyInput').value.trim();
+  if (!key) { showLoginErr('Enter your API key.'); return; }
+
+  var btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Verifying…';
+  hideLoginErr();
+
+  /* 1. Try client portal */
+  fetch(API + '/portal/overview', { headers: { 'X-API-Key': key } })
+    .then(function(r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      S.clientKey     = key;
+      S.portalType    = 'client';
+      S.brokerageName = data.brokerage_name || 'Your Brokerage';
+      localStorage.setItem(CLIENT_KEY_LS, key);
+      trackEvent('client_logged_in');
+      showClientPortal(data);
+    })
+    .catch(function() {
+      /* 2. Try admin portal */
+      fetch(API + '/admin/brokerages', { headers: { 'X-Admin-Key': key } })
+        .then(function(r) {
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(function() {
+          S.adminKey   = key;
+          S.portalType = 'admin';
+          localStorage.setItem(ADMIN_KEY_LS, key);
+          trackEvent('admin_logged_in');
+          showAdminPortal();
+        })
+        .catch(function() {
+          trackEvent('admin_login_failed');
+          trackEvent('client_login_failed');
+          showLoginErr('Invalid key — check with your ORVN account manager.');
+          btn.disabled = false;
+          btn.textContent = 'Access Portal →';
+        });
+    });
+}
+
+function showLoginErr(msg) {
+  var el = document.getElementById('loginErr');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideLoginErr() {
+  document.getElementById('loginErr').style.display = 'none';
 }
 
 function doLogout() {
-  localStorage.removeItem('pas_portal_key');
-  localStorage.removeItem('pas_admin_key');
-  API_KEY = ''; ADMIN_KEY = ''; MODE = '';
-  document.getElementById('brokerageApp').style.display = 'none';
-  document.getElementById('adminApp').style.display = 'none';
+  trackEvent(S.portalType === 'admin' ? 'admin_logged_out' : 'client_logged_out');
+  localStorage.removeItem(ADMIN_KEY_LS);
+  localStorage.removeItem(CLIENT_KEY_LS);
+  S.adminKey = ''; S.clientKey = ''; S.portalType = null; S.brokerageId = null; S.loaded = {};
+  document.getElementById('adminApp').classList.remove('visible');
+  document.getElementById('clientApp').classList.remove('visible');
   document.getElementById('loginView').style.display = 'flex';
   document.getElementById('keyInput').value = '';
+  var btn = document.getElementById('loginBtn');
+  btn.disabled = false; btn.textContent = 'Access Portal →';
+  hideLoginErr();
 }
 
-document.getElementById('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+/* ═══════════════════════════════════════════════
+   SHOW PORTALS
+═══════════════════════════════════════════════ */
+function showAdminPortal() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('clientApp').classList.remove('visible');
+  document.getElementById('adminApp').classList.add('visible');
+  S.currentTab = 'a-dashboard';
+  S.tabEntered = Date.now();
+  loadAdminDashboard();
+  trackEvent('dashboard_tab_viewed');
+}
 
-window.addEventListener('load', async () => {
-  const bk = localStorage.getItem('pas_portal_key');
-  const ak = localStorage.getItem('pas_admin_key');
-  if (bk) {
-    try {
-      const r = await fetch(BASE + '/portal/overview', {headers: {'X-API-Key': bk}});
-      if (r.ok) { API_KEY = bk; MODE = 'brokerage'; startBrokerageApp(await r.json()); return; }
-    } catch(e) {}
-    localStorage.removeItem('pas_portal_key');
+function showClientPortal(overviewData) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('adminApp').classList.remove('visible');
+  document.getElementById('clientApp').classList.add('visible');
+  document.getElementById('clientTopName').textContent = S.brokerageName;
+  S.currentTab = 'c-dashboard';
+  S.tabEntered = Date.now();
+  loadClientDashboard(overviewData);
+  trackEvent('dashboard_tab_viewed');
+}
+
+/* ═══════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════ */
+function adminGo(el) {
+  var tab = el.dataset.tab;
+  if (S.currentTab === tab) return;
+  var elapsed = Math.round((Date.now() - S.tabEntered) / 1000);
+  if (S.currentTab) trackEvent('tab_time_spent', { tab: S.currentTab, seconds: elapsed });
+
+  document.querySelectorAll('#adminTabbar .tab').forEach(function(t){ t.classList.remove('on'); });
+  el.classList.add('on');
+  document.querySelectorAll('#adminApp .pg').forEach(function(p){ p.classList.remove('on'); });
+  document.getElementById(tab).classList.add('on');
+  S.currentTab = tab; S.tabEntered = Date.now();
+  trackEvent(tab.replace('a-','') + '_tab_viewed');
+
+  switch(tab) {
+    case 'a-dashboard':  loadAdminDashboard(); break;
+    case 'a-brokerages': loadBrokerages();     break;
+    case 'a-calls':      loadAdminCalls();     break;
+    case 'a-errors':     loadErrors();         break;
+    case 'a-simulate':   loadSimulate();       break;
+    case 'a-onboard':    loadOnboard();        break;
   }
-  if (ak) {
-    try {
-      const r = await fetch(BASE + '/admin/brokerages', {headers: {'X-Admin-Key': ak}});
-      if (r.ok) { ADMIN_KEY = ak; MODE = 'admin'; startAdminApp(await r.json()); return; }
-    } catch(e) {}
-    localStorage.removeItem('pas_admin_key');
+}
+
+function clientGo(el) {
+  var tab = el.dataset.tab;
+  if (S.currentTab === tab) return;
+  var elapsed = Math.round((Date.now() - S.tabEntered) / 1000);
+  if (S.currentTab) trackEvent('tab_time_spent', { tab: S.currentTab, seconds: elapsed });
+
+  document.querySelectorAll('#clientTabbar .tab').forEach(function(t){ t.classList.remove('on'); });
+  el.classList.add('on');
+  document.querySelectorAll('#clientApp .pg').forEach(function(p){ p.classList.remove('on'); });
+  document.getElementById(tab).classList.add('on');
+  S.currentTab = tab; S.tabEntered = Date.now();
+  trackEvent(tab.replace('c-','') + '_tab_viewed');
+
+  switch(tab) {
+    case 'c-dashboard': loadClientDashboard(); break;
+    case 'c-calls':     loadClientCalls();     break;
+    case 'c-leads':     loadClientLeads();     break;
+    case 'c-bookings':  loadClientBookings();  break;
+    case 'c-agents':    loadClientAgents();    break;
+    case 'c-insights':  loadClientInsights();  break;
+    case 'c-billing':   loadBilling();         break;
+    case 'c-support':   loadSupport();         break;
+    case 'c-settings':  loadClientSettings();  break;
   }
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — DASHBOARD
+═══════════════════════════════════════════════ */
+function loadAdminDashboard() {
+  if (S.loaded['a-dashboard']) return;
+  var el = document.getElementById('aDashContent');
+  el.innerHTML = loadingHtml('Loading fleet data…');
+
+  var sysData = {}, healthData = {};
+
+  function finish() {
+    var bs = sysData.brokerages || {};
+    var cs = sysData.calls || {};
+
+    var services = [
+      ['Supabase',   healthData.supabase],
+      ['Twilio',     healthData.twilio],
+      ['Deepgram',   healthData.deepgram],
+      ['ElevenLabs', healthData.elevenlabs],
+      ['Anthropic',  healthData.anthropic],
+      ['Cal.com',    healthData.calcom]
+    ];
+
+    var healthCards = services.map(function(pair) {
+      var name = pair[0], s = pair[1];
+      var status = s === 'connected' ? 'green' : s === 'demo' ? 'amber' : 'red';
+      var label  = s || 'unknown';
+      return '<div class="card" style="display:flex;align-items:center;gap:10px;padding:14px 16px">'
+        + dotHtml(status)
+        + '<div><div style="font-size:13px;font-weight:500">' + name + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--mu);letter-spacing:.08em;text-transform:uppercase">' + label + '</div></div></div>';
+    }).join('');
+
+    var unresolvedCount = sysData.unresolved_errors || 0;
+    el.innerHTML = '<h1 class="pg-title">Fleet Overview</h1>'
+      + '<p class="pg-sub">Cross-brokerage command centre — ORVN Admin.</p>'
+      + '<div class="g4">'
+      + '<div class="stat-card"><div class="stat-label">Total Brokerages</div><div class="stat-val">' + (bs.total != null ? bs.total : '—') + '</div><div class="stat-sub">across all plans</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Active</div><div class="stat-val green">' + (bs.active != null ? bs.active : '—') + '</div><div class="stat-sub">receiving calls</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Calls This Week</div><div class="stat-val purple">' + (cs.calls_week != null ? cs.calls_week : '—') + '</div><div class="stat-sub">' + (cs.calls_today || 0) + ' today</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Booking Rate</div><div class="stat-val">' + fmtPct(cs.booking_rate_pct) + '</div><div class="stat-sub">this week</div></div>'
+      + '</div>'
+      + '<div class="g4" style="margin-bottom:28px">'
+      + '<div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val">' + (cs.total_leads != null ? cs.total_leads : '—') + '</div><div class="stat-sub">all time</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Paused</div><div class="stat-val">' + (bs.paused != null ? bs.paused : '—') + '</div><div class="stat-sub">call handling off</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Unresolved Errors</div><div class="stat-val ' + (unresolvedCount > 0 ? 'red' : '') + '">' + unresolvedCount + '</div><div class="stat-sub">requires review</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Total Calls</div><div class="stat-val">' + (cs.total_calls != null ? cs.total_calls : '—') + '</div><div class="stat-sub">all time</div></div>'
+      + '</div>'
+      + '<span class="sec-label">Service Health</span>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:28px">'
+      + (healthCards || '<p style="color:var(--mu);font-size:13px">Health data unavailable.</p>')
+      + '</div>'
+      + '<span class="sec-label">Quick Actions</span>'
+      + '<div class="g3">'
+      + '<button class="btn btn-ghost btn-full" onclick="adminGo(document.querySelector(\'[data-tab=a-onboard]\'))">+ Create Brokerage</button>'
+      + '<button class="btn btn-ghost btn-full" onclick="adminGo(document.querySelector(\'[data-tab=a-simulate]\'))">▶ Run Simulation</button>'
+      + '<button class="btn btn-ghost btn-full" onclick="adminGo(document.querySelector(\'[data-tab=a-errors]\'))">⚠ View Errors</button>'
+      + '</div>';
+
+    S.loaded['a-dashboard'] = true;
+  }
+
+  var pending = 2;
+  function done() { pending--; if (pending === 0) finish(); }
+
+  apiFetch('/admin/system').then(function(d){ sysData = d; }).catch(function(e){ console.warn('system:', e); }).then(done);
+  apiFetch('/admin/health').then(function(d){ healthData = d; }).catch(function(e){ console.warn('health:', e); }).then(done);
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — BROKERAGES
+═══════════════════════════════════════════════ */
+function loadBrokerages() {
+  var el = document.getElementById('aBrokContent');
+  el.innerHTML = loadingHtml('Loading brokerages…');
+
+  apiFetch('/admin/brokerages').then(function(data) {
+    var brokerages = data.brokerages || [];
+
+    if (brokerages.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Brokerages</h1>'
+        + emptyHtml('🏢','No brokerages yet','Onboard your first brokerage account.',
+          '<button class="btn btn-primary" onclick="adminGo(document.querySelector(\'[data-tab=a-onboard]\'))">Onboard Brokerage</button>');
+      return;
+    }
+
+    var cards = brokerages.map(function(b) {
+      var active = b.active !== false;
+      var keyMasked = b.api_key
+        ? b.api_key.slice(0,8) + '••••••••' + b.api_key.slice(-4)
+        : '—';
+      var apiKeySafe = escAttr(b.api_key || '');
+      return '<div class="card">'
+        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
+        + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:16px">' + escHtml(b.name || b.id) + '</div>'
+        + statusTagHtml(active)
+        + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--mu);margin-bottom:12px">' + escHtml(b.id) + '</div>'
+        + '<div style="display:flex;gap:16px;font-size:12px;color:var(--mu);margin-bottom:14px">'
+        + '<span>Calls <strong style="color:var(--text)">' + (b.call_count || 0) + '</strong></span>'
+        + '<span>Plan <strong style="color:var(--text)">' + escHtml(b.plan || 'Trial') + '</strong></span>'
+        + '<span>Agent <strong style="color:var(--text)">' + escHtml(b.agent_name || 'Alex') + '</strong></span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;padding:8px 12px;margin-bottom:12px">'
+        + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(keyMasked) + '</span>'
+        + (b.api_key ? '<button class="copy-btn" onclick="copyText(\'' + apiKeySafe + '\')">Copy</button>' : '')
+        + '</div>'
+        + '<button class="btn btn-ghost btn-sm" onclick="toast(\'Brokerage detail panel coming in Phase 2\',\'info\')">View Detail →</button>'
+        + '</div>';
+    }).join('');
+
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<h1 class="pg-title">Brokerages</h1>'
+      + '<button class="btn btn-primary btn-sm" onclick="adminGo(document.querySelector(\'[data-tab=a-onboard]\'))">+ Onboard</button>'
+      + '</div>'
+      + '<p class="pg-sub">' + brokerages.length + ' account' + (brokerages.length !== 1 ? 's' : '') + ' registered.</p>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">'
+      + cards + '</div>';
+
+  }).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Brokerages</h1>'
+      + emptyHtml('🏢','Could not load brokerages',e.message,
+        '<button class="btn btn-ghost btn-sm" onclick="loadBrokerages()">Retry</button>');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — CALLS (placeholder)
+═══════════════════════════════════════════════ */
+function loadAdminCalls() {
+  if (S.loaded['a-calls']) return;
+  S.loaded['a-calls'] = true;
+  document.getElementById('aCallsContent').innerHTML = '<h1 class="pg-title">Calls</h1>'
+    + '<p class="pg-sub">Fleet-wide call history across all brokerage accounts.</p>'
+    + '<div class="callout callout-amber"><div class="callout-label cl-amber">Phase 2</div>'
+    + '<p>Fleet-wide call table with brokerage filter, outcome tags, and call detail drawer arrives in Phase 2.'
+    + ' To view a specific brokerage\'s calls now, use <strong>Brokerages → View Detail → Calls</strong>.</p></div>'
+    + emptyHtml('📞','Full call table in Phase 2','Per-brokerage call viewing is available in the Brokerages tab today.');
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — ERRORS
+═══════════════════════════════════════════════ */
+function loadErrors() {
+  var el = document.getElementById('aErrContent');
+  el.innerHTML = loadingHtml('Loading error logs…');
+
+  apiFetch('/admin/error-logs').then(function(data) {
+    var errors = data.errors || data.error_logs || [];
+    var unresolved = errors.filter(function(e){ return !e.resolved && !e.resolved_at; });
+
+    if (errors.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Error Logs</h1>'
+        + emptyHtml('✅','No errors found','PAS services are running cleanly.');
+      return;
+    }
+
+    var rows = unresolved.slice(0,10).map(function(e) {
+      return '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--bo)">'
+        + dotHtml('red')
+        + '<div><div style="font-size:13px;font-weight:500">' + escHtml(e.message || e.error_message || 'Unknown error') + '</div>'
+        + '<div style="font-size:11px;color:var(--mu);margin-top:2px">'
+        + escHtml(e.service || '') + ' · ' + fmtDate(e.created_at || e.timestamp)
+        + ' · Brokerage: ' + escHtml(e.brokerage_id || '—') + '</div></div></div>';
+    }).join('');
+
+    el.innerHTML = '<h1 class="pg-title">Error Logs</h1>'
+      + '<p class="pg-sub">' + unresolved.length + ' unresolved · ' + errors.length + ' total.</p>'
+      + '<div class="callout callout-amber"><div class="callout-label cl-amber">Resolve actions</div>'
+      + '<p>Full error table with resolve actions and admin notes arrives in Phase 2.</p></div>'
+      + '<div class="card">' + (rows || '<p style="color:var(--mu);font-size:13px">All errors resolved.</p>') + '</div>';
+
+  }).catch(function(e) {
+    document.getElementById('aErrContent').innerHTML = '<h1 class="pg-title">Error Logs</h1>'
+      + emptyHtml('✅','Error log unavailable','Could not reach error log endpoint. ' + escHtml(e.message));
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — SIMULATE
+═══════════════════════════════════════════════ */
+var SIM = { sid: null, done: false };
+
+function loadSimulate() {
+  if (S.loaded['a-simulate']) return;
+
+  apiFetch('/admin/brokerages').then(function(d) {
+    buildSimUI(d.brokerages || []);
+  }).catch(function() {
+    buildSimUI([]);
+  });
+}
+
+function buildSimUI(brokerages) {
+  S.loaded['a-simulate'] = true;
+  SIM = { sid: null, done: false };
+
+  var brokOptions = '<option value="demo">demo (default)</option>'
+    + brokerages.filter(function(b){ return b.id !== 'demo'; }).map(function(b) {
+        return '<option value="' + escAttr(b.id) + '">' + escHtml(b.name || b.id) + '</option>';
+      }).join('');
+
+  document.getElementById('aSimContent').innerHTML = '<h1 class="pg-title">Simulate</h1>'
+    + '<p class="pg-sub">Test the PAS engine without a live phone number. No Twilio required.</p>'
+    + '<div class="callout callout-purple"><div class="callout-label cl-purple">How it works</div>'
+    + '<p>Select a brokerage, prefill a lead, then send messages to see how PAS (Alex) responds in real time. Uses the real state machine end-to-end.</p></div>'
+
+    + '<div class="card" style="margin-bottom:16px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:16px">Simulation Setup</div>'
+    + '<div class="form-row" style="margin-bottom:0">'
+    + '<div class="fg"><label>Brokerage</label><select class="form-input form-select" id="simBrok">' + brokOptions + '</select></div>'
+    + '<div class="fg"><label>Lead Name</label><input class="form-input" id="simName" value="Jordan Ellis"></div>'
+    + '</div>'
+    + '<div class="form-row" style="margin-bottom:0">'
+    + '<div class="fg"><label>Intent</label><select class="form-input form-select" id="simIntent">'
+    + '<option value="buying">Buying</option><option value="selling">Selling</option>'
+    + '<option value="renting">Renting</option><option value="investing">Investing</option></select></div>'
+    + '<div class="fg"><label>Budget</label><input class="form-input" id="simBudget" value="$450,000"></div>'
+    + '</div>'
+    + '<div class="form-row" style="margin-bottom:16px">'
+    + '<div class="fg"><label>Timeline</label><input class="form-input" id="simTimeline" value="3 months"></div>'
+    + '<div class="fg"><label>Phone (simulated)</label><input class="form-input" id="simPhone" value="+13055550001"></div>'
+    + '</div>'
+    + '<button class="btn btn-primary" id="simStartBtn" onclick="startSim()">Start Simulation →</button>'
+    + '</div>'
+
+    + '<div class="card" id="simChatCard" style="display:none">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px">Live Session</div>'
+    + '<span id="simStateBadge" style="font-family:\'DM Mono\',monospace;font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(91,63,212,.1);color:var(--p);border:1px solid rgba(91,63,212,.2)">—</span>'
+    + '</div>'
+    + '<div id="simChat" style="border:1px solid var(--bo);border-radius:10px;padding:14px;height:300px;overflow-y:auto;background:var(--bg3);margin-bottom:12px;display:flex;flex-direction:column;gap:10px"></div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<input class="form-input" id="simMsg" placeholder="Type the lead\'s message…" style="flex:1" onkeydown="if(event.key===\'Enter\')sendSimMsg()">'
+    + '<button class="btn btn-primary" onclick="sendSimMsg()">Send</button>'
+    + '<button class="btn btn-ghost" onclick="resetSim()">Reset</button>'
+    + '</div>'
+    + '<div id="simLeadData" style="margin-top:14px"></div>'
+    + '</div>';
+}
+
+function startSim() {
+  var brokerageId = document.getElementById('simBrok').value;
+  var btn = document.getElementById('simStartBtn');
+  btn.disabled = true; btn.textContent = 'Connecting…';
+  SIM = { sid: null, done: false };
+
+  var lead = {
+    name:         document.getElementById('simName').value,
+    phone_number: document.getElementById('simPhone').value,
+    intent:       document.getElementById('simIntent').value,
+    budget:       document.getElementById('simBudget').value,
+    timeline:     document.getElementById('simTimeline').value
+  };
+
+  apiFetch('/simulate-call', {
+    method: 'POST',
+    body: JSON.stringify({ brokerage_id: brokerageId, lead: lead })
+  }).then(function(data) {
+    SIM.sid = data.call_sid;
+    document.getElementById('simChatCard').style.display = 'block';
+    btn.textContent = 'Restart'; btn.disabled = false;
+    addSimMsg('alex', data.response || '(no response)');
+    updateSimState(data.state, data.lead_data);
+    trackEvent('simulation_started', { brokerage_id: brokerageId });
+  }).catch(function(e) {
+    toast('Simulation failed: ' + e.message, 'err');
+    trackEvent('simulation_failed', { error: e.message });
+    btn.disabled = false; btn.textContent = 'Start Simulation →';
+  });
+}
+
+function sendSimMsg() {
+  if (!SIM.sid) { toast('Start a simulation first', 'err'); return; }
+  if (SIM.done)  { toast('Session ended — click Restart', 'info'); return; }
+
+  var msgEl = document.getElementById('simMsg');
+  var msg = msgEl.value.trim();
+  if (!msg) return;
+
+  addSimMsg('lead', msg);
+  msgEl.value = '';
+  trackEvent('simulation_message_sent');
+
+  apiFetch('/simulate-call', {
+    method: 'POST',
+    body: JSON.stringify({ call_sid: SIM.sid, message: msg })
+  }).then(function(data) {
+    addSimMsg('alex', data.response || '(no response)');
+    updateSimState(data.state, data.lead_data);
+    if (data.done) {
+      SIM.done = true;
+      addSimMsg('system', '── Session ended · Outcome: ' + (data.outcome || 'pending') + ' ──');
+    }
+  }).catch(function(e) {
+    toast('Send failed: ' + e.message, 'err');
+  });
+}
+
+function resetSim() {
+  SIM = { sid: null, done: false };
+  document.getElementById('simChat').innerHTML = '';
+  document.getElementById('simStateBadge').textContent = '—';
+  document.getElementById('simLeadData').innerHTML = '';
+  document.getElementById('simChatCard').style.display = 'none';
+  var btn = document.getElementById('simStartBtn');
+  btn.textContent = 'Start Simulation →'; btn.disabled = false;
+}
+
+function addSimMsg(who, text) {
+  var chat = document.getElementById('simChat');
+  var el = document.createElement('div');
+  if (who === 'alex') {
+    el.style.cssText = 'max-width:80%;padding:10px 14px;border-radius:10px 10px 10px 2px;font-size:13px;line-height:1.5;background:var(--p);color:#fff;align-self:flex-start';
+  } else if (who === 'lead') {
+    el.style.cssText = 'max-width:80%;padding:10px 14px;border-radius:10px 10px 2px 10px;font-size:13px;line-height:1.5;background:var(--bg2);border:1px solid var(--bo);align-self:flex-end;margin-left:auto;color:var(--text)';
+  } else {
+    el.style.cssText = 'font-family:"DM Mono",monospace;font-size:10px;color:var(--mu);text-align:center;padding:2px 0;align-self:center';
+  }
+  el.textContent = text;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function updateSimState(state, leadData) {
+  if (state) document.getElementById('simStateBadge').textContent = state;
+  if (leadData && Object.keys(leadData).length) {
+    var rows = Object.keys(leadData).filter(function(k){ return leadData[k] != null && leadData[k] !== ''; })
+      .map(function(k) {
+        return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bo);font-size:12px">'
+          + '<span style="color:var(--mu)">' + escHtml(k) + '</span>'
+          + '<span style="font-family:\'DM Mono\',monospace">' + escHtml(String(leadData[k])) + '</span></div>';
+      }).join('');
+    document.getElementById('simLeadData').innerHTML = '<div class="callout callout-green">'
+      + '<div class="callout-label cl-green">Extracted Lead Data</div>' + rows + '</div>';
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — ONBOARD
+═══════════════════════════════════════════════ */
+function loadOnboard() {
+  if (S.loaded['a-onboard']) return;
+  S.loaded['a-onboard'] = true;
+
+  document.getElementById('aOnboardContent').innerHTML = '<h1 class="pg-title">Onboard</h1>'
+    + '<p class="pg-sub">Create a new brokerage account and generate its API key.</p>'
+
+    + '<div class="card" style="margin-bottom:20px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:18px">New Brokerage Account</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Brokerage ID <span style="color:var(--re)">*</span></label>'
+    + '<input class="form-input" id="onId" placeholder="remax-miami">'
+    + '<div class="fg-hint">Lowercase, hyphens only. Cannot be changed.</div></div>'
+    + '<div class="fg"><label>Brokerage Name <span style="color:var(--re)">*</span></label>'
+    + '<input class="form-input" id="onName" placeholder="RE/MAX Miami"></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Agent Name</label><input class="form-input" id="onAgent" value="Alex"></div>'
+    + '<div class="fg"><label>Agent Phone</label><input class="form-input" id="onAgentPhone" placeholder="+13055550001"></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Twilio Phone</label><input class="form-input" id="onTwilio" placeholder="+18005550000"></div>'
+    + '<div class="fg"><label>Fallback Phone</label><input class="form-input" id="onFallback" placeholder="+13055559999"></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Tone</label>'
+    + '<select class="form-input form-select" id="onTone"><option value="professional">Professional</option>'
+    + '<option value="friendly">Friendly</option><option value="formal">Formal</option></select></div>'
+    + '<div class="fg"><label>Slack Webhook (optional)</label>'
+    + '<input class="form-input" id="onSlack" placeholder="https://hooks.slack.com/…"></div>'
+    + '</div>'
+    + '<button class="btn btn-primary" id="onboardBtn" onclick="submitOnboard()">Create Brokerage Account</button>'
+    + '<div class="success-box" id="onboardSuccess">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;margin-bottom:8px;color:var(--gr)">✓ Brokerage Created</div>'
+    + '<div style="font-size:12px;color:var(--mu);margin-bottom:6px">API Key — copy and send to the client:</div>'
+    + '<div class="key-reveal" id="onboardKey"></div>'
+    + '<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyText(document.getElementById(\'onboardKey\').textContent)">Copy Key</button>'
+    + '<div class="callout callout-amber" style="margin-top:14px;margin-bottom:0">'
+    + '<div class="callout-label cl-amber">Next steps</div>'
+    + '<p>1. Copy the API key above.<br>2. Give it to the client brokerage.<br>3. Client logs in at <strong>/dashboard</strong> with that key.</p></div>'
+    + '</div>'
+    + '</div>'
+
+    + '<div class="card">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:6px">Generate Invite Key</div>'
+    + '<p style="font-size:13px;color:var(--mu);margin-bottom:14px">Generate a one-time invite key for an existing brokerage account.</p>'
+    + '<div class="form-row" style="margin-bottom:14px">'
+    + '<div class="fg" style="margin-bottom:0"><label>Brokerage ID</label><input class="form-input" id="invBrokId" placeholder="remax-miami"></div>'
+    + '<div style="display:flex;align-items:flex-end"><button class="btn btn-ghost" onclick="genInvite()">Generate Invite Key</button></div>'
+    + '</div>'
+    + '<div id="inviteResult"></div>'
+    + '</div>';
+}
+
+function submitOnboard() {
+  var id   = document.getElementById('onId').value.trim();
+  var name = document.getElementById('onName').value.trim();
+  if (!id || !name) { toast('Brokerage ID and Name are required.', 'err'); return; }
+  if (!/^[a-z0-9-]+$/.test(id)) { toast('ID must be lowercase letters, numbers, hyphens only.', 'err'); return; }
+
+  var btn = document.getElementById('onboardBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+
+  apiFetch('/admin/brokerages', {
+    method: 'POST',
+    body: JSON.stringify({
+      id: id,
+      name: name,
+      agent_name:   document.getElementById('onAgent').value || 'Alex',
+      agent_phone:  document.getElementById('onAgentPhone').value,
+      twilio_phone: document.getElementById('onTwilio').value,
+      slack_webhook_url: document.getElementById('onSlack').value,
+      tone: document.getElementById('onTone').value,
+      transfer_enabled: true,
+      booking_enabled: true,
+      ai_disclosure_enabled: true,
+      max_objection_attempts: 2,
+      after_hours_behavior: 'callback'
+    })
+  }).then(function(data) {
+    var apiKey = (data.brokerage && data.brokerage.api_key) || data.api_key || '(key not returned)';
+    document.getElementById('onboardKey').textContent = apiKey;
+    document.getElementById('onboardSuccess').classList.add('show');
+    toast('Brokerage created!', 'ok');
+    S.loaded['a-brokerages'] = false; /* invalidate cache */
+  }).catch(function(e) {
+    toast('Create failed: ' + e.message, 'err');
+  }).then(function() {
+    btn.disabled = false; btn.textContent = 'Create Brokerage Account';
+  });
+}
+
+function genInvite() {
+  var id = document.getElementById('invBrokId').value.trim();
+  if (!id) { toast('Enter a brokerage ID', 'err'); return; }
+  var el = document.getElementById('inviteResult');
+  el.innerHTML = loadingHtml('Generating…');
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(id) + '/invite', { method: 'POST' })
+    .then(function(data) {
+      var key = data.invite_key || data.key || JSON.stringify(data);
+      var keySafe = escAttr(key);
+      el.innerHTML = '<div class="callout callout-green"><div class="callout-label cl-green">Invite Key Generated</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;margin:8px 0;word-break:break-all">' + escHtml(key) + '</div>'
+        + '<button class="btn btn-ghost btn-sm" onclick="copyText(\'' + keySafe + '\')">Copy</button></div>';
+    }).catch(function(e) {
+      el.innerHTML = '<p style="color:var(--re);font-size:12px;font-family:\'DM Mono\',monospace">Failed: ' + escHtml(e.message) + '</p>';
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — DASHBOARD
+═══════════════════════════════════════════════ */
+function loadClientDashboard(preloaded) {
+  var el = document.getElementById('cDashContent');
+  if (S.loaded['c-dashboard'] && !preloaded) return;
+
+  if (!preloaded) el.innerHTML = loadingHtml('Loading dashboard…');
+
+  function render(d) {
+    S.brokerageName = d.brokerage_name || S.brokerageName;
+    if (d.brokerage_name) document.getElementById('clientTopName').textContent = d.brokerage_name;
+
+    var week    = d.calls_this_week || 0;
+    var booked  = d.booked_this_week || 0;
+    var bookPct = d.booking_rate_pct || 0;
+    var isEmpty = week === 0;
+
+    var nextActions = [
+      ['Review unbooked qualified leads', 'c-leads'],
+      ['Check after-hours lead volume',   'c-insights'],
+      ['View call outcomes this week',    'c-calls']
+    ];
+    if ((d.total_agents || 0) === 0) nextActions.push(['Add a fallback agent', 'c-agents']);
+
+    el.innerHTML = (isEmpty ? '<div style="margin-bottom:14px"><span class="demo-badge">DEMO MODE — no live calls yet</span></div>' : '')
+      + '<h1 class="pg-title">PAS Control Room</h1>'
+      + '<p class="pg-sub">PAS handled <strong>' + week + '</strong> lead conversation' + (week!==1?'s':'') + ' this week and booked <strong>' + booked + '</strong> appointment' + (booked!==1?'s':'') + '.</p>'
+      + '<div class="g4" style="margin-bottom:20px">'
+      + '<div class="stat-card"><div class="stat-label">Calls Today</div><div class="stat-val">' + (d.calls_today||0) + '</div><div class="stat-sub">inbound + sim</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Calls This Week</div><div class="stat-val purple">' + week + '</div><div class="stat-sub">all sources</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Appointments Booked</div><div class="stat-val green">' + booked + '</div><div class="stat-sub">this week</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Booking Rate</div><div class="stat-val">' + fmtPct(bookPct) + '</div><div class="stat-sub">this week</div></div>'
+      + '</div>'
+      + '<div class="g3" style="margin-bottom:24px">'
+      + '<div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val">' + (d.total_leads||0) + '</div><div class="stat-sub">in memory</div></div>'
+      + '<div class="stat-card"><div class="stat-label">Active Agents</div><div class="stat-val">' + (d.available_agents||0) + ' <span style="font-size:16px;color:var(--mu)">/ ' + (d.total_agents||0) + '</span></div><div class="stat-sub">available now</div></div>'
+      + '<div class="stat-card"><div class="stat-label">PAS Credits</div><div class="stat-val purple">4,000</div><div class="stat-sub">remaining · demo</div></div>'
+      + '</div>'
+      + (d.best_agent ? '<span class="sec-label">Top Agent This Period</span>'
+        + '<div class="card" style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">'
+        + '<div><div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:20px">' + escHtml(d.best_agent.name) + '</div>'
+        + '<div style="font-size:12px;color:var(--mu);margin-top:2px">' + (d.best_agent.total_closed||0) + ' deals closed · ' + (d.best_agent.total_assigned||0) + ' leads assigned</div></div>'
+        + '<div style="text-align:right"><div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:38px;color:var(--gr);line-height:1">' + fmtPct(d.best_agent.close_rate) + '</div>'
+        + '<div style="font-size:11px;color:var(--mu)">close rate</div></div></div>' : '')
+      + '<span class="sec-label">Next Best Actions</span>'
+      + '<div class="card" style="padding:0;overflow:hidden">'
+      + nextActions.map(function(pair) {
+          return '<button onclick="clientGo(document.querySelector(\'[data-tab=' + pair[1] + ']\'))" '
+            + 'style="display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--bo);padding:13px 22px;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:color .2s;font-family:\'DM Sans\',sans-serif" '
+            + 'onmouseover="this.style.color=\'var(--p)\'" onmouseout="this.style.color=\'var(--text)\'">→ ' + pair[0] + '</button>';
+        }).join('')
+      + '</div>'
+      + (isEmpty ? '<div class="callout callout-amber" style="margin-top:24px"><div class="callout-label cl-amber">Demo Mode Active</div>'
+        + '<p>Demo data shown until live calls are connected. Contact <strong>ORVN Support</strong> to enable your live voice stack and start handling real inbound leads.</p></div>' : '');
+
+    S.loaded['c-dashboard'] = true;
+  }
+
+  if (preloaded) { render(preloaded); return; }
+
+  apiFetch('/portal/overview').then(render).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Dashboard</h1>'
+      + emptyHtml('📊','Dashboard unavailable','Could not connect to PAS. ' + escHtml(e.message));
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — CALLS
+═══════════════════════════════════════════════ */
+function loadClientCalls() {
+  var el = document.getElementById('cCallsContent');
+  el.innerHTML = loadingHtml('Loading calls…');
+
+  apiFetch('/portal/calls?limit=25&offset=0').then(function(data) {
+    var calls = data.calls || [];
+    if (calls.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Calls</h1>'
+        + emptyHtml('📞','No calls yet','Call history will appear here once PAS handles inbound leads.');
+      return;
+    }
+    var rows = calls.map(function(c) {
+      return '<tr onclick="toast(\'Call detail drawer coming in Phase 2\',\'info\')">'
+        + '<td>' + maskPhone(c.phone_number) + '</td>'
+        + '<td>' + tagHtml(c.source||'inbound','gray') + '</td>'
+        + '<td>' + outcomeTagHtml(c.outcome) + '</td>'
+        + '<td>' + fmtDuration(c.duration_seconds) + '</td>'
+        + '<td>' + fmtDate(c.start_time) + '</td>'
+        + '<td>' + (c.outcome==='booked' ? tagHtml('Yes','green') : tagHtml('No','gray')) + '</td>'
+        + '</tr>';
+    }).join('');
+    el.innerHTML = '<h1 class="pg-title">Calls</h1>'
+      + '<p class="pg-sub">' + calls.length + ' recent call' + (calls.length!==1?'s':'') + '. Call detail drawer arrives in Phase 2.</p>'
+      + '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
+      + '<thead><tr><th>Phone</th><th>Source</th><th>Outcome</th><th>Duration</th><th>Date</th><th>Booked</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+  }).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Calls</h1>'
+      + emptyHtml('📞','No calls yet','Call history will appear here once PAS handles inbound leads.');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — LEADS
+═══════════════════════════════════════════════ */
+function loadClientLeads() {
+  var el = document.getElementById('cLeadsContent');
+  el.innerHTML = loadingHtml('Loading leads…');
+
+  var intentColor = { buying:'green', selling:'blue', renting:'purple', investing:'amber' };
+
+  apiFetch('/portal/leads?limit=25&offset=0').then(function(data) {
+    var leads = data.leads || [];
+    if (leads.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Leads</h1>'
+        + emptyHtml('👤','No leads yet','Lead memory builds automatically as PAS handles inbound calls.');
+      return;
+    }
+    var rows = leads.map(function(l) {
+      return '<tr>'
+        + '<td>' + escHtml(l.name||'Unknown') + '</td>'
+        + '<td>' + maskPhone(l.phone_number) + '</td>'
+        + '<td>' + (l.intent ? tagHtml(l.intent, intentColor[l.intent]||'gray') : '—') + '</td>'
+        + '<td>' + escHtml(l.budget||'—') + '</td>'
+        + '<td>' + escHtml(l.timeline||'—') + '</td>'
+        + '<td>' + (l.total_calls||0) + '</td>'
+        + '<td>' + fmtDate(l.last_call_at||l.updated_at) + '</td>'
+        + '</tr>';
+    }).join('');
+    el.innerHTML = '<h1 class="pg-title">Leads</h1>'
+      + '<p class="pg-sub">' + leads.length + ' lead' + (leads.length!==1?'s':'') + ' in memory. Status update and detail drawer in Phase 2.</p>'
+      + '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
+      + '<thead><tr><th>Name</th><th>Phone</th><th>Intent</th><th>Budget</th><th>Timeline</th><th>Calls</th><th>Last Contact</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+  }).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Leads</h1>'
+      + emptyHtml('👤','No leads yet','Lead memory builds automatically as PAS handles inbound calls.');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — BOOKINGS
+═══════════════════════════════════════════════ */
+function loadClientBookings() {
+  var el = document.getElementById('cBookContent');
+  el.innerHTML = loadingHtml('Loading bookings…');
+
+  apiFetch('/portal/bookings').then(function(data) {
+    var bookings = data.bookings || [];
+    if (bookings.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Bookings</h1>'
+        + emptyHtml('📅','No bookings yet','PAS will log appointments here once Cal.com is connected.',
+          '<div class="callout callout-purple" style="text-align:left;max-width:420px;margin:18px auto 0">'
+          + '<div class="callout-label cl-purple">Cal.com Required</div>'
+          + '<p>Contact ORVN to connect your Cal.com account and start receiving booked appointments.</p></div>');
+      return;
+    }
+    var rows = bookings.map(function(b) {
+      return '<tr>'
+        + '<td>' + fmtDate(b.scheduled_at||b.start_time) + '</td>'
+        + '<td>' + escHtml(b.attendee_name||'—') + '</td>'
+        + '<td>' + maskPhone(b.attendee_phone||b.phone_number) + '</td>'
+        + '<td>' + tagHtml(b.status||'scheduled','green') + '</td>'
+        + '<td>' + escHtml(b.assigned_agent||'—') + '</td>'
+        + '</tr>';
+    }).join('');
+    el.innerHTML = '<h1 class="pg-title">Bookings</h1>'
+      + '<p class="pg-sub">' + bookings.length + ' appointment' + (bookings.length!==1?'s':'') + ' logged.</p>'
+      + '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
+      + '<thead><tr><th>Scheduled</th><th>Lead Name</th><th>Phone</th><th>Status</th><th>Agent</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+  }).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Bookings</h1>'
+      + emptyHtml('📅','No bookings yet','PAS will log appointments here once Cal.com is connected.');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — AGENTS
+═══════════════════════════════════════════════ */
+function loadClientAgents() {
+  var el = document.getElementById('cAgentsContent');
+  el.innerHTML = loadingHtml('Loading agents…');
+
+  apiFetch('/portal/agents').then(function(data) {
+    var agents    = data.leaderboard || data.agents || [];
+    var available = data.available_count || 0;
+
+    if (agents.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Agents</h1>'
+        + emptyHtml('👥','No agents configured','Add your team so PAS can route qualified leads and bookings.',
+          '<button class="btn btn-primary" onclick="toast(\'Agent add form arrives in Phase 2\',\'info\')">Add Agent</button>');
+      return;
+    }
+
+    var cards = agents.map(function(a, i) {
+      return '<div class="card">'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--mu);margin-bottom:4px">#' + (i+1) + '</div>'
+        + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:16px;margin-bottom:4px">' + escHtml(a.name) + '</div>'
+        + '<div style="font-size:12px;color:var(--mu);margin-bottom:12px">' + maskPhone(a.phone) + ' · ' + escHtml(a.email||'—') + '</div>'
+        + '<div style="display:flex;gap:20px;margin-bottom:12px">'
+        + '<div><div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:700;color:var(--p)">' + fmtPct(a.close_rate) + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--mu);letter-spacing:.08em;text-transform:uppercase">Close Rate</div></div>'
+        + '<div><div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:700;color:var(--text)">' + (a.total_closed||0) + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--mu);letter-spacing:.08em;text-transform:uppercase">Closed</div></div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;justify-content:space-between">'
+        + (a.status==='available' ? tagHtml('Available','green') : a.status==='busy' ? tagHtml('Busy','amber') : tagHtml('Offline','gray'))
+        + '<button class="btn btn-ghost btn-xs" onclick="toast(\'Agent edit arrives in Phase 2\',\'info\')">Edit</button>'
+        + '</div></div>';
+    }).join('');
+
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<h1 class="pg-title">Agents</h1>'
+      + '<button class="btn btn-primary btn-sm" onclick="toast(\'Agent add form arrives in Phase 2\',\'info\')">+ Add Agent</button>'
+      + '</div>'
+      + '<p class="pg-sub">' + agents.length + ' agent' + (agents.length!==1?'s':'') + ' · ' + available + ' available now.</p>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">' + cards + '</div>';
+
+  }).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Agents</h1>'
+      + emptyHtml('👥','No agents yet','Add your team so PAS can route qualified leads and bookings.');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — INSIGHTS
+═══════════════════════════════════════════════ */
+function loadClientInsights() {
+  var el = document.getElementById('cInsContent');
+  el.innerHTML = loadingHtml('Loading insights…');
+
+  apiFetch('/portal/insights').then(function(ins) {
+    renderInsights(ins);
+  }).catch(function() {
+    renderInsights({});
+  });
+}
+
+function renderInsights(ins) {
+  var el = document.getElementById('cInsContent');
+  var objections = ins.top_objections || [];
+  var maxObj = objections.length ? Math.max.apply(null, objections.map(function(o){ return o.count||0; })) : 1;
+
+  var bars = objections.length
+    ? objections.slice(0,6).map(function(o) {
+        var pct = Math.round((o.count||0) / maxObj * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+          + '<div style="font-size:12px;color:var(--mu);min-width:130px;flex-shrink:0">' + escHtml(o.category||o.objection||'Other') + '</div>'
+          + '<div style="flex:1;background:var(--bg3);border-radius:4px;height:8px;overflow:hidden">'
+          + '<div style="height:100%;background:var(--p);border-radius:4px;width:' + pct + '%"></div></div>'
+          + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text);min-width:28px;text-align:right">' + (o.count||0) + '</div></div>';
+      }).join('')
+    : '<p style="color:var(--mu);font-size:13px">No objection data yet — builds after first calls.</p>';
+
+  var intentBreakdown = ins.intent_breakdown || [];
+  var intentRows = intentBreakdown.length
+    ? intentBreakdown.map(function(i) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bo);font-size:13px">'
+          + '<span>' + tagHtml(i.intent||'Unknown','gray') + '</span>'
+          + '<span style="font-family:\'DM Mono\',monospace">' + (i.count||0) + '</span></div>';
+      }).join('')
+    : '<p style="color:var(--mu);font-size:13px">No intent data yet.</p>';
+
+  el.innerHTML = '<h1 class="pg-title">Insights</h1>'
+    + '<p class="pg-sub">PAS intelligence — objections, intent patterns, and conversion signals.</p>'
+    + '<div class="g2" style="margin-bottom:24px">'
+    + '<div class="card"><div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px">Top Objections</div>' + bars + '</div>'
+    + '<div class="card"><div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px">Intent Breakdown</div>' + intentRows + '</div>'
+    + '</div>'
+    + '<div class="callout callout-purple">'
+    + '<div class="callout-label cl-purple">First-Contact Lift</div>'
+    + '<p>Baseline vs PAS growth tracking — booking lift, response time improvement, and weekly trend — arrives in Phase 2 once baseline data is captured.</p></div>';
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — BILLING (demo)
+═══════════════════════════════════════════════ */
+function loadBilling() {
+  if (S.loaded['c-billing']) return;
+  S.loaded['c-billing'] = true;
+
+  document.getElementById('cBillContent').innerHTML = '<h1 class="pg-title">Billing</h1>'
+    + '<p class="pg-sub">PAS Credits and plan management. Managed by ORVN during early access.</p>'
+    + '<div class="callout callout-green" style="margin-bottom:24px">'
+    + '<div class="callout-label cl-green">Early Access — Trial Active</div>'
+    + '<p>Billing is currently managed by ORVN during early access. Your team will receive a summary at the end of each billing period.</p></div>'
+    + '<div class="g3" style="margin-bottom:24px">'
+    + '<div class="stat-card"><div class="stat-label">Current Plan</div><div class="stat-val" style="font-size:22px">Growth</div><div class="stat-sub">Trial / Early Access</div></div>'
+    + '<div class="stat-card"><div class="stat-label">PAS Credits</div><div class="stat-val purple">4,000</div><div class="stat-sub">included this period</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Credits Used</div><div class="stat-val">0</div><div class="stat-sub">of 4,000 included</div></div>'
+    + '</div>'
+    + '<div class="card" style="margin-bottom:20px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:6px">What Are PAS Credits?</div>'
+    + '<p style="font-size:13px;color:var(--mu);margin-bottom:14px">PAS Credits are internal usage units — not crypto, not payment tokens.</p>'
+    + [['Call started','1 credit'],['Per completed minute','2 credits'],['Successful qualification','3 credits'],
+       ['Appointment booked','10 credits'],['Human transfer','5 credits'],['Transcript generated','2 credits']].map(function(pair) {
+        return '<div style="display:flex;justify-content:space-between;font-size:12px;padding:7px 0;border-bottom:1px solid var(--bo)">'
+          + '<span style="color:var(--mu)">' + pair[0] + '</span>'
+          + '<span style="font-family:\'DM Mono\',monospace;color:var(--text)">' + pair[1] + '</span></div>';
+      }).join('')
+    + '<div class="callout callout-amber" style="margin-top:14px;margin-bottom:0">'
+    + '<div class="callout-label cl-amber">Example</div>'
+    + '<p>A 3-min call that qualifies and books: 1 + 6 + 3 + 10 + 2 = <strong>22 PAS Credits</strong>.</p></div>'
+    + '</div>'
+    + '<p style="font-size:12px;color:var(--mu);text-align:center">Questions? <strong>ORVN Support</strong> · billing@orvnlabs.com</p>';
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — SUPPORT (demo stub)
+═══════════════════════════════════════════════ */
+function loadSupport() {
+  if (S.loaded['c-support']) return;
+  S.loaded['c-support'] = true;
+
+  document.getElementById('cSuppContent').innerHTML = '<h1 class="pg-title">Support</h1>'
+    + '<p class="pg-sub">Contact ORVN Support for billing, configuration, or technical issues.</p>'
+    + '<div class="card" style="margin-bottom:20px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:16px">Submit a Ticket</div>'
+    + '<div class="fg"><label>Subject</label><input class="form-input" id="suppSubject" placeholder="Brief description of your issue"></div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Category</label><select class="form-input form-select" id="suppCat">'
+    + '<option value="call_issue">Call Issue</option><option value="config_change">Script / Config Change</option>'
+    + '<option value="billing">Billing Question</option><option value="technical">Technical Issue</option>'
+    + '<option value="feature_request">Feature Request</option><option value="other">Other</option></select></div>'
+    + '<div class="fg"><label>Priority</label><select class="form-input form-select" id="suppPriority">'
+    + '<option value="normal">Normal</option><option value="low">Low</option><option value="urgent">Urgent</option></select></div>'
+    + '</div>'
+    + '<div class="fg"><label>Message</label>'
+    + '<textarea class="form-input" id="suppMsg" rows="4" placeholder="Describe your issue in detail…" style="resize:vertical;font-family:\'DM Sans\',sans-serif"></textarea></div>'
+    + '<button class="btn btn-primary" onclick="submitTicket()">Submit Ticket</button>'
+    + '<div id="suppSuccess" style="display:none;margin-top:14px" class="callout callout-green">'
+    + '<div class="callout-label cl-green">Ticket Received</div>'
+    + '<p>ORVN Support will follow up within 1 business day. For urgent issues contact your account manager directly.</p></div>'
+    + '</div>'
+    + '<div class="card">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">Contact ORVN Support</div>'
+    + '<p style="font-size:13px;color:var(--mu)">Email: <strong>billing@orvnlabs.com</strong></p>'
+    + '<p style="font-size:13px;color:var(--mu);margin-top:6px">For urgent issues, contact your ORVN account manager directly.</p>'
+    + '</div>';
+}
+
+function submitTicket() {
+  var subj = document.getElementById('suppSubject').value.trim();
+  var msg  = document.getElementById('suppMsg').value.trim();
+  if (!subj || !msg) { toast('Please fill in subject and message.', 'err'); trackEvent('form_validation_failed',{form:'support'}); return; }
+  trackEvent('support_ticket_submitted', { category: document.getElementById('suppCat').value });
+  document.getElementById('suppSuccess').style.display = 'block';
+  toast('Ticket submitted!', 'ok');
+  /* TODO: POST to /portal/support when backend endpoint exists */
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — SETTINGS
+═══════════════════════════════════════════════ */
+function loadClientSettings() {
+  var el = document.getElementById('cSetContent');
+  el.innerHTML = loadingHtml('Loading settings…');
+
+  var settingsData = {}, notifsData = {};
+  var pending = 2;
+
+  function done() {
+    pending--;
+    if (pending > 0) return;
+    renderSettings(settingsData, notifsData);
+  }
+
+  apiFetch('/portal/settings').then(function(d){ settingsData = d; }).catch(function(e){ console.warn('settings:', e); }).then(done);
+  apiFetch('/portal/notifications').then(function(d){ notifsData = d; }).catch(function(e){ console.warn('notifs:', e); }).then(done);
+}
+
+function renderSettings(settings, notifs) {
+  var el = document.getElementById('cSetContent');
+  var isActive = settings.active !== false;
+
+  var toggleRows = [
+    ['notify_on_booking',    'New appointment booked',      true],
+    ['notify_on_transfer',   'Human transfer requested',    true],
+    ['notify_on_high_intent','High-intent lead detected',   true],
+    ['notify_on_failure',    'Failed call alert',           false],
+    ['daily_summary',        'Daily summary email',         false],
+    ['weekly_report',        'Weekly report email',         false]
+  ].map(function(row) {
+    var key = row[0], label = row[1], def = row[2];
+    var checked = notifs[key] !== undefined ? notifs[key] : def;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bo)">'
+      + '<div style="font-size:13px;color:var(--text)">' + label + '</div>'
+      + '<label class="toggle"><input type="checkbox" ' + (checked?'checked':'') + ' onchange="saveNotifPref(\'' + key + '\',this.checked)">'
+      + '<span class="toggle-slider"></span></label></div>';
+  }).join('');
+
+  el.innerHTML = '<h1 class="pg-title">Settings</h1>'
+    + '<p class="pg-sub">PAS configuration and notification preferences.</p>'
+    + '<div class="card" style="margin-bottom:20px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:16px">Brokerage Profile</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Agent Name (PAS Voice)</label><input class="form-input" id="setAgentName" value="' + escAttr(settings.agent_name||'Alex') + '"></div>'
+    + '<div class="fg"><label>Agent Phone</label><input class="form-input" id="setAgentPhone" value="' + escAttr(settings.agent_phone||'') + '"></div>'
+    + '</div>'
+    + '<div class="fg"><label>Slack Webhook URL</label><input class="form-input" id="setSlack" value="' + escAttr(settings.slack_webhook_url||'') + '" placeholder="https://hooks.slack.com/…"></div>'
+    + '<button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>'
+    + '</div>'
+    + '<div class="card" style="margin-bottom:20px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:6px">PAS Control</div>'
+    + '<p style="font-size:13px;color:var(--mu);margin-bottom:14px">PAS is currently <strong>' + (isActive?'active':'paused') + '</strong>.</p>'
+    + '<button class="btn ' + (isActive?'btn-ghost':'btn-primary') + '" onclick="togglePas(' + (!isActive) + ')">'
+    + (isActive ? '⏸ Pause PAS' : '▶ Resume PAS') + '</button>'
+    + '<p style="font-size:11px;color:var(--mu);margin-top:8px">Pausing stops PAS from handling new calls. Active calls are not affected.</p>'
+    + '</div>'
+    + '<div class="card" style="margin-bottom:20px">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px">Notification Preferences</div>'
+    + toggleRows
+    + '</div>'
+    + '<div class="card">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">Advanced Configuration</div>'
+    + '<p style="font-size:13px;color:var(--mu)">Script changes, qualification logic, after-hours rules, and voice configuration require ORVN involvement to change safely.</p>'
+    + '<button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="clientGo(document.querySelector(\'[data-tab=c-support]\'))">Contact ORVN Support →</button>'
+    + '</div>';
+}
+
+function saveSettings() {
+  trackEvent('settings_save_clicked');
+  var nameEl  = document.getElementById('setAgentName');
+  var phoneEl = document.getElementById('setAgentPhone');
+  var slackEl = document.getElementById('setSlack');
+  if (!nameEl || !slackEl) return;
+
+  var body = { agent_name: nameEl.value.trim(), slack_webhook_url: slackEl.value.trim() };
+  if (phoneEl && phoneEl.value.trim()) body.agent_phone = phoneEl.value.trim();
+
+  apiFetch('/portal/settings', { method:'PATCH', body: JSON.stringify(body) }).then(function() {
+    toast('Settings saved!', 'ok');
+  }).catch(function(e) {
+    toast('Save failed: ' + e.message, 'err');
+    trackEvent('save_settings_failed', { error: e.message });
+  });
+}
+
+function togglePas(resume) {
+  var action = resume ? 'resume' : 'pause';
+  if (!confirm((resume ? 'Resume' : 'Pause') + ' PAS? ' + (resume ? 'PAS will start handling inbound calls again.' : 'PAS will stop handling new calls.'))) return;
+  apiFetch('/portal/control', { method:'POST', body: JSON.stringify({ action: action }) }).then(function() {
+    toast('PAS ' + (resume?'resumed':'paused') + '.', 'ok');
+    S.loaded['c-settings'] = false;
+    loadClientSettings();
+  }).catch(function(e) {
+    toast('Action failed: ' + e.message, 'err');
+  });
+}
+
+function saveNotifPref(key, value) {
+  trackEvent('notification_toggle_clicked', { key: key, value: value });
+  var body = {};
+  body[key] = value;
+  apiFetch('/portal/notifications', { method:'PATCH', body: JSON.stringify(body) }).then(function() {
+    toast('Preference saved.', 'ok');
+  }).catch(function(e) {
+    toast('Could not save preference.', 'err');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   GLOBAL ERROR CAPTURE
+═══════════════════════════════════════════════ */
+window.onerror = function(msg, src, line, col) {
+  trackEvent('dashboard_js_error', { message: msg, source: src, line: line, col: col });
+};
+window.addEventListener('unhandledrejection', function(e) {
+  trackEvent('dashboard_js_error', { message: String(e.reason), type: 'unhandledrejection' });
 });
 
-// ════ BROKERAGE APP ════
-function startBrokerageApp(overview) {
-  document.getElementById('loginView').style.display = 'none';
-  document.getElementById('brokerageApp').style.display = 'block';
-  document.getElementById('bTopName').textContent = overview.brokerage_name;
-  renderOverview(overview);
-}
+/* ═══════════════════════════════════════════════
+   INIT — restore session from localStorage
+═══════════════════════════════════════════════ */
+(function init() {
+  var savedAdmin  = localStorage.getItem(ADMIN_KEY_LS);
+  var savedClient = localStorage.getItem(CLIENT_KEY_LS);
 
-function bGo(id, btn) {
-  document.querySelectorAll('#brokerageApp .pg').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('#bTabs .tab').forEach(b => b.classList.remove('on'));
-  document.getElementById('bpg-' + id).classList.add('on');
-  btn.classList.add('on');
-  if (id === 'calls'      && needsLoad('callsContent'))    loadCalls();
-  if (id === 'leads'      && needsLoad('leadsContent'))    loadLeads();
-  if (id === 'agents'     && needsLoad('agentsContent'))   loadAgents();
-  if (id === 'training'   && needsLoad('trainingContent')) loadTraining();
-  if (id === 'control'    && !controlLoaded)               loadControl();
-  if (id === 'settings'   && !settingsLoaded)              loadSettings();
-  if (id === 'calculator' && !calcPrefilled)               loadCalcPrefill();
-}
-
-function needsLoad(id) { return document.getElementById(id).innerHTML.includes('spinner'); }
-function portalFetch(path, opts={}) {
-  return fetch(BASE + path, {...opts, headers: {'X-API-Key': API_KEY, 'Content-Type': 'application/json', ...(opts.headers||{})}});
-}
-
-// ── OVERVIEW ──
-function renderOverview(d) {
-  const brColor = d.booking_rate_pct >= 30 ? 'var(--gr)' : d.booking_rate_pct >= 15 ? 'var(--am)' : 'var(--re)';
-  document.getElementById('overviewContent').innerHTML = `
-    <h2 class="sh">${d.brokerage_name}</h2>
-    <p class="sub">Training v${d.training_version}${d.last_trained_at ? ' · Last trained ' + fmtDate(d.last_trained_at) : ''}</p>
-    <div class="g4">
-      <div class="stat-card"><div class="stat-lbl">Calls Today</div><div class="stat-val" style="color:var(--pl)">${d.calls_today}</div><div class="stat-sub">inbound + outbound</div></div>
-      <div class="stat-card"><div class="stat-lbl">Calls This Week</div><div class="stat-val">${d.calls_this_week}</div><div class="stat-sub">${d.booked_this_week} booked</div></div>
-      <div class="stat-card"><div class="stat-lbl">Booking Rate</div><div class="stat-val" style="color:${brColor}">${d.booking_rate_pct}%</div><div class="stat-sub">this week</div></div>
-      <div class="stat-card"><div class="stat-lbl">Total Leads</div><div class="stat-val">${d.total_leads}</div><div class="stat-sub">${d.available_agents}/${d.total_agents} agents on</div></div>
-    </div>
-    <div class="g2">
-      ${d.best_agent ? `
-      <div class="best-card">
-        <div class="best-lbl">⭐ Top Agent</div>
-        <div class="best-name">${d.best_agent.name}</div>
-        <div class="best-rate">${Number(d.best_agent.close_rate).toFixed(1)}%</div>
-        <div class="best-sub">close rate · ${d.best_agent.total_closed} deals closed · ${d.best_agent.total_assigned} assigned</div>
-      </div>` : `<div class="callout c-p" style="margin:0"><div class="callout-lbl cl-p">No agents yet</div><p>Contact your ORVN account manager to add agents.</p></div>`}
-      <div class="card">
-        <div class="section-head">Quick Actions</div>
-        <button class="qa-btn" onclick="bGo('control',document.querySelectorAll('#bTabs .tab')[1])">Control PAS (pause, properties) →</button>
-        <button class="qa-btn" onclick="bGo('calls',document.querySelectorAll('#bTabs .tab')[2])">View recent calls →</button>
-        <button class="qa-btn" onclick="bGo('leads',document.querySelectorAll('#bTabs .tab')[3])">Browse lead memory →</button>
-        <button class="qa-btn" onclick="bGo('calculator',document.querySelectorAll('#bTabs .tab')[5])">Run revenue audit →</button>
-      </div>
-    </div>`;
-}
-
-// ── CONTROL ──
-async function loadControl() {
-  controlLoaded = true;
-  const r = await portalFetch('/portal/settings');
-  const d = await r.json();
-  renderControl(d);
-}
-
-function renderControl(d) {
-  const isActive = d.active !== false;
-  const props = d.featured_properties || [];
-  document.getElementById('controlContent').innerHTML = `
-    <div class="status-widget">
-      <div class="sw-left">
-        <div class="sw-label">PAS Status</div>
-        <div class="sw-status">
-          <span class="${isActive ? 'dot-active' : 'dot-paused'}">●</span>
-          <span>${isActive ? 'Active — accepting calls' : 'Paused — not making or accepting calls'}</span>
-        </div>
-      </div>
-      <button class="btn ${isActive ? 'btn-danger' : 'btn-primary'}" id="pauseResumeBtn" onclick="togglePas(${isActive})">
-        ${isActive ? 'Pause PAS' : 'Resume PAS'}
-      </button>
-    </div>
-    <div class="card">
-      <div class="section-head">Featured Properties</div>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Alex mentions these on calls when a lead asks about available properties.</p>
-      <div class="prop-list" id="propList">
-        ${props.length ? props.map((p, i) => propCard(p, i)).join('') : '<div style="font-size:13px;color:var(--mu);padding:8px 0">No featured properties yet. Add one below.</div>'}
-      </div>
-      <div class="add-prop-form">
-        <div class="section-head">Add a Property</div>
-        <div class="form-row" style="margin-bottom:12px">
-          <div>
-            <label class="form-label">Address *</label>
-            <input class="form-input" id="pAddr" placeholder="123 Ocean Drive, Miami">
-          </div>
-          <div>
-            <label class="form-label">Price</label>
-            <input class="form-input" id="pPrice" placeholder="$850,000">
-          </div>
-        </div>
-        <div class="form-row" style="margin-bottom:12px">
-          <div>
-            <label class="form-label">Bedrooms / Size</label>
-            <input class="form-input" id="pBeds" placeholder="3 bed, 2 bath, 1,800 sqft">
-          </div>
-          <div>
-            <label class="form-label">One-line description</label>
-            <input class="form-input" id="pDesc" placeholder="Waterfront condo with marina views">
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="addProperty()">Add Property</button>
-      </div>
-    </div>`;
-}
-
-function propCard(p, i) {
-  return `<div class="prop-item">
-    <div class="prop-body">
-      <div class="prop-addr">${p.address || '—'}</div>
-      <div class="prop-meta">${[p.price, p.bedrooms, p.description].filter(Boolean).join(' · ')}</div>
-    </div>
-    <button class="prop-remove" onclick="removeProperty(${i})">Remove</button>
-  </div>`;
-}
-
-async function togglePas(isActive) {
-  const action = isActive ? 'pause' : 'resume';
-  const r = await portalFetch('/portal/control', {method:'POST', body: JSON.stringify({action})});
-  if (r.ok) { toast(isActive ? 'PAS paused' : 'PAS resumed', !isActive); controlLoaded = false; loadControl(); }
-  else toast('Failed — try again', false);
-}
-
-async function addProperty() {
-  const addr = document.getElementById('pAddr').value.trim();
-  if (!addr) { toast('Address is required', false); return; }
-  const prop = {address: addr, price: document.getElementById('pPrice').value.trim(), bedrooms: document.getElementById('pBeds').value.trim(), description: document.getElementById('pDesc').value.trim()};
-  const r = await portalFetch('/portal/control', {method:'POST', body: JSON.stringify({action:'add_property', property_data: prop})});
-  if (r.ok) { toast('Property added — Alex will mention it on calls'); controlLoaded = false; loadControl(); }
-  else toast('Failed', false);
-}
-
-async function removeProperty(index) {
-  const r = await portalFetch('/portal/control', {method:'POST', body: JSON.stringify({action:'remove_property', remove_index: index})});
-  if (r.ok) { toast('Property removed'); controlLoaded = false; loadControl(); }
-  else toast('Failed', false);
-}
-
-// ── CALLS ──
-function filterCalls(outcome, btn) {
-  callsOutcome = outcome; callsOffset = 0;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  loadCalls();
-}
-async function loadCalls() {
-  const el = document.getElementById('callsContent');
-  el.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
-  let url = `/portal/calls?limit=20&offset=${callsOffset}`;
-  if (callsOutcome) url += `&outcome=${callsOutcome}`;
-  const d = await (await portalFetch(url)).json();
-  const calls = d.calls || [];
-  if (!calls.length) { el.innerHTML = '<div class="loading">No calls found.</div>'; return; }
-  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>Phone</th><th>Source</th><th>Outcome</th><th>Duration</th><th>Date</th></tr></thead>
-    <tbody>${calls.map(c => `<tr>
-      <td style="font-family:'DM Mono',monospace;font-size:12px">${mask(c.phone_number)}</td>
-      <td><span class="tag tag-${c.source==='outbound'?'b':'p'}">${c.source||'inbound'}</span></td>
-      <td><span class="tag tag-${outcomeTag(c.outcome)}">${c.outcome}</span></td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px">${fmtDur(c.duration_seconds)}</td>
-      <td style="color:var(--mu);font-size:12px">${fmtDate(c.start_time)}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>
-  <div class="pager">
-    <button class="pager-btn" onclick="callsOffset=Math.max(0,callsOffset-20);loadCalls()" ${callsOffset===0?'disabled':''}>← Prev</button>
-    <span class="pager-info">${callsOffset+1}–${callsOffset+calls.length}</span>
-    <button class="pager-btn" onclick="callsOffset+=20;loadCalls()" ${calls.length<20?'disabled':''}>Next →</button>
-  </div>`;
-}
-
-// ── LEADS ──
-async function loadLeads() {
-  const el = document.getElementById('leadsContent');
-  el.innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
-  const d = await (await portalFetch(`/portal/leads?limit=20&offset=${leadsOffset}`)).json();
-  const leads = d.leads || [];
-  if (!leads.length) { el.innerHTML = '<div class="loading">No leads yet.</div>'; return; }
-  el.innerHTML = `<div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>Name</th><th>Phone</th><th>Intent</th><th>Budget</th><th>Calls</th><th>Last Booked</th></tr></thead>
-    <tbody>${leads.map(l => `<tr>
-      <td>${l.name||'Unknown'}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px">${mask(l.phone_number)}</td>
-      <td>${l.intent?`<span class="tag tag-${intentTag(l.intent)}">${l.intent}</span>`:'—'}</td>
-      <td style="font-size:12px;color:var(--mu)">${l.budget||'—'}</td>
-      <td style="font-family:'DM Mono',monospace">${l.total_calls||0}</td>
-      <td style="color:var(--mu);font-size:12px">${l.last_booked_at?fmtDate(l.last_booked_at):'—'}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>
-  <div class="pager">
-    <button class="pager-btn" onclick="leadsOffset=Math.max(0,leadsOffset-20);loadLeads()" ${leadsOffset===0?'disabled':''}>← Prev</button>
-    <span class="pager-info">${leadsOffset+1}–${leadsOffset+leads.length}</span>
-    <button class="pager-btn" onclick="leadsOffset+=20;loadLeads()" ${leads.length<20?'disabled':''}>Next →</button>
-  </div>`;
-}
-
-// ── AGENTS ──
-async function loadAgents() {
-  const el = document.getElementById('agentsContent');
-  const d = await (await portalFetch('/portal/agents')).json();
-  const agents = d.leaderboard || [];
-  if (!agents.length) { el.innerHTML = `<div class="callout c-p"><div class="callout-lbl cl-p">No agents</div><p>Contact your ORVN account manager to add agents.</p></div>`; return; }
-  el.innerHTML = `<div style="font-size:13px;color:var(--mu);margin-bottom:16px">${d.available_count} of ${d.total_count} available</div>
-  <div class="agent-grid">${agents.map((a,i) => `
-    <div class="agent-card" style="${i===0?'border-color:rgba(91,63,212,.5)':''}">
-      <div class="agent-rank">#${i+1} ${dot(a.status)} <span class="tag tag-${a.status==='available'?'g':a.status==='busy'?'a':'r'}">${a.status}</span></div>
-      <div class="agent-name">${a.name}</div>
-      <div class="agent-stats">
-        <div><div class="a-stat-val">${Number(a.close_rate||0).toFixed(1)}%</div><div class="a-stat-lbl">Close Rate</div></div>
-        <div><div class="a-stat-val">${a.total_closed||0}</div><div class="a-stat-lbl">Closed</div></div>
-        <div><div class="a-stat-val">${a.total_assigned||0}</div><div class="a-stat-lbl">Assigned</div></div>
-      </div>
-      ${a.specialties?.length?`<div style="font-size:11px;color:var(--mu)">${a.specialties.join(', ')}</div>`:''}
-    </div>`).join('')}</div>`;
-}
-
-// ── TRAINING ──
-async function loadTraining() {
-  const el = document.getElementById('trainingContent');
-  const d = await (await portalFetch('/portal/training')).json();
-  if (!d.current_version && !d.history.length) {
-    el.innerHTML = `<div class="callout c-a"><div class="callout-lbl cl-a">Not trained yet</div><p>PAS self-trains every <strong>25 calls</strong>. Claude will analyse transcripts and improve scripts automatically.</p></div>`;
+  /* Try admin key */
+  if (savedAdmin) {
+    fetch(API + '/admin/brokerages', { headers: { 'X-Admin-Key': savedAdmin } })
+      .then(function(r) {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+      .then(function() {
+        S.adminKey = savedAdmin; S.portalType = 'admin';
+        showAdminPortal();
+      })
+      .catch(function() {
+        localStorage.removeItem(ADMIN_KEY_LS);
+        tryClientFallback(savedClient);
+      });
     return;
   }
-  const ins = d.insights || {};
-  el.innerHTML = `${d.current_version?`<div class="callout c-g" style="margin-bottom:20px"><div class="callout-lbl cl-g">Active v${d.current_version}</div><p>${ins.what_works||'Scripts trained and optimised.'} ${ins.calls_analyzed?`Based on ${ins.calls_analyzed} calls.`:''} ${ins.booking_rate?`Booking rate: <strong>${ins.booking_rate}%</strong>.`:''}</p></div>`:''}
-  ${d.history.map(t=>`<div class="training-item"><div class="training-header"><span class="training-v">v${t.version}</span><span class="tag tag-p">${t.calls_analyzed} calls</span><span class="tag tag-g">${t.booking_rate||0}% booking</span><span class="training-date">${fmtDate(t.created_at)}</span></div><div style="font-size:12.5px;color:#B0A8C8">${t.insights?.what_works||'Training completed.'}</div></div>`).join('')}`;
-}
 
-// ── SETTINGS ──
-async function loadSettings() {
-  settingsLoaded = true;
-  const r = await portalFetch('/portal/settings');
-  const d = await r.json();
-  document.getElementById('settingsContent').innerHTML = `
-    <div class="card" style="max-width:560px">
-      <div class="section-head">Agent Configuration</div>
-      <div class="form-group">
-        <label class="form-label">Agent Name (how PAS identifies itself on calls)</label>
-        <input class="form-input" id="sAgentName" value="${d.agent_name||'Alex'}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Agent Backup Phone (SMS fallback)</label>
-        <input class="form-input" id="sAgentPhone" value="${d.agent_phone||''}" placeholder="+13051234567">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Slack Webhook URL (post-call summaries)</label>
-        <input class="form-input" id="sSlack" value="${d.slack_webhook_url||''}" placeholder="https://hooks.slack.com/...">
-      </div>
-      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-    </div>
-    <div class="callout c-p" style="max-width:560px;margin-top:14px">
-      <div class="callout-lbl cl-p">Changes take effect on the next call</div>
-      <p>To update your Twilio phone number or Cal.com integration, contact your ORVN account manager. Those require backend configuration.</p>
-    </div>`;
-}
+  tryClientFallback(savedClient);
 
-async function saveSettings() {
-  const body = {};
-  const n = document.getElementById('sAgentName').value.trim();
-  const p = document.getElementById('sAgentPhone').value.trim();
-  const s = document.getElementById('sSlack').value.trim();
-  if (n) body.agent_name = n;
-  if (p) body.agent_phone = p;
-  if (s) body.slack_webhook_url = s;
-  const r = await portalFetch('/portal/settings', {method:'PATCH', body: JSON.stringify(body)});
-  if (r.ok) { toast('Settings saved'); settingsLoaded = false; }
-  else toast('Save failed', false);
-}
-
-// ── CALCULATOR ──
-async function loadCalcPrefill() {
-  calcPrefilled = true;
-  const d = await (await portalFetch('/portal/calculator-prefill')).json();
-  if (d.monthly_leads) document.getElementById('cLeads').value = d.monthly_leads;
-  if (d.crm_size) document.getElementById('cCRM').value = d.crm_size;
-  if (d.avg_close_rate_pct > 0) {
-    const r = Math.round(d.avg_close_rate_pct);
-    document.getElementById('cClose').value = r;
-    document.getElementById('cCloseV').textContent = r + '%';
+  function tryClientFallback(key) {
+    if (!key) {
+      showLogin();
+      return;
+    }
+    fetch(API + '/portal/overview', { headers: { 'X-API-Key': key } })
+      .then(function(r) {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+      .then(function(d) {
+        S.clientKey = key; S.portalType = 'client';
+        S.brokerageName = d.brokerage_name || 'Your Brokerage';
+        showClientPortal(d);
+      })
+      .catch(function() {
+        localStorage.removeItem(CLIENT_KEY_LS);
+        showLogin();
+      });
   }
-}
-function updateCResp(el) {
-  const v = parseInt(el.value);
-  document.getElementById('cRespV').textContent = v<=1?'3 sec (PAS)':v<5?'<5 min':v<30?v+' min':v<60?'30–60 min':v<240?'1–4 hrs':'4+ hrs';
-}
-function getPenalty(rt) { if(rt<=5)return 0;if(rt<=30)return.4;if(rt<=60)return.6;if(rt<=240)return.72;return.82; }
-function runCalc() {
-  const leads=parseFloat(document.getElementById('cLeads').value)||150;
-  const comm=parseFloat(document.getElementById('cComm').value)||12000;
-  const cr=parseFloat(document.getElementById('cClose').value)/100||.08;
-  const rt=parseFloat(document.getElementById('cResp').value)||1;
-  const crm=parseFloat(document.getElementById('cCRM').value)||0;
-  const isa=parseFloat(document.getElementById('cISA').value)||0;
-  const P=getPenalty(rt),ideal=leads*cr,lost=ideal*P,mLost=lost*comm,aLost=mLost*12;
-  const grav=crm*.12*cr*.4*comm,total=aLost+grav,netGain=total-999*12;
-  const el=document.getElementById('calcResults');
-  el.style.display='block';
-  el.innerHTML=`<div style="background:linear-gradient(135deg,rgba(239,68,68,.1),rgba(91,63,212,.07));border:1px solid rgba(239,68,68,.24);border-radius:10px;padding:24px;text-align:center;margin-bottom:14px;animation:fu .4s ease both">
-    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--re);text-transform:uppercase;margin-bottom:8px">Annual Revenue at Risk</div>
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(40px,7vw,64px);color:var(--re);letter-spacing:-.03em;line-height:1;margin-bottom:6px">${fm(total)}</div>
-    <div style="font-size:12px;color:var(--mu)">speed-to-lead loss + graveyard CRM combined</div>
-  </div>
-  <div class="g3" style="margin-bottom:14px">
-    <div style="background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:6px">Deals Lost/Month</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--re)">${Math.round(lost)}</div></div>
-    <div style="background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:6px">Graveyard Value</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gr)">${fm(grav)}</div></div>
-    <div style="background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:14px;text-align:center"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:6px">Net vs ORVN</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:${netGain>0?'var(--gr)':'var(--am)'}">${fm(Math.abs(netGain))}</div></div>
-  </div>
-  ${isa>0?`<div class="callout c-p"><p>ISA: <strong>${fm(isa)}/yr</strong> vs ORVN: <strong>$11,988/yr</strong>. You save <strong>${fm(isa-999*12)}/yr</strong> — before recovered revenue.</p></div>`:''}`;
-}
 
-// ════ ADMIN APP ════
-function startAdminApp(data) {
-  document.getElementById('loginView').style.display = 'none';
-  document.getElementById('adminApp').style.display = 'block';
-  renderBrokerages(data.brokerages || []);
-}
-
-function aGo(id, btn) {
-  document.querySelectorAll('#adminApp .pg').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('#adminApp .tab').forEach(b => b.classList.remove('on'));
-  document.getElementById('apg-' + id).classList.add('on');
-  btn.classList.add('on');
-  if (id === 'brokerages') loadBrokerages();
-  if (id === 'create') {
-    document.getElementById('createSuccess').classList.remove('show');
-    ['cId','cName','cAgentPhone','cTwilioPhone','cSlack','cSlackTeam'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('cAgentName').value='Alex';
+  function showLogin() {
+    document.getElementById('loginView').style.display = 'flex';
+    document.getElementById('keyInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
   }
-}
-
-function adminFetch(path, opts={}) {
-  return fetch(BASE + path, {...opts, headers: {'X-Admin-Key': ADMIN_KEY, 'Content-Type': 'application/json', ...(opts.headers||{})}});
-}
-
-async function loadBrokerages() {
-  document.getElementById('brokeragesContent').innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
-  const d = await (await adminFetch('/admin/brokerages')).json();
-  renderBrokerages(d.brokerages || []);
-}
-
-function renderBrokerages(list) {
-  if (!list.length) {
-    document.getElementById('brokeragesContent').innerHTML = `<div class="callout c-a"><div class="callout-lbl cl-a">No brokerages yet</div><p>Go to "Onboard Client" to create the first account.</p></div>`;
-    return;
-  }
-  document.getElementById('brokeragesContent').innerHTML = `
-    <div class="brok-grid">${list.map(b => `
-      <div class="brok-card">
-        <div class="brok-name">${b.name} ${b.active===false?'<span class="tag tag-r">PAUSED</span>':'<span class="tag tag-g">ACTIVE</span>'}</div>
-        <div class="brok-id">${b.id}</div>
-        <div class="brok-stats"><span>Calls: <strong>${b.call_count||0}</strong></span><span>Training: <strong>v${b.training_version||0}</strong></span></div>
-        <div class="api-key-row">
-          <div class="api-key-val" title="${b.api_key||'—'}">${b.api_key||'—'}</div>
-          <button class="copy-btn" onclick="copyText('${b.api_key||''}')">Copy</button>
-        </div>
-        <button class="btn btn-ghost btn-sm btn-full" onclick="openEdit(${JSON.stringify(b).replace(/"/g,'&quot;')})">Edit Config</button>
-      </div>`).join('')}
-    </div>`;
-}
-
-function openEdit(b) {
-  editActiveCurrent = b.active !== false;
-  document.getElementById('editTitle').textContent = 'Editing: ' + b.name;
-  document.getElementById('editId').value = b.id;
-  document.getElementById('eName').value = b.name || '';
-  document.getElementById('eAgentName').value = b.agent_name || 'Alex';
-  document.getElementById('eTwilioPhone').value = b.twilio_phone || '';
-  document.getElementById('eAgentPhone').value = b.agent_phone || '';
-  document.getElementById('eSlack').value = b.slack_webhook_url || '';
-  document.getElementById('eSlackTeam').value = b.slack_team_id || '';
-  document.getElementById('toggleActiveBtn').textContent = editActiveCurrent ? 'Pause Account' : 'Reactivate';
-  document.getElementById('editOverlay').style.display = 'flex';
-}
-
-function closeEdit() { document.getElementById('editOverlay').style.display = 'none'; }
-
-async function saveEdit() {
-  const id = document.getElementById('editId').value;
-  const body = {
-    name: document.getElementById('eName').value.trim() || undefined,
-    agent_name: document.getElementById('eAgentName').value.trim() || undefined,
-    twilio_phone: document.getElementById('eTwilioPhone').value.trim() || undefined,
-    agent_phone: document.getElementById('eAgentPhone').value.trim() || undefined,
-    slack_webhook_url: document.getElementById('eSlack').value.trim() || undefined,
-    slack_team_id: document.getElementById('eSlackTeam').value.trim() || undefined,
-  };
-  Object.keys(body).forEach(k => body[k] === undefined && delete body[k]);
-  const r = await adminFetch(`/admin/brokerages/${id}`, {method:'PATCH', body: JSON.stringify(body)});
-  if (r.ok) { toast('Saved'); closeEdit(); loadBrokerages(); }
-  else toast('Save failed', false);
-}
-
-async function toggleActive() {
-  const id = document.getElementById('editId').value;
-  const endpoint = editActiveCurrent ? 'deactivate' : 'reactivate';
-  let r;
-  if (editActiveCurrent) {
-    r = await adminFetch(`/admin/brokerages/${id}`, {method:'DELETE'});
-  } else {
-    r = await adminFetch(`/admin/brokerages/${id}/reactivate`, {method:'POST'});
-  }
-  if (r.ok) { toast(editActiveCurrent ? 'Account paused' : 'Account reactivated', true); closeEdit(); loadBrokerages(); }
-  else toast('Failed', false);
-}
-
-async function createBrokerage() {
-  const id = document.getElementById('cId').value.trim();
-  const name = document.getElementById('cName').value.trim();
-  if (!id || !name) { toast('ID and Name are required', false); return; }
-  const btn = document.getElementById('createBrokBtn');
-  btn.disabled = true; btn.textContent = 'Creating...';
-  const body = {
-    id, name,
-    agent_name: document.getElementById('cAgentName').value.trim() || 'Alex',
-    twilio_phone: document.getElementById('cTwilioPhone').value.trim(),
-    agent_phone: document.getElementById('cAgentPhone').value.trim(),
-    slack_webhook_url: document.getElementById('cSlack').value.trim(),
-    slack_team_id: document.getElementById('cSlackTeam').value.trim(),
-    slack_signing_secret: '',
-  };
-  const r = await adminFetch('/admin/brokerages', {method:'POST', body: JSON.stringify(body)});
-  btn.disabled = false; btn.textContent = 'Create Brokerage Account';
-  if (r.ok) {
-    const d = await r.json();
-    document.getElementById('newApiKey').textContent = d.brokerage?.api_key || '—';
-    document.getElementById('createSuccess').classList.add('show');
-    toast('Brokerage created');
-  } else {
-    const err = await r.json().catch(()=>({}));
-    toast(err.detail || 'Creation failed', false);
-  }
-}
-
-// ════ HELPERS ════
-function fm(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+Math.round(n).toLocaleString();}
-function fmtDate(s){if(!s)return'—';return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
-function fmtDur(s){if(!s)return'—';return Math.floor(s/60)+'m '+(s%60)+'s';}
-function mask(p){if(!p||p==='unknown')return'—';return p.slice(0,-4).replace(/\d/g,'*')+p.slice(-4);}
-function outcomeTag(o){return o==='booked'?'g':o==='not_interested'?'r':'a';}
-function intentTag(i){return i==='buying'?'g':i==='selling'?'b':'a';}
-function dot(s){return`<span style="color:${s==='available'?'var(--gr)':s==='busy'?'var(--am)':'var(--mu)'}">●</span>`;}
-function copyText(t){navigator.clipboard.writeText(t).then(()=>toast('Copied'));}
-function toast(msg, ok=true) {
-  const el = document.createElement('div');
-  el.className = 'toast ' + (ok ? 'green' : 'red');
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(), 2800);
-}
+})();
 </script>
 </body>
 </html>
