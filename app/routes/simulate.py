@@ -43,6 +43,7 @@ Response:
 
 import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
@@ -50,6 +51,7 @@ from pydantic import BaseModel
 
 from app.db.brokerage_store import get_brokerage_by_id
 from app.db.call_logger import create_call_record, update_call_outcome
+from app.db.lead_memory import upsert_lead, mark_booked
 from app.engine.state_machine import PASEngine
 from app.services.summary.call_summary import generate_call_summary
 
@@ -230,3 +232,25 @@ async def _finalize_session(call_sid: str, engine: PASEngine):
         logger.info(f"[{call_sid}] Simulation finalized | outcome={outcome} | duration={duration}s")
     except Exception as e:
         logger.warning(f"[{call_sid}] Could not finalize call record: {e}")
+
+    # Persist lead memory so the brokerage's CRM-style Leads tab reflects the call.
+    # Mirrors the behaviour of the live inbound flow.
+    try:
+        lead_data = metadata.get("lead", {}) or {}
+        phone = lead_data.get("phone_number") or ""
+        brokerage_id = getattr(engine, "brokerage_id", None)
+        if phone and phone != "simulated" and brokerage_id and brokerage_id != "demo":
+            updates = {
+                "name":         lead_data.get("name") or "",
+                "email":        lead_data.get("email") or "",
+                "intent":       lead_data.get("intent") or "",
+                "budget":       lead_data.get("budget") or "",
+                "timeline":     lead_data.get("timeline") or "",
+                "last_call_at": datetime.now(timezone.utc).isoformat(),
+            }
+            updates = {k: v for k, v in updates.items() if v}
+            upsert_lead(brokerage_id, phone, updates)
+            if outcome == "booked":
+                mark_booked(brokerage_id, phone)
+    except Exception as e:
+        logger.warning(f"[{call_sid}] Lead memory upsert skipped: {e}")

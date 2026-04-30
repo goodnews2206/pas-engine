@@ -103,6 +103,7 @@ class PASEngine:
 
         # Lead context — from outbound form data or inbound memory lookup
         if lead_context:
+            self.state.lead.phone_number = lead_context.get("phone_number", "")
             self.state.lead.name = lead_context.get("name", "")
             self.state.lead.email = lead_context.get("email", "")
             self.state.lead.intent = lead_context.get("intent", "")
