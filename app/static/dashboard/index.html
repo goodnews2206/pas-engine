@@ -195,6 +195,69 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:rgba(91,63,212,.02);cursor:pointer}
 
+/* ── DRAWER (right side, shared) ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(15,15,30,0.32);z-index:1000;display:none;animation:fade .2s ease}
+.drawer-overlay.open{display:block}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:min(540px,100vw);background:var(--bg2);border-left:1px solid var(--bo);z-index:1001;overflow-y:auto;box-shadow:-8px 0 32px rgba(0,0,0,0.08);transform:translateX(100%);transition:transform .28s ease}
+.drawer.open{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--bo);position:sticky;top:0;background:var(--bg2);z-index:2}
+.drawer-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text)}
+.drawer-close{font-size:22px;cursor:pointer;color:var(--mu);background:transparent;border:none;padding:4px 10px;border-radius:6px;line-height:1;transition:all .15s}
+.drawer-close:hover{color:var(--text);background:var(--bg3)}
+.drawer-body{padding:22px 24px 60px}
+.drawer-section{margin-bottom:22px}
+.drawer-sec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);margin-bottom:10px;display:block}
+.dr-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--bo);font-size:13px;gap:12px}
+.dr-row:last-child{border-bottom:none}
+.dr-key{color:var(--mu);flex-shrink:0}
+.dr-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);text-align:right;word-break:break-word;max-width:65%}
+.transcript-box{background:var(--bg3);border:1px solid var(--bo);border-radius:10px;padding:14px;max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.tx-line{display:flex;flex-direction:column;gap:2px}
+.tx-who{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+.tx-text{font-size:13px;line-height:1.5;color:var(--text);background:var(--bg2);border:1px solid var(--bo);border-radius:8px;padding:8px 12px}
+.tx-line.alex .tx-who{color:var(--p)}
+.tx-line.alex .tx-text{background:rgba(91,63,212,.05);border-color:rgba(91,63,212,.15)}
+.tx-line.lead .tx-who{color:var(--text)}
+.metadata-pre{background:var(--bg3);border:1px solid var(--bo);border-radius:8px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text);max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+
+/* ── BROKERAGE OVERLAY (full-screen) ── */
+.bk-overlay{position:fixed;inset:0;background:var(--bg);z-index:950;display:none;overflow-y:auto;animation:fade .25s ease}
+.bk-overlay.open{display:block}
+.bk-topbar{position:sticky;top:0;z-index:951;background:var(--bg2);border-bottom:1px solid var(--bo);padding:14px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bk-back{font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;background:transparent;color:var(--mu);border:1px solid var(--bo);border-radius:6px;padding:6px 12px;transition:all .15s;flex-shrink:0}
+.bk-back:hover{color:var(--p);border-color:var(--p)}
+.bk-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-id-badge{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);padding:3px 8px;border:1px solid var(--bo);border-radius:5px}
+.bk-keybox{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--bo);border-radius:6px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text)}
+.bk-tabs{background:var(--bg2);border-bottom:1px solid var(--bo);display:flex;padding:0 24px;overflow-x:auto;scrollbar-width:none;position:sticky;top:60px;z-index:950}
+.bk-tabs::-webkit-scrollbar{display:none}
+.bk-tab{padding:0 14px;height:42px;display:flex;align-items:center;font-size:12.5px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--mu);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;flex-shrink:0;font-family:'DM Sans',sans-serif}
+.bk-tab.on{color:var(--p);border-bottom-color:var(--p)}
+.bk-tab:hover:not(.on){color:var(--text)}
+.bk-pg{display:none}
+.bk-pg.on{display:block}
+.bk-wrap{max-width:1080px;margin:0 auto;padding:28px 24px 80px}
+
+/* ── DANGER ZONE ── */
+.danger-card{border:1px solid rgba(220,38,38,.25);border-radius:12px;padding:20px;background:var(--re-bg);margin-top:16px}
+.danger-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--re);margin-bottom:6px}
+.danger-sub{font-size:12px;color:var(--mu);margin-bottom:14px}
+.danger-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ── LIFT CARD ── */
+.lift-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:14px}
+.lift-card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:14px;text-align:center}
+.lift-val{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--gr);line-height:1.1}
+.lift-val.neutral{color:var(--mu)}
+.lift-label{font-size:11px;color:var(--mu);margin-top:4px}
+
+/* ── FILTER PILLS ── */
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filter-pill{background:var(--bg2);border:1px solid var(--bo);border-radius:6px;padding:5px 12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);cursor:pointer;transition:all .15s}
+.filter-pill.on{color:var(--p);border-color:var(--p);background:rgba(91,63,212,.06)}
+.filter-pill:hover:not(.on){color:var(--text)}
+
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
   .g4{grid-template-columns:1fr 1fr}
@@ -202,6 +265,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   .wrap{padding:20px 14px 60px}
   .topbar,.tabbar{padding-left:14px;padding-right:14px}
   .login-card{padding:32px 24px}
+  .bk-topbar{padding:12px 14px}
+  .bk-tabs{padding:0 12px;top:auto}
+  .bk-wrap{padding:20px 14px 60px}
+  .drawer{width:100vw}
 }
 @media(max-width:420px){
   .g4{grid-template-columns:1fr 1fr}
@@ -288,6 +355,68 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   <div class="pg"    id="c-billing"><div class="wrap" id="cBillContent"></div></div>
   <div class="pg"    id="c-support"><div class="wrap" id="cSuppContent"></div></div>
   <div class="pg"    id="c-settings"><div class="wrap" id="cSetContent"></div></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BROKERAGE DETAIL OVERLAY (admin-only)
+══════════════════════════════════════════ -->
+<div class="bk-overlay" id="bkOverlay">
+  <div class="bk-topbar">
+    <button class="bk-back" onclick="closeBrokerageOverlay()">← Back</button>
+    <div class="bk-name" id="bkName">—</div>
+    <span class="bk-id-badge" id="bkIdBadge">—</span>
+    <span id="bkStatusBadge"></span>
+    <div class="bk-keybox" id="bkKeyBox" style="display:none">
+      <span id="bkKeyMasked">—</span>
+      <button class="copy-btn" id="bkKeyCopy">Copy</button>
+    </div>
+  </div>
+  <div class="bk-tabs" id="bkTabbar">
+    <button class="bk-tab on" data-bk="metrics" onclick="bkGo(this)">Metrics</button>
+    <button class="bk-tab"    data-bk="agents"  onclick="bkGo(this)">Agents</button>
+    <button class="bk-tab"    data-bk="calls"   onclick="bkGo(this)">Calls</button>
+    <button class="bk-tab"    data-bk="config"  onclick="bkGo(this)">Config</button>
+    <button class="bk-tab"    data-bk="invite"  onclick="bkGo(this)">Invite</button>
+    <button class="bk-tab"    data-bk="billing" onclick="bkGo(this)">Billing</button>
+    <button class="bk-tab"    data-bk="support" onclick="bkGo(this)">Support</button>
+    <button class="bk-tab"    data-bk="danger"  onclick="bkGo(this)">Danger Zone</button>
+  </div>
+  <div class="bk-pg on" id="bk-metrics"><div class="bk-wrap" id="bkMetrics"></div></div>
+  <div class="bk-pg"    id="bk-agents"><div class="bk-wrap" id="bkAgents"></div></div>
+  <div class="bk-pg"    id="bk-calls"><div class="bk-wrap" id="bkCalls"></div></div>
+  <div class="bk-pg"    id="bk-config"><div class="bk-wrap" id="bkConfig"></div></div>
+  <div class="bk-pg"    id="bk-invite"><div class="bk-wrap" id="bkInvite"></div></div>
+  <div class="bk-pg"    id="bk-billing"><div class="bk-wrap" id="bkBilling"></div></div>
+  <div class="bk-pg"    id="bk-support"><div class="bk-wrap" id="bkSupport"></div></div>
+  <div class="bk-pg"    id="bk-danger"><div class="bk-wrap" id="bkDanger"></div></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SHARED CALL DETAIL DRAWER
+══════════════════════════════════════════ -->
+<div class="drawer-overlay" id="callDrawerOverlay" onclick="closeCallDrawer()"></div>
+<div class="drawer" id="callDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title">Call Detail</div>
+    <button class="drawer-close" onclick="closeCallDrawer()" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body" id="callDrawerBody">
+    <div class="loading-box"><div class="spinner"></div><br>Loading call…</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SHARED LEAD DETAIL DRAWER (client)
+══════════════════════════════════════════ -->
+<div class="drawer-overlay" id="leadDrawerOverlay" onclick="closeLeadDrawer()"></div>
+<div class="drawer" id="leadDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title">Lead Detail</div>
+    <button class="drawer-close" onclick="closeLeadDrawer()" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body" id="leadDrawerBody">
+    <div class="loading-box"><div class="spinner"></div><br>Loading lead…</div>
+  </div>
 </div>
 
 <!-- toast container -->
@@ -742,7 +871,7 @@ function loadBrokerages() {
         + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(keyMasked) + '</span>'
         + (b.api_key ? '<button class="copy-btn" onclick="copyText(\'' + apiKeySafe + '\')">Copy</button>' : '')
         + '</div>'
-        + '<button class="btn btn-ghost btn-sm" onclick="toast(\'Brokerage detail panel coming in Phase 2\',\'info\')">View Detail →</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="openBrokerageOverlay(\'' + escAttr(b.id) + '\')">View Detail →</button>'
         + '</div>';
     }).join('');
 
@@ -762,17 +891,122 @@ function loadBrokerages() {
 }
 
 /* ═══════════════════════════════════════════════
-   ADMIN — CALLS (placeholder)
+   ADMIN — CALLS (per-brokerage table; falls back to brokerage selector)
 ═══════════════════════════════════════════════ */
+var adminCallsState = { brokerages: [], brokerageId: null, outcome: '', calls: [] };
+
 function loadAdminCalls() {
-  if (S.loaded['a-calls']) return;
-  S.loaded['a-calls'] = true;
+  trackEvent('admin_calls_viewed');
+  var el = document.getElementById('aCallsContent');
+  el.innerHTML = loadingHtml('Loading brokerages…');
+
+  apiFetch('/admin/brokerages').then(function(d) {
+    adminCallsState.brokerages = d.brokerages || [];
+    if (adminCallsState.brokerages.length === 0) {
+      el.innerHTML = '<h1 class="pg-title">Calls</h1>'
+        + emptyHtml('📞','No brokerages yet','Onboard a brokerage first — calls will appear here once PAS handles inbound leads.',
+            '<button class="btn btn-primary" onclick="adminGo(document.querySelector(\'[data-tab=a-onboard]\'))">Onboard Brokerage</button>');
+      return;
+    }
+    if (!adminCallsState.brokerageId) adminCallsState.brokerageId = adminCallsState.brokerages[0].id;
+    renderAdminCallsShell();
+    fetchAdminCalls();
+  }).catch(function(e) {
+    el.innerHTML = '<h1 class="pg-title">Calls</h1>'
+      + emptyHtml('📞','Could not load brokerages', escHtml(e.message),
+          '<button class="btn btn-ghost btn-sm" onclick="loadAdminCalls()">Retry</button>');
+  });
+}
+
+function renderAdminCallsShell() {
+  var brokOptions = adminCallsState.brokerages.map(function(b) {
+    var sel = b.id === adminCallsState.brokerageId ? ' selected' : '';
+    return '<option value="' + escAttr(b.id) + '"' + sel + '>' + escHtml(b.name || b.id) + '</option>';
+  }).join('');
+
+  var outcomes = [
+    ['',            'All'],
+    ['booked',      'Booked'],
+    ['transferred', 'Transferred'],
+    ['not_booked',  'Not booked'],
+    ['failed',      'Failed']
+  ];
+  var pills = outcomes.map(function(o) {
+    var on = adminCallsState.outcome === o[0] ? ' on' : '';
+    return '<button class="filter-pill' + on + '" onclick="setAdminCallsOutcome(\'' + o[0] + '\')">' + o[1] + '</button>';
+  }).join('');
+
   document.getElementById('aCallsContent').innerHTML = '<h1 class="pg-title">Calls</h1>'
-    + '<p class="pg-sub">Fleet-wide call history across all brokerage accounts.</p>'
-    + '<div class="callout callout-amber"><div class="callout-label cl-amber">Phase 2</div>'
-    + '<p>Fleet-wide call table with brokerage filter, outcome tags, and call detail drawer arrives in Phase 2.'
-    + ' To view a specific brokerage\'s calls now, use <strong>Brokerages → View Detail → Calls</strong>.</p></div>'
-    + emptyHtml('📞','Full call table in Phase 2','Per-brokerage call viewing is available in the Brokerages tab today.');
+    + '<p class="pg-sub">Per-brokerage call history. Click any row to view full transcript and metadata.</p>'
+    + '<div class="card" style="margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+    + '<div style="display:flex;align-items:center;gap:8px"><span style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)">Brokerage</span>'
+    + '<select class="form-input form-select" style="min-width:200px" onchange="setAdminCallsBrokerage(this.value)">' + brokOptions + '</select></div>'
+    + '<div class="filter-pills" style="margin-bottom:0">' + pills + '</div>'
+    + '</div>'
+    + '<div id="aCallsTable">' + loadingHtml('Loading calls…') + '</div>';
+}
+
+function setAdminCallsBrokerage(id) {
+  adminCallsState.brokerageId = id;
+  trackEvent('admin_calls_filter_changed', { brokerage_id: id });
+  fetchAdminCalls();
+}
+
+function setAdminCallsOutcome(outcome) {
+  adminCallsState.outcome = outcome;
+  trackEvent('admin_calls_filter_changed', { outcome: outcome });
+  renderAdminCallsShell();
+  fetchAdminCalls();
+}
+
+function fetchAdminCalls() {
+  var bid = adminCallsState.brokerageId;
+  if (!bid) return;
+  var path = '/admin/brokerages/' + encodeURIComponent(bid) + '/calls?limit=50&offset=0';
+  if (adminCallsState.outcome) path += '&outcome=' + encodeURIComponent(adminCallsState.outcome);
+
+  var tbl = document.getElementById('aCallsTable');
+  if (tbl) tbl.innerHTML = loadingHtml('Loading calls…');
+
+  apiFetch(path).then(function(d) {
+    adminCallsState.calls = d.calls || [];
+    renderAdminCallsTable();
+  }).catch(function(e) {
+    if (tbl) tbl.innerHTML = emptyHtml('📞','Could not load calls', escHtml(e.message));
+  });
+}
+
+function renderAdminCallsTable() {
+  var tbl = document.getElementById('aCallsTable');
+  if (!tbl) return;
+  var calls = adminCallsState.calls;
+  if (calls.length === 0) {
+    tbl.innerHTML = emptyHtml('📞','No calls yet','No call history matches the current filter.');
+    return;
+  }
+  var brokName = (function() {
+    for (var i = 0; i < adminCallsState.brokerages.length; i++) {
+      if (adminCallsState.brokerages[i].id === adminCallsState.brokerageId) return adminCallsState.brokerages[i].name || adminCallsState.brokerages[i].id;
+    }
+    return adminCallsState.brokerageId;
+  })();
+
+  var rows = calls.map(function(c) {
+    return '<tr onclick="openAdminCallDrawer(\'' + escAttr(c.id) + '\')">'
+      + '<td>' + escHtml(brokName) + '</td>'
+      + '<td>' + maskPhone(c.phone_number) + '</td>'
+      + '<td>' + tagHtml(c.source||'inbound','gray') + '</td>'
+      + '<td>' + outcomeTagHtml(c.outcome) + '</td>'
+      + '<td>' + fmtDuration(c.duration_seconds) + '</td>'
+      + '<td>' + fmtDate(c.start_time) + '</td>'
+      + '<td>' + (c.outcome==='booked' ? tagHtml('Yes','green') : tagHtml('No','gray')) + '</td>'
+      + '<td>' + (c.outcome==='transferred' ? tagHtml('Yes','blue') : tagHtml('No','gray')) + '</td>'
+      + '</tr>';
+  }).join('');
+
+  tbl.innerHTML = '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
+    + '<thead><tr><th>Brokerage</th><th>Phone</th><th>Source</th><th>Outcome</th><th>Duration</th><th>Date</th><th>Booked</th><th>Transferred</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table></div>';
 }
 
 /* ═══════════════════════════════════════════════
@@ -1168,7 +1402,7 @@ function loadClientCalls() {
       return;
     }
     var rows = calls.map(function(c) {
-      return '<tr onclick="toast(\'Call detail drawer coming in Phase 2\',\'info\')">'
+      return '<tr onclick="openClientCallDrawer(\'' + escAttr(c.id) + '\')">'
         + '<td>' + maskPhone(c.phone_number) + '</td>'
         + '<td>' + tagHtml(c.source||'inbound','gray') + '</td>'
         + '<td>' + outcomeTagHtml(c.outcome) + '</td>'
@@ -1178,7 +1412,7 @@ function loadClientCalls() {
         + '</tr>';
     }).join('');
     el.innerHTML = '<h1 class="pg-title">Calls</h1>'
-      + '<p class="pg-sub">' + calls.length + ' recent call' + (calls.length!==1?'s':'') + '. Call detail drawer arrives in Phase 2.</p>'
+      + '<p class="pg-sub">' + calls.length + ' recent call' + (calls.length!==1?'s':'') + '. Click a row to view detail.</p>'
       + '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
       + '<thead><tr><th>Phone</th><th>Source</th><th>Outcome</th><th>Duration</th><th>Date</th><th>Booked</th></tr></thead>'
       + '<tbody>' + rows + '</tbody></table></div>';
@@ -1205,7 +1439,7 @@ function loadClientLeads() {
       return;
     }
     var rows = leads.map(function(l) {
-      return '<tr>'
+      return '<tr onclick="openLeadDrawer(\'' + escAttr(l.id) + '\')">'
         + '<td>' + escHtml(l.name||'Unknown') + '</td>'
         + '<td>' + maskPhone(l.phone_number) + '</td>'
         + '<td>' + (l.intent ? tagHtml(l.intent, intentColor[l.intent]||'gray') : '—') + '</td>'
@@ -1216,7 +1450,7 @@ function loadClientLeads() {
         + '</tr>';
     }).join('');
     el.innerHTML = '<h1 class="pg-title">Leads</h1>'
-      + '<p class="pg-sub">' + leads.length + ' lead' + (leads.length!==1?'s':'') + ' in memory. Status update and detail drawer in Phase 2.</p>'
+      + '<p class="pg-sub">' + leads.length + ' lead' + (leads.length!==1?'s':'') + ' in memory. Click a row to update status.</p>'
       + '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
       + '<thead><tr><th>Name</th><th>Phone</th><th>Intent</th><th>Budget</th><th>Timeline</th><th>Calls</th><th>Last Contact</th></tr></thead>'
       + '<tbody>' + rows + '</tbody></table></div>';
@@ -1545,6 +1779,833 @@ function saveNotifPref(key, value) {
     toast('Preference saved.', 'ok');
   }).catch(function(e) {
     toast('Could not save preference.', 'err');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   BROKERAGE DETAIL OVERLAY (admin)
+═══════════════════════════════════════════════ */
+var BK = {
+  brokerage: null,
+  currentSubTab: 'metrics',
+  bkCallsState: { outcome: '', calls: [] }
+};
+
+function openBrokerageOverlay(brokerageId) {
+  trackEvent('brokerage_overlay_opened', { brokerage_id: brokerageId });
+  document.getElementById('bkOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  /* reset to first sub-tab */
+  document.querySelectorAll('#bkTabbar .bk-tab').forEach(function(t){ t.classList.remove('on'); });
+  document.querySelector('#bkTabbar .bk-tab[data-bk=metrics]').classList.add('on');
+  document.querySelectorAll('#bkOverlay .bk-pg').forEach(function(p){ p.classList.remove('on'); });
+  document.getElementById('bk-metrics').classList.add('on');
+  BK.currentSubTab = 'metrics';
+
+  /* load brokerage record */
+  apiFetch('/admin/brokerages/' + encodeURIComponent(brokerageId)).then(function(data) {
+    var b = data.brokerage || data;
+    BK.brokerage = b;
+    renderBkHeader(b);
+    loadBkMetrics();
+  }).catch(function(e) {
+    BK.brokerage = { id: brokerageId, name: brokerageId };
+    renderBkHeader(BK.brokerage);
+    document.getElementById('bkMetrics').innerHTML = emptyHtml('⚠️','Could not load brokerage','Detail endpoint failed: ' + escHtml(e.message));
+  });
+}
+
+function closeBrokerageOverlay() {
+  document.getElementById('bkOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  BK.brokerage = null;
+}
+
+function renderBkHeader(b) {
+  document.getElementById('bkName').textContent = b.name || b.id;
+  document.getElementById('bkIdBadge').textContent = b.id;
+  document.getElementById('bkStatusBadge').innerHTML = statusTagHtml(b.active !== false);
+  if (b.api_key) {
+    var keyMasked = b.api_key.slice(0,8) + '••••••••' + b.api_key.slice(-4);
+    document.getElementById('bkKeyMasked').textContent = keyMasked;
+    document.getElementById('bkKeyBox').style.display = 'flex';
+    document.getElementById('bkKeyCopy').onclick = function() { copyText(b.api_key); };
+  } else {
+    document.getElementById('bkKeyBox').style.display = 'none';
+  }
+}
+
+function bkGo(el) {
+  var sub = el.dataset.bk;
+  if (BK.currentSubTab === sub) return;
+  document.querySelectorAll('#bkTabbar .bk-tab').forEach(function(t){ t.classList.remove('on'); });
+  el.classList.add('on');
+  document.querySelectorAll('#bkOverlay .bk-pg').forEach(function(p){ p.classList.remove('on'); });
+  document.getElementById('bk-' + sub).classList.add('on');
+  BK.currentSubTab = sub;
+
+  switch(sub) {
+    case 'metrics': loadBkMetrics(); break;
+    case 'agents':  loadBkAgents();  break;
+    case 'calls':   loadBkCalls();   break;
+    case 'config':  loadBkConfig();  break;
+    case 'invite':  loadBkInvite();  break;
+    case 'billing': loadBkBilling(); break;
+    case 'support': loadBkSupport(); break;
+    case 'danger':  loadBkDanger();  break;
+  }
+}
+
+/* ─── Metrics ─── */
+function loadBkMetrics() {
+  if (!BK.brokerage) return;
+  trackEvent('brokerage_metrics_viewed', { brokerage_id: BK.brokerage.id });
+  var el = document.getElementById('bkMetrics');
+  el.innerHTML = loadingHtml('Loading metrics…');
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/metrics').then(function(m) {
+    renderBkMetrics(m);
+  }).catch(function(e) {
+    el.innerHTML = emptyHtml('📊','Metrics unavailable', escHtml(e.message));
+  });
+}
+
+function renderBkMetrics(m) {
+  var el = document.getElementById('bkMetrics');
+  var objs = m.top_objections || [];
+  var maxObj = objs.length ? Math.max.apply(null, objs.map(function(o){ return o.count||0; })) : 1;
+  var bars = objs.length
+    ? objs.map(function(o) {
+        var pct = Math.round((o.count||0) / maxObj * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+          + '<div style="font-size:12px;color:var(--mu);min-width:140px;flex-shrink:0">' + escHtml(o.category||'Other') + '</div>'
+          + '<div style="flex:1;background:var(--bg3);border-radius:4px;height:8px;overflow:hidden">'
+          + '<div style="height:100%;background:var(--p);border-radius:4px;width:' + pct + '%"></div></div>'
+          + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text);min-width:28px;text-align:right">' + (o.count||0) + '</div></div>';
+      }).join('')
+    : '<p style="color:var(--mu);font-size:13px">No objections detected yet.</p>';
+
+  var dist = m.outcome_distribution || {};
+  var distRows = ['booked','transferred','not_booked','pending'].map(function(k) {
+    return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--bo)">'
+      + '<span style="color:var(--mu)">' + k.replace('_',' ') + '</span>'
+      + '<span style="font-family:\'DM Mono\',monospace">' + (dist[k] || 0) + '</span></div>';
+  }).join('');
+
+  /* First-Contact Lift demo card */
+  var baselineCalls = 18;
+  var pasCalls = m.calls_this_week || 0;
+  var trackedLift = pasCalls > 0 ? Math.round((pasCalls - baselineCalls) / Math.max(baselineCalls,1) * 100) : null;
+
+  el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+    + '<h2 class="pg-title" style="font-size:22px">Metrics</h2>'
+    + '</div>'
+    + '<p class="pg-sub">Operational KPIs for this PAS Deployment.</p>'
+    + '<div class="g4">'
+    + '<div class="stat-card"><div class="stat-label">Total Calls</div><div class="stat-val">' + (m.total_calls||0) + '</div><div class="stat-sub">all time</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Bookings</div><div class="stat-val green">' + (m.booked_calls||0) + '</div><div class="stat-sub">' + fmtPct(m.booking_rate) + ' rate</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Transfers</div><div class="stat-val purple">' + (m.transferred_calls||0) + '</div><div class="stat-sub">' + fmtPct(m.transfer_rate) + ' rate</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val">' + (m.total_leads||0) + '</div><div class="stat-sub">in memory</div></div>'
+    + '</div>'
+    + '<div class="g4" style="margin-bottom:24px">'
+    + '<div class="stat-card"><div class="stat-label">Calls Today</div><div class="stat-val">' + (m.calls_today||0) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Calls This Week</div><div class="stat-val">' + (m.calls_this_week||0) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Avg Duration</div><div class="stat-val">' + fmtDuration(m.average_call_duration||0) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Active Agents</div><div class="stat-val">' + (m.active_agents||0) + ' <span style="font-size:16px;color:var(--mu)">/ ' + (m.total_agents||0) + '</span></div></div>'
+    + '</div>'
+    + '<div class="g2" style="margin-bottom:24px">'
+    + '<div class="card"><div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px">Top Objections</div>' + bars + '</div>'
+    + '<div class="card"><div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">Outcome Distribution</div>' + distRows + '</div>'
+    + '</div>'
+    + '<div class="callout callout-purple" style="margin-bottom:0"><div class="callout-label cl-purple">First-Contact Lift</div>'
+    + '<p>Compare what this brokerage could track before PAS versus what PAS is capturing now.</p>'
+    + '<div class="lift-grid">'
+    + '<div class="lift-card"><div class="lift-val neutral">' + baselineCalls + '</div><div class="lift-label">Baseline tracked / week<br><em style="font-size:9px">demo</em></div></div>'
+    + '<div class="lift-card"><div class="lift-val" style="color:var(--p)">' + pasCalls + '</div><div class="lift-label">PAS tracked / week<br><em style="font-size:9px">live</em></div></div>'
+    + '<div class="lift-card"><div class="lift-val ' + (trackedLift != null && trackedLift >= 0 ? '' : 'neutral') + '">' + (trackedLift != null ? (trackedLift >= 0 ? '+' : '') + trackedLift + '%' : '—') + '</div><div class="lift-label">Tracked-call lift</div></div>'
+    + '<div class="lift-card"><div class="lift-val neutral">—</div><div class="lift-label">Response time<br><em style="font-size:9px">capture in Phase 3</em></div></div>'
+    + '</div></div>';
+}
+
+/* ─── Agents ─── */
+function loadBkAgents() {
+  if (!BK.brokerage) return;
+  trackEvent('brokerage_agents_viewed', { brokerage_id: BK.brokerage.id });
+  var el = document.getElementById('bkAgents');
+  el.innerHTML = loadingHtml('Loading agents…');
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/agents').then(function(d) {
+    var agents = d.agents || d.leaderboard || [];
+    if (agents.length === 0) {
+      el.innerHTML = '<h2 class="pg-title" style="font-size:22px">Agents</h2>'
+        + '<p class="pg-sub">Team routing for this PAS Deployment.</p>'
+        + emptyHtml('👥','No agents yet','Add agents so PAS knows who to route qualified leads to.',
+            '<button class="btn btn-ghost btn-sm" onclick="trackEvent(\'add_agent_clicked\');toast(\'Admin agent add UI arrives in Phase 3\',\'info\')">+ Add Agent</button>');
+      return;
+    }
+    var rows = agents.map(function(a) {
+      var statusType = a.status === 'available' ? 'green' : a.status === 'busy' ? 'amber' : 'gray';
+      return '<tr>'
+        + '<td>' + escHtml(a.name || '—') + '</td>'
+        + '<td>' + maskPhone(a.phone) + '</td>'
+        + '<td>' + escHtml(a.email || '—') + '</td>'
+        + '<td>' + tagHtml(a.status || 'offline', statusType) + '</td>'
+        + '<td>' + escHtml(a.role || 'agent') + '</td>'
+        + '<td>' + fmtPct(a.close_rate) + '</td>'
+        + '<td>' + (a.total_closed || 0) + '</td>'
+        + '</tr>';
+    }).join('');
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<h2 class="pg-title" style="font-size:22px">Agents</h2>'
+      + '<button class="btn btn-ghost btn-sm" onclick="trackEvent(\'add_agent_clicked\');toast(\'Admin agent add UI arrives in Phase 3\',\'info\')">+ Add Agent</button>'
+      + '</div>'
+      + '<p class="pg-sub">' + agents.length + ' agent' + (agents.length!==1?'s':'') + ' configured.</p>'
+      + '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
+      + '<thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th>Role</th><th>Close Rate</th><th>Closed</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+  }).catch(function(e) {
+    el.innerHTML = '<h2 class="pg-title" style="font-size:22px">Agents</h2>'
+      + emptyHtml('👥','Could not load agents', escHtml(e.message));
+  });
+}
+
+/* ─── Calls (per-brokerage) ─── */
+function loadBkCalls() {
+  if (!BK.brokerage) return;
+  trackEvent('brokerage_calls_viewed', { brokerage_id: BK.brokerage.id });
+  BK.bkCallsState.outcome = '';
+  renderBkCallsShell();
+  fetchBkCalls();
+}
+
+function renderBkCallsShell() {
+  var outcomes = [
+    ['',            'All'],
+    ['booked',      'Booked'],
+    ['transferred', 'Transferred'],
+    ['not_booked',  'Not booked'],
+    ['failed',      'Failed']
+  ];
+  var pills = outcomes.map(function(o) {
+    var on = BK.bkCallsState.outcome === o[0] ? ' on' : '';
+    return '<button class="filter-pill' + on + '" onclick="setBkCallsOutcome(\'' + o[0] + '\')">' + o[1] + '</button>';
+  }).join('');
+
+  document.getElementById('bkCalls').innerHTML = '<h2 class="pg-title" style="font-size:22px">Calls</h2>'
+    + '<p class="pg-sub">Recent call history for this PAS Deployment.</p>'
+    + '<div class="filter-pills">' + pills + '</div>'
+    + '<div id="bkCallsTable">' + loadingHtml('Loading calls…') + '</div>';
+}
+
+function setBkCallsOutcome(outcome) {
+  BK.bkCallsState.outcome = outcome;
+  renderBkCallsShell();
+  fetchBkCalls();
+}
+
+function fetchBkCalls() {
+  if (!BK.brokerage) return;
+  var path = '/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/calls?limit=50&offset=0';
+  if (BK.bkCallsState.outcome) path += '&outcome=' + encodeURIComponent(BK.bkCallsState.outcome);
+
+  apiFetch(path).then(function(d) {
+    BK.bkCallsState.calls = d.calls || [];
+    var tbl = document.getElementById('bkCallsTable');
+    if (!tbl) return;
+    if (BK.bkCallsState.calls.length === 0) {
+      tbl.innerHTML = emptyHtml('📞','No calls','No calls match the current filter.');
+      return;
+    }
+    var rows = BK.bkCallsState.calls.map(function(c) {
+      return '<tr onclick="openAdminCallDrawer(\'' + escAttr(c.id) + '\')">'
+        + '<td style="font-family:\'DM Mono\',monospace;font-size:11px">' + escHtml(String(c.id||'').slice(0,8)) + '…</td>'
+        + '<td>' + maskPhone(c.phone_number) + '</td>'
+        + '<td>' + tagHtml(c.source||'inbound','gray') + '</td>'
+        + '<td>' + outcomeTagHtml(c.outcome) + '</td>'
+        + '<td>' + fmtDuration(c.duration_seconds) + '</td>'
+        + '<td>' + fmtDate(c.start_time) + '</td>'
+        + '<td>' + (c.outcome==='booked' ? tagHtml('Yes','green') : tagHtml('No','gray')) + '</td>'
+        + '<td>' + (c.outcome==='transferred' ? tagHtml('Yes','blue') : tagHtml('No','gray')) + '</td>'
+        + '</tr>';
+    }).join('');
+    tbl.innerHTML = '<div class="tbl-wrap" style="overflow-x:auto"><table class="tbl">'
+      + '<thead><tr><th>ID</th><th>Phone</th><th>Source</th><th>Outcome</th><th>Duration</th><th>Date</th><th>Booked</th><th>Transferred</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+  }).catch(function(e) {
+    var tbl = document.getElementById('bkCallsTable');
+    if (tbl) tbl.innerHTML = emptyHtml('📞','Could not load calls', escHtml(e.message));
+  });
+}
+
+/* ─── Config ─── */
+function loadBkConfig() {
+  if (!BK.brokerage) return;
+  trackEvent('brokerage_config_viewed', { brokerage_id: BK.brokerage.id });
+  var el = document.getElementById('bkConfig');
+  el.innerHTML = loadingHtml('Loading config…');
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id)).then(function(d) {
+    var b = d.brokerage || d;
+    BK.brokerage = b;
+    renderBkConfig(b);
+  }).catch(function(e) {
+    el.innerHTML = emptyHtml('⚙️','Could not load config', escHtml(e.message));
+  });
+}
+
+function renderBkConfig(b) {
+  var tones = ['professional','friendly','formal'];
+  var afterHours = ['callback','voicemail','none'];
+
+  var toneOpts = tones.map(function(t) {
+    var sel = (b.tone || 'professional') === t ? ' selected' : '';
+    return '<option value="' + t + '"' + sel + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>';
+  }).join('');
+  var ahOpts = afterHours.map(function(t) {
+    var sel = (b.after_hours_behavior || 'callback') === t ? ' selected' : '';
+    return '<option value="' + t + '"' + sel + '>' + t + '</option>';
+  }).join('');
+
+  document.getElementById('bkConfig').innerHTML = '<h2 class="pg-title" style="font-size:22px">Config</h2>'
+    + '<p class="pg-sub">Editable configuration for this PAS Deployment.</p>'
+    + '<div class="card">'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Brokerage Name</label><input class="form-input" id="cfgName" value="' + escAttr(b.name||'') + '"></div>'
+    + '<div class="fg"><label>Agent Name</label><input class="form-input" id="cfgAgentName" value="' + escAttr(b.agent_name||'Alex') + '"></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Agent Phone</label><input class="form-input" id="cfgAgentPhone" value="' + escAttr(b.agent_phone||'') + '"></div>'
+    + '<div class="fg"><label>Twilio Phone</label><input class="form-input" id="cfgTwilio" value="' + escAttr(b.twilio_phone||'') + '"></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Tone</label><select class="form-input form-select" id="cfgTone">' + toneOpts + '</select></div>'
+    + '<div class="fg"><label>After-Hours Behavior</label><select class="form-input form-select" id="cfgAfterHours">' + ahOpts + '</select></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="fg"><label>Max Objection Attempts</label><input class="form-input" id="cfgMaxObj" type="number" min="0" max="10" value="' + (b.max_objection_attempts != null ? b.max_objection_attempts : 2) + '"></div>'
+    + '<div class="fg"><label>Notification Email</label><input class="form-input" id="cfgEmail" value="' + escAttr(b.owner_email||'') + '" placeholder="owner@brokerage.com"></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:24px;flex-wrap:wrap;margin:6px 0 18px 0">'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:13px">'
+    + '<span class="toggle"><input type="checkbox" id="cfgBooking" ' + (b.booking_enabled !== false ? 'checked' : '') + '><span class="toggle-slider"></span></span>'
+    + '<span>Booking enabled</span></label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:13px">'
+    + '<span class="toggle"><input type="checkbox" id="cfgTransfer" ' + (b.transfer_enabled !== false ? 'checked' : '') + '><span class="toggle-slider"></span></span>'
+    + '<span>Transfer enabled</span></label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:13px">'
+    + '<span class="toggle"><input type="checkbox" id="cfgAi" ' + (b.ai_disclosure_enabled !== false ? 'checked' : '') + '><span class="toggle-slider"></span></span>'
+    + '<span>AI disclosure</span></label>'
+    + '</div>'
+    + '<button class="btn btn-primary" id="cfgSaveBtn" onclick="saveBkConfig()">Save Config</button>'
+    + '</div>';
+}
+
+function saveBkConfig() {
+  if (!BK.brokerage) return;
+  trackEvent('brokerage_config_save_attempted', { brokerage_id: BK.brokerage.id });
+  var btn = document.getElementById('cfgSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  var maxObjVal = parseInt(document.getElementById('cfgMaxObj').value, 10);
+  var body = {
+    name:                   document.getElementById('cfgName').value.trim(),
+    agent_name:             document.getElementById('cfgAgentName').value.trim(),
+    agent_phone:            document.getElementById('cfgAgentPhone').value.trim(),
+    twilio_phone:           document.getElementById('cfgTwilio').value.trim(),
+    tone:                   document.getElementById('cfgTone').value,
+    after_hours_behavior:   document.getElementById('cfgAfterHours').value,
+    max_objection_attempts: isNaN(maxObjVal) ? 2 : maxObjVal,
+    owner_email:            document.getElementById('cfgEmail').value.trim(),
+    booking_enabled:        document.getElementById('cfgBooking').checked,
+    transfer_enabled:       document.getElementById('cfgTransfer').checked,
+    ai_disclosure_enabled:  document.getElementById('cfgAi').checked
+  };
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id), {
+    method: 'PATCH',
+    body: JSON.stringify(body)
+  }).then(function() {
+    trackEvent('brokerage_config_saved', { brokerage_id: BK.brokerage.id });
+    toast('Config saved.', 'ok');
+    /* invalidate brokerages cache so list reflects rename */
+    S.loaded['a-brokerages'] = false;
+  }).catch(function(e) {
+    trackEvent('brokerage_config_save_failed', { brokerage_id: BK.brokerage.id, error: e.message });
+    toast('Save failed: ' + e.message, 'err');
+  }).then(function() {
+    btn.disabled = false; btn.textContent = 'Save Config';
+  });
+}
+
+/* ─── Invite ─── */
+function loadBkInvite() {
+  if (!BK.brokerage) return;
+  trackEvent('invite_viewed', { brokerage_id: BK.brokerage.id });
+  var el = document.getElementById('bkInvite');
+  el.innerHTML = loadingHtml('Loading invite status…');
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/invite').then(function(d) {
+    renderBkInvite(d, false);
+  }).catch(function() {
+    /* 404 likely means no invite key exists — friendly empty state, not an error */
+    renderBkInvite({}, true);
+  });
+}
+
+function renderBkInvite(data, missing) {
+  var el = document.getElementById('bkInvite');
+  var key = data.invite_key || data.key || '';
+  var used = data.used || data.consumed || false;
+  var expiresAt = data.expires_at || data.expiry || null;
+
+  var keyBlock = missing
+    ? '<div class="callout callout-amber"><div class="callout-label cl-amber">No invite key</div><p>Generate a one-time invite key to onboard the brokerage owner without sharing the API key directly.</p></div>'
+    : key
+      ? '<div class="callout callout-green" style="margin-bottom:14px"><div class="callout-label cl-green">Active Invite Key</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;margin:8px 0;word-break:break-all;background:rgba(255,255,255,.7);padding:10px;border-radius:6px;border:1px solid rgba(22,163,74,.2)">' + escHtml(key) + '</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="copyInvite(\'' + escAttr(key) + '\')">Copy</button>'
+        + '<button class="btn btn-danger btn-sm" onclick="revokeInvite()">Revoke</button></div>'
+        + '<div style="font-size:11px;color:var(--mu);margin-top:10px">Used: <strong>' + (used ? 'Yes' : 'No') + '</strong>' + (expiresAt ? ' · Expires: <strong>' + fmtDate(expiresAt) + '</strong>' : '') + '</div></div>'
+      : '<div class="callout callout-amber"><div class="callout-label cl-amber">No invite key</div><p>No active invite key for this brokerage.</p></div>';
+
+  el.innerHTML = '<h2 class="pg-title" style="font-size:22px">Invite</h2>'
+    + '<p class="pg-sub">Generate or revoke a one-time invite key for the brokerage owner.</p>'
+    + keyBlock
+    + '<button class="btn btn-primary" onclick="generateInvite()">' + (key ? 'Re-generate Invite Key' : 'Generate Invite Key') + '</button>';
+}
+
+function copyInvite(key) {
+  trackEvent('invite_key_copied', { brokerage_id: BK.brokerage && BK.brokerage.id });
+  copyText(key);
+}
+
+function generateInvite() {
+  if (!BK.brokerage) return;
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/invite', { method: 'POST' })
+    .then(function() {
+      trackEvent('invite_generated', { brokerage_id: BK.brokerage.id });
+      toast('Invite key generated.', 'ok');
+      loadBkInvite();
+    })
+    .catch(function(e) { toast('Generate failed: ' + e.message, 'err'); });
+}
+
+function revokeInvite() {
+  if (!BK.brokerage) return;
+  if (!confirm('Revoke the current invite key? It will stop working immediately.')) return;
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/invite', { method: 'DELETE' })
+    .then(function() {
+      trackEvent('invite_revoked', { brokerage_id: BK.brokerage.id });
+      toast('Invite key revoked.', 'ok');
+      loadBkInvite();
+    })
+    .catch(function(e) { toast('Revoke failed: ' + e.message, 'err'); });
+}
+
+/* ─── Billing (demo / static) ─── */
+function loadBkBilling() {
+  if (!BK.brokerage) return;
+  trackEvent('admin_billing_viewed', { brokerage_id: BK.brokerage.id });
+  document.getElementById('bkBilling').innerHTML = '<h2 class="pg-title" style="font-size:22px">Billing</h2>'
+    + '<p class="pg-sub">PAS Credits and plan summary for this brokerage.</p>'
+    + '<div class="callout callout-green" style="margin-bottom:20px"><div class="callout-label cl-green">Early Access</div>'
+    + '<p>Billing is currently managed manually by ORVN during early access.</p></div>'
+    + '<div class="g3" style="margin-bottom:20px">'
+    + '<div class="stat-card"><div class="stat-label">Current Plan</div><div class="stat-val" style="font-size:22px">Growth</div><div class="stat-sub">Trial / Early Access</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Billing Status</div><div class="stat-val" style="font-size:22px">Trial</div><div class="stat-sub">no charges yet</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Setup Fee</div><div class="stat-val" style="font-size:22px">Pending</div><div class="stat-sub">demo</div></div>'
+    + '</div>'
+    + '<div class="g3" style="margin-bottom:20px">'
+    + '<div class="stat-card"><div class="stat-label">Monthly Subscription</div><div class="stat-val">$1,500</div><div class="stat-sub">demo price</div></div>'
+    + '<div class="stat-card"><div class="stat-label">PAS Credits Included</div><div class="stat-val purple">4,000</div><div class="stat-sub">per period</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Credits Used</div><div class="stat-val">0</div><div class="stat-sub">remaining: 4,000</div></div>'
+    + '</div>'
+    + '<div class="card">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:6px">Internal Notes</div>'
+    + '<p style="font-size:13px;color:var(--mu);margin-bottom:12px">Internal notes are demo placeholders. TODO: connect to billing_accounts backend.</p>'
+    + '<textarea class="form-input" rows="3" placeholder="Internal billing notes…" style="font-family:\'DM Sans\',sans-serif;resize:vertical"></textarea>'
+    + '<div style="margin-top:10px;font-size:11px;color:var(--mu)">Next billing date: <strong>—</strong> · Last invoice: <strong>—</strong></div>'
+    + '</div>';
+}
+
+/* ─── Support (demo / static) ─── */
+function loadBkSupport() {
+  if (!BK.brokerage) return;
+  trackEvent('admin_support_viewed', { brokerage_id: BK.brokerage.id });
+  var demoTickets = [
+    { subject: 'Transfer did not reach agent', priority: 'urgent', status: 'in_review', created: '2026-04-26' },
+    { subject: 'Update greeting script',       priority: 'normal', status: 'open',      created: '2026-04-22' },
+    { subject: 'Billing question about credits', priority: 'normal', status: 'open',    created: '2026-04-20' },
+    { subject: 'Call transcript looks incomplete', priority: 'low', status: 'resolved', created: '2026-04-12' }
+  ];
+  var prioColor = { urgent:'red', normal:'amber', low:'gray' };
+  var statColor = { open:'amber', in_review:'blue', resolved:'green' };
+
+  var rows = demoTickets.map(function(t, i) {
+    var actions = t.status === 'resolved'
+      ? '<button class="btn btn-ghost btn-xs" onclick="toast(\'Reopen wired in Phase 3\',\'info\')">Reopen</button>'
+      : '<button class="btn btn-ghost btn-xs" onclick="toast(\'In-review wired in Phase 3\',\'info\')">In Review</button>'
+        + ' <button class="btn btn-ghost btn-xs" onclick="toast(\'Resolve wired in Phase 3\',\'info\')">Resolve</button>';
+    return '<tr>'
+      + '<td>' + escHtml(t.subject) + '</td>'
+      + '<td>' + tagHtml(t.priority, prioColor[t.priority]) + '</td>'
+      + '<td>' + tagHtml(t.status.replace('_',' '), statColor[t.status]) + '</td>'
+      + '<td>' + fmtDate(t.created) + '</td>'
+      + '<td>' + actions + '</td>'
+      + '</tr>';
+  }).join('');
+
+  document.getElementById('bkSupport').innerHTML = '<h2 class="pg-title" style="font-size:22px">Support</h2>'
+    + '<p class="pg-sub">Demo support tickets for this brokerage. Connects to support_tickets backend in Phase 3.</p>'
+    + '<div class="callout callout-amber" style="margin-bottom:20px"><div class="callout-label cl-amber">Demo data</div>'
+    + '<p>This list shows static demo tickets. Actions are placeholders — no backend ticket store is wired yet.</p></div>'
+    + '<div class="tbl-wrap" style="overflow-x:auto;margin-bottom:18px"><table class="tbl">'
+    + '<thead><tr><th>Subject</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table></div>'
+    + '<div class="card">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">Add Internal Note</div>'
+    + '<textarea class="form-input" rows="3" placeholder="Internal note (demo only)…" style="font-family:\'DM Sans\',sans-serif;resize:vertical"></textarea>'
+    + '<button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="toast(\'Internal notes wired in Phase 3\',\'info\')">Save Note</button>'
+    + '</div>';
+}
+
+/* ─── Danger Zone ─── */
+function loadBkDanger() {
+  if (!BK.brokerage) return;
+  trackEvent('danger_zone_viewed', { brokerage_id: BK.brokerage.id });
+  var b = BK.brokerage;
+  var isActive = b.active !== false;
+
+  document.getElementById('bkDanger').innerHTML = '<h2 class="pg-title" style="font-size:22px">Danger Zone</h2>'
+    + '<p class="pg-sub">Irreversible or disruptive actions. Confirm before proceeding.</p>'
+    + '<div class="danger-card">'
+    + '<div class="danger-title">' + (isActive ? 'Pause' : 'Reactivate') + ' Brokerage</div>'
+    + '<div class="danger-sub">' + (isActive
+        ? 'Stops PAS from handling new calls for this brokerage. Existing data is preserved. Client can still log in.'
+        : 'Resumes call handling for this brokerage. PAS will start answering inbound leads again.')
+      + '</div>'
+    + '<button class="btn ' + (isActive ? 'btn-danger' : 'btn-primary') + ' btn-sm" onclick="dangerToggleActive(' + (!isActive) + ')">'
+    + (isActive ? 'Pause Brokerage' : 'Reactivate Brokerage') + '</button>'
+    + '</div>'
+    + '<div class="danger-card">'
+    + '<div class="danger-title">Rotate API Key</div>'
+    + '<div class="danger-sub">Generates a new API key. The current key stops working immediately. Make sure the client is ready to update integrations.</div>'
+    + '<button class="btn btn-danger btn-sm" onclick="dangerRotateKey()">Rotate API Key</button>'
+    + '</div>'
+    + '<div class="danger-card">'
+    + '<div class="danger-title">Reset Client Access (placeholder)</div>'
+    + '<div class="danger-sub">Force all client sessions to log in again with a new key. Backend endpoint not yet wired.</div>'
+    + '<button class="btn btn-danger btn-sm" disabled>Reset Client Access</button>'
+    + '</div>'
+    + '<div class="danger-card">'
+    + '<div class="danger-title">Revoke API Key (placeholder)</div>'
+    + '<div class="danger-sub">Permanently revoke the API key without rotating. Backend endpoint not yet wired.</div>'
+    + '<button class="btn btn-danger btn-sm" disabled>Revoke Key</button>'
+    + '</div>';
+}
+
+function dangerToggleActive(activate) {
+  if (!BK.brokerage) return;
+  trackEvent('danger_action_attempted', { brokerage_id: BK.brokerage.id, action: activate ? 'reactivate' : 'pause' });
+  var verb = activate ? 'reactivate' : 'pause';
+  if (!confirm((activate ? 'Reactivate' : 'Pause') + ' "' + (BK.brokerage.name || BK.brokerage.id) + '"? '
+    + (activate ? 'PAS will resume answering inbound calls.' : 'PAS will stop handling new calls.'))) return;
+
+  var path = '/admin/brokerages/' + encodeURIComponent(BK.brokerage.id);
+  var opts = activate
+    ? { method: 'POST',   body: undefined, headers: undefined }
+    : { method: 'DELETE', body: undefined, headers: undefined };
+  if (activate) path += '/reactivate';
+
+  apiFetch(path, opts).then(function() {
+    toast('Brokerage ' + (activate ? 'reactivated' : 'paused') + '.', 'ok');
+    BK.brokerage.active = activate;
+    renderBkHeader(BK.brokerage);
+    loadBkDanger();
+    S.loaded['a-brokerages'] = false;
+  }).catch(function(e) {
+    toast('Action failed: ' + e.message, 'err');
+  });
+}
+
+function dangerRotateKey() {
+  if (!BK.brokerage) return;
+  trackEvent('danger_action_attempted', { brokerage_id: BK.brokerage.id, action: 'rotate_key' });
+  if (!confirm('Rotate API key for "' + (BK.brokerage.name || BK.brokerage.id) + '"?\n\nThe current key stops working immediately. Update any integrations before continuing.')) return;
+
+  apiFetch('/admin/brokerages/' + encodeURIComponent(BK.brokerage.id) + '/rotate-key', { method: 'POST' })
+    .then(function(d) {
+      var newKey = d.api_key || '(no key returned)';
+      BK.brokerage.api_key = newKey;
+      renderBkHeader(BK.brokerage);
+      toast('Key rotated. Copy and share immediately.', 'ok');
+      alert('NEW API KEY:\n\n' + newKey + '\n\nThis is shown only once. Copy it now.');
+      S.loaded['a-brokerages'] = false;
+    })
+    .catch(function(e) { toast('Rotation failed: ' + e.message, 'err'); });
+}
+
+/* ═══════════════════════════════════════════════
+   SHARED CALL DETAIL DRAWER
+═══════════════════════════════════════════════ */
+function openCallDrawer() {
+  document.getElementById('callDrawerOverlay').classList.add('open');
+  document.getElementById('callDrawer').classList.add('open');
+  trackEvent('call_drawer_opened');
+}
+
+function closeCallDrawer() {
+  document.getElementById('callDrawerOverlay').classList.remove('open');
+  document.getElementById('callDrawer').classList.remove('open');
+  trackEvent('call_drawer_closed');
+}
+
+function openClientCallDrawer(callId) {
+  trackEvent('view_call_detail_clicked', { source: 'client', call_id: callId });
+  trackEvent('client_call_detail_viewed', { call_id: callId });
+  openCallDrawer();
+  document.getElementById('callDrawerBody').innerHTML = loadingHtml('Loading call…');
+  apiFetch('/portal/calls/' + encodeURIComponent(callId)).then(function(d) {
+    renderCallDrawer(d.call || d, 'client');
+  }).catch(function(e) {
+    document.getElementById('callDrawerBody').innerHTML = emptyHtml('📞','Could not load call', escHtml(e.message));
+  });
+}
+
+function openAdminCallDrawer(callId) {
+  trackEvent('view_call_detail_clicked', { source: 'admin', call_id: callId });
+  openCallDrawer();
+  document.getElementById('callDrawerBody').innerHTML = loadingHtml('Loading call…');
+  apiFetch('/admin/calls/' + encodeURIComponent(callId)).then(function(d) {
+    renderCallDrawer(d.call || d, 'admin');
+  }).catch(function(e) {
+    document.getElementById('callDrawerBody').innerHTML = emptyHtml('📞','Could not load call', escHtml(e.message));
+  });
+}
+
+function renderCallDrawer(call, source) {
+  if (!call || typeof call !== 'object') {
+    document.getElementById('callDrawerBody').innerHTML = emptyHtml('📞','No data','Full call detail unavailable for this record.');
+    return;
+  }
+  var meta = call.metadata || {};
+  var leadData = meta.extracted_lead_data || meta.lead_data || {};
+  var transcript = call.transcript || meta.transcript || [];
+  var objections = meta.objections_detected || meta.objections || [];
+
+  /* normalize transcript */
+  var transcriptHtml;
+  if (Array.isArray(transcript) && transcript.length > 0) {
+    transcriptHtml = transcript.map(function(t) {
+      var rawWho = (t.role || t.speaker || t.who || '').toLowerCase();
+      var isAlex = rawWho === 'pas' || rawWho === 'alex' || rawWho === 'assistant' || rawWho === 'agent' || rawWho === 'bot';
+      var label = isAlex ? 'Alex' : 'Lead';
+      var cls   = isAlex ? 'alex' : 'lead';
+      var text  = t.text || t.content || t.message || '';
+      return '<div class="tx-line ' + cls + '"><span class="tx-who">' + label + '</span><div class="tx-text">' + escHtml(text) + '</div></div>';
+    }).join('');
+  } else if (typeof transcript === 'string' && transcript.trim()) {
+    transcriptHtml = '<div class="tx-line"><div class="tx-text" style="white-space:pre-wrap">' + escHtml(transcript) + '</div></div>';
+  } else {
+    transcriptHtml = '<p style="color:var(--mu);font-size:13px;text-align:center;padding:20px 0">No transcript captured for this call yet.</p>';
+  }
+
+  /* lead data rows */
+  var leadRows = '';
+  if (leadData && typeof leadData === 'object' && Object.keys(leadData).length > 0) {
+    leadRows = Object.keys(leadData).filter(function(k){ return leadData[k] != null && leadData[k] !== ''; }).map(function(k) {
+      return '<div class="dr-row"><span class="dr-key">' + escHtml(k) + '</span><span class="dr-val">' + escHtml(String(leadData[k])) + '</span></div>';
+    }).join('');
+  }
+  var leadSection = leadRows
+    ? '<div class="drawer-section"><span class="drawer-sec-label">Extracted Lead Data</span>' + leadRows + '</div>'
+    : '';
+
+  /* objections */
+  var objHtml = '';
+  if (Array.isArray(objections) && objections.length > 0) {
+    objHtml = '<div class="drawer-section"><span class="drawer-sec-label">Objections Detected</span>'
+      + objections.map(function(o) {
+          var label = o.category || o.objection || 'Other';
+          var count = o.count != null ? o.count : 1;
+          return '<div class="dr-row"><span class="dr-key">' + escHtml(label) + '</span><span class="dr-val">×' + count + '</span></div>';
+        }).join('')
+      + '</div>';
+  }
+
+  /* metadata pretty print */
+  var metaHtml = '';
+  if (meta && Object.keys(meta).length > 0) {
+    var prettyMeta;
+    try { prettyMeta = JSON.stringify(meta, null, 2); } catch(_) { prettyMeta = '(unable to serialize)'; }
+    metaHtml = '<div class="drawer-section"><span class="drawer-sec-label">Metadata (raw)</span>'
+      + '<details><summary style="cursor:pointer;font-size:12px;color:var(--mu);margin-bottom:8px">Show JSON</summary>'
+      + '<pre class="metadata-pre">' + escHtml(prettyMeta) + '</pre></details></div>';
+  }
+
+  document.getElementById('callDrawerBody').innerHTML =
+      '<div class="drawer-section">'
+    + '<div class="dr-row"><span class="dr-key">Call ID</span><span class="dr-val">' + escHtml(String(call.id||'—')) + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Phone</span><span class="dr-val">' + maskPhone(call.phone_number) + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Source</span><span class="dr-val">' + escHtml(call.source||'—') + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Outcome</span><span class="dr-val">' + outcomeTagHtml(call.outcome) + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Status</span><span class="dr-val">' + escHtml(call.call_status||'—') + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Duration</span><span class="dr-val">' + fmtDuration(call.duration_seconds) + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Started</span><span class="dr-val">' + fmtDate(call.start_time) + '</span></div>'
+    + (call.email ? '<div class="dr-row"><span class="dr-key">Email</span><span class="dr-val">' + escHtml(call.email) + '</span></div>' : '')
+    + (call.assigned_agent ? '<div class="dr-row"><span class="dr-key">Agent</span><span class="dr-val">' + escHtml(call.assigned_agent) + '</span></div>' : '')
+    + '</div>'
+    + (call.summary
+        ? '<div class="drawer-section"><span class="drawer-sec-label">Summary</span><p style="font-size:13px;line-height:1.6;color:var(--text)">' + escHtml(call.summary) + '</p></div>'
+        : '')
+    + leadSection
+    + objHtml
+    + '<div class="drawer-section"><span class="drawer-sec-label">Transcript</span><div class="transcript-box">' + transcriptHtml + '</div></div>'
+    + metaHtml;
+}
+
+/* ═══════════════════════════════════════════════
+   CLIENT — LEAD DETAIL DRAWER + STATUS UPDATE
+═══════════════════════════════════════════════ */
+/* UI label → backend value (backend uses nurture / do_not_call) */
+var LEAD_STATUSES = [
+  ['new',             'New'],
+  ['qualified',       'Qualified'],
+  ['booked',          'Booked'],
+  ['transferred',     'Transferred'],
+  ['nurture',         'Needs follow-up'],
+  ['not_ready',       'Not ready'],
+  ['not_interested',  'Not interested'],
+  ['do_not_call',     'Do not contact'],
+  ['closed',          'Closed']
+];
+
+var LEAD_DR = { leadId: null };
+
+function openLeadDrawer(leadId) {
+  LEAD_DR.leadId = leadId;
+  trackEvent('lead_drawer_opened', { lead_id: leadId });
+  trackEvent('view_lead_detail_clicked', { lead_id: leadId });
+
+  document.getElementById('leadDrawerOverlay').classList.add('open');
+  document.getElementById('leadDrawer').classList.add('open');
+  document.getElementById('leadDrawerBody').innerHTML = loadingHtml('Loading lead…');
+
+  apiFetch('/portal/leads/' + encodeURIComponent(leadId)).then(function(d) {
+    renderLeadDrawer(d.lead || d, d.calls || []);
+  }).catch(function(e) {
+    document.getElementById('leadDrawerBody').innerHTML = emptyHtml('👤','Could not load lead', escHtml(e.message));
+  });
+}
+
+function closeLeadDrawer() {
+  document.getElementById('leadDrawerOverlay').classList.remove('open');
+  document.getElementById('leadDrawer').classList.remove('open');
+  LEAD_DR.leadId = null;
+}
+
+function renderLeadDrawer(lead, calls) {
+  if (!lead || typeof lead !== 'object') {
+    document.getElementById('leadDrawerBody').innerHTML = emptyHtml('👤','No data','Lead detail not available.');
+    return;
+  }
+
+  var currentStatus = lead.status || 'new';
+  var statusOpts = LEAD_STATUSES.map(function(p) {
+    var sel = p[0] === currentStatus ? ' selected' : '';
+    return '<option value="' + p[0] + '"' + sel + '>' + p[1] + '</option>';
+  }).join('');
+
+  var preferences = lead.preferences || lead.extracted_preferences || null;
+  var prefsRows = '';
+  if (preferences && typeof preferences === 'object') {
+    prefsRows = Object.keys(preferences).filter(function(k){ return preferences[k] != null && preferences[k] !== ''; }).map(function(k) {
+      var v = preferences[k];
+      if (typeof v === 'object') { try { v = JSON.stringify(v); } catch(_) { v = String(v); } }
+      return '<div class="dr-row"><span class="dr-key">' + escHtml(k) + '</span><span class="dr-val">' + escHtml(String(v)) + '</span></div>';
+    }).join('');
+  }
+  var prefsSection = prefsRows
+    ? '<div class="drawer-section"><span class="drawer-sec-label">Extracted Preferences</span>' + prefsRows + '</div>'
+    : '';
+
+  var callsSection = '';
+  if (Array.isArray(calls) && calls.length > 0) {
+    callsSection = '<div class="drawer-section"><span class="drawer-sec-label">Call History (' + calls.length + ')</span>'
+      + calls.map(function(c) {
+          return '<div class="dr-row" style="cursor:pointer" onclick="openClientCallDrawer(\'' + escAttr(c.id) + '\')">'
+            + '<span class="dr-key">' + fmtDate(c.start_time) + '</span>'
+            + '<span class="dr-val">' + outcomeTagHtml(c.outcome) + ' · ' + fmtDuration(c.duration_seconds) + '</span></div>';
+        }).join('')
+      + '</div>';
+  }
+
+  var bookings = lead.bookings || lead.booking_history;
+  var bookingsSection = '';
+  if (Array.isArray(bookings) && bookings.length > 0) {
+    bookingsSection = '<div class="drawer-section"><span class="drawer-sec-label">Booking History</span>'
+      + bookings.map(function(b) {
+          return '<div class="dr-row"><span class="dr-key">' + fmtDate(b.scheduled_at || b.start_time) + '</span><span class="dr-val">' + escHtml(b.status||'scheduled') + '</span></div>';
+        }).join('')
+      + '</div>';
+  }
+
+  document.getElementById('leadDrawerBody').innerHTML =
+      '<div class="drawer-section">'
+    + '<div class="dr-row"><span class="dr-key">Name</span><span class="dr-val">' + escHtml(lead.name||'Unknown') + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Phone</span><span class="dr-val">' + maskPhone(lead.phone_number) + '</span></div>'
+    + (lead.email ? '<div class="dr-row"><span class="dr-key">Email</span><span class="dr-val">' + escHtml(lead.email) + '</span></div>' : '')
+    + (lead.intent ? '<div class="dr-row"><span class="dr-key">Intent</span><span class="dr-val">' + tagHtml(lead.intent,'purple') + '</span></div>' : '')
+    + (lead.budget ? '<div class="dr-row"><span class="dr-key">Budget</span><span class="dr-val">' + escHtml(lead.budget) + '</span></div>' : '')
+    + (lead.timeline ? '<div class="dr-row"><span class="dr-key">Timeline</span><span class="dr-val">' + escHtml(lead.timeline) + '</span></div>' : '')
+    + (lead.assigned_agent ? '<div class="dr-row"><span class="dr-key">Assigned Agent</span><span class="dr-val">' + escHtml(lead.assigned_agent) + '</span></div>' : '')
+    + '<div class="dr-row"><span class="dr-key">Total Calls</span><span class="dr-val">' + (lead.total_calls||0) + '</span></div>'
+    + '<div class="dr-row"><span class="dr-key">Last Contact</span><span class="dr-val">' + fmtDate(lead.last_call_at || lead.updated_at) + '</span></div>'
+    + (lead.last_booked_at ? '<div class="dr-row"><span class="dr-key">Last Booking</span><span class="dr-val">' + fmtDate(lead.last_booked_at) + '</span></div>' : '')
+    + '</div>'
+
+    + '<div class="drawer-section"><span class="drawer-sec-label">Status</span>'
+    + '<div style="display:flex;gap:8px;align-items:center">'
+    + '<select class="form-input form-select" id="leadStatusSelect" onchange="updateLeadStatus(this.value)" data-prev="' + escAttr(currentStatus) + '" style="flex:1">'
+    + statusOpts + '</select>'
+    + '<span id="leadStatusSpin" style="display:none;font-family:\'DM Mono\',monospace;font-size:10px;color:var(--mu)">…</span>'
+    + '</div>'
+    + (lead.next_step ? '<div style="font-size:12px;color:var(--mu);margin-top:8px">Next step: <strong style="color:var(--text)">' + escHtml(lead.next_step) + '</strong></div>' : '')
+    + '</div>'
+
+    + (lead.summary ? '<div class="drawer-section"><span class="drawer-sec-label">Summary</span><p style="font-size:13px;line-height:1.6;color:var(--text)">' + escHtml(lead.summary) + '</p></div>' : '')
+    + prefsSection
+    + callsSection
+    + bookingsSection;
+}
+
+function updateLeadStatus(newStatus) {
+  if (!LEAD_DR.leadId) return;
+  trackEvent('lead_status_update_attempted', { lead_id: LEAD_DR.leadId, status: newStatus });
+  trackEvent('status_update_attempted', { lead_id: LEAD_DR.leadId, status: newStatus });
+  var sel = document.getElementById('leadStatusSelect');
+  var prev = sel.dataset.prev;
+  var spin = document.getElementById('leadStatusSpin');
+  sel.disabled = true;
+  if (spin) spin.style.display = 'inline';
+
+  apiFetch('/portal/leads/' + encodeURIComponent(LEAD_DR.leadId) + '/status', {
+    method: 'PATCH',
+    body: JSON.stringify({ status: newStatus })
+  }).then(function() {
+    trackEvent('lead_status_updated', { lead_id: LEAD_DR.leadId, status: newStatus });
+    sel.dataset.prev = newStatus;
+    toast('Lead status updated.', 'ok');
+    /* refresh leads table if currently open */
+    if (S.currentTab === 'c-leads') loadClientLeads();
+  }).catch(function(e) {
+    trackEvent('lead_status_update_failed', { lead_id: LEAD_DR.leadId, error: e.message });
+    toast('Update failed: ' + e.message, 'err');
+    sel.value = prev;
+  }).then(function() {
+    sel.disabled = false;
+    if (spin) spin.style.display = 'none';
   });
 }
 
