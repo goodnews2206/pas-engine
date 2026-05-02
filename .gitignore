@@ -9,3 +9,9 @@ dist/
 build/
 .pytest_cache/
 .DS_Store
+
+# Runtime logs — NEVER commit. Caused PAS125 leak of brokerage api_keys
+# via httpx INFO request-URL logging. Files stay on disk locally.
+server_err.log
+server_out.log
+*.log

@@ -46,7 +46,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.db.brokerage_store import get_brokerage_by_id
@@ -55,6 +55,7 @@ from app.db.event_logger import log_event_bg
 from app.db.lead_memory import upsert_lead, mark_booked
 from app.engine.state_machine import PASEngine
 from app.services.summary.call_summary import generate_call_summary
+from app.utils.rate_limiter import client_ip, rate_limit
 
 router = APIRouter()
 logger = logging.getLogger("pas.simulate")
@@ -82,7 +83,7 @@ class SimulateRequest(BaseModel):
 
 
 @router.post("/simulate-call")
-async def simulate_call(body: SimulateRequest):
+async def simulate_call(body: SimulateRequest, request: Request):
     """
     Run one turn of a simulated PAS call.
 
@@ -94,6 +95,14 @@ async def simulate_call(body: SimulateRequest):
 
     # ── NEW SESSION ──────────────────────────────────────────────────────────
     if not call_sid or call_sid not in _sessions:
+        # SECURITY: throttle session creation per-IP. Existing-session turns
+        # (below) are cheap in-memory updates and stay unrate-limited so a
+        # legitimate caller mid-flow isn't blocked.
+        rate_limit(
+            f"sim:{client_ip(request)}",
+            max_requests=10,
+            window_seconds=60,
+        )
         call_sid = call_sid or f"SIM-{uuid.uuid4().hex[:12].upper()}"
 
         # Evict oldest sessions if at limit (simple FIFO — fine for demo scale)

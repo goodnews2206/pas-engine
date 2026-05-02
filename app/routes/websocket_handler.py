@@ -38,6 +38,15 @@ logger = logging.getLogger("pas.websocket")
 
 @router.websocket("/media-stream/{call_sid}")
 async def media_stream(websocket: WebSocket, call_sid: str):
+    # SECURITY: only accept media streams whose call_sid was registered by a
+    # legitimate /twilio/voice (or /demo/call) webhook. Unknown call_sids are
+    # rejected before any STT/TTS resources spin up — closes the cost-DoS
+    # path against ElevenLabs/Deepgram from random WebSocket connections.
+    if call_sid not in active_calls:
+        logger.warning(f"[{call_sid}] WebSocket rejected — unknown call_sid")
+        await websocket.close(code=4401, reason="Unknown call_sid")
+        return
+
     await websocket.accept()
     logger.info(f"[{call_sid}] WebSocket connected")
 

@@ -30,6 +30,12 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
+# SECURITY: httpx/httpcore log full request URLs at INFO level — including
+# Supabase query strings like ?api_key=eq.pas_… which leaks brokerage API
+# keys into server logs. Suppress to WARNING. App-level logging unaffected.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 logger = logging.getLogger("pas.main")
 
 MAX_BODY_SIZE = 64 * 1024  # 64 KB — enough for any legitimate PAS payload
@@ -44,16 +50,28 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+_WEAK_ADMIN_KEYS = {"", "change-me-before-deploy", "admin", "secret", "password"}
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     logger.info("PAS Engine starting up...")
 
-    # Warn loudly about weak admin key — do not block startup, but be impossible to miss
-    if not settings.ADMIN_API_KEY:
-        logger.critical("SECURITY: ADMIN_API_KEY is not set — /admin routes are locked but should be configured before deploying.")
-    elif settings.ADMIN_API_KEY in ("change-me-before-deploy", "admin", "secret", "password"):
-        logger.critical(f"SECURITY: ADMIN_API_KEY is set to a weak default value '{settings.ADMIN_API_KEY}' — change it immediately.")
+    # SECURITY: weak/empty admin keys must never serve /admin/* in production.
+    # In development we keep the existing loud warning so local testing isn't blocked.
+    if (settings.ADMIN_API_KEY or "") in _WEAK_ADMIN_KEYS:
+        if settings.ENVIRONMENT == "production":
+            logger.critical(
+                "SECURITY: ADMIN_API_KEY is missing or weak in production — refusing to start."
+            )
+            raise RuntimeError(
+                "ADMIN_API_KEY missing or weak in production — refusing to start."
+            )
+        logger.critical(
+            "SECURITY: ADMIN_API_KEY is missing or weak — /admin routes are unsafe. "
+            "This is allowed in development only."
+        )
 
     if settings.ENVIRONMENT == "development":
         logger.warning("SECURITY: Running in DEVELOPMENT mode — Twilio signature verification is DISABLED.")
