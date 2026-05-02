@@ -31,6 +31,40 @@ HARD_OBJECTIONS = [
     "waste of time", "don't need"
 ]
 
+# Phrases that, on their own, signal "call me back later" intent regardless
+# of conversation state. Hard objections still take priority — those are
+# checked first in process_input — so DNC behaviour is preserved.
+CALLBACK_TRIGGERS = [
+    "this is not a good time",
+    "not a good time",
+    "i'm busy",
+    "i am busy",
+    "i'm at work",
+    "i am at work",
+    "can't talk now",
+    "cannot talk now",
+    "call me later",
+    "call me back",
+    "call back later",
+    "call tomorrow",
+    "call me tomorrow",
+    "text me later",
+    "reach me later",
+]
+
+# Time phrases that are only callback-intent when paired with an
+# explicit callback hint word. Avoids stealing normal TIMELINE answers
+# like "next week" / "in the morning" when the lead is just describing
+# their move-in window.
+CALLBACK_TIME_HINTS = [
+    "later today",
+    "in the morning",
+    "in the afternoon",
+    "this evening",
+    "next week",
+]
+CALLBACK_HINT_WORDS = ["call", "later", "back", "talk", "reach", "text"]
+
 STATE_ORDER = [
     State.GREETING,
     State.INTENT,
@@ -55,6 +89,15 @@ class LeadData:
     booking_confirmed: bool = False
     booking_url: str = ""
     booking_slot: str = ""
+    # Callback Capture Flow (PAS128)
+    callback_requested: bool = False
+    callback_reason: str = ""
+    preferred_callback_time_raw: str = ""
+    preferred_callback_time_normalized: str = ""
+    callback_timezone: str = ""
+    callback_confirmed: bool = False
+    best_number_confirmed: bool = False
+    followup_status: str = ""
 
 
 @dataclass
@@ -76,6 +119,12 @@ class PASEngine:
     # The websocket handler reads this and initiates a Twilio warm transfer.
     pending_transfer: bool = False
     assigned_agent_id: Optional[str] = None
+
+    # Callback Capture Flow (PAS128) — when a lead asks to be called back, we
+    # bypass normal qualification and run a small sub-flow that captures time
+    # and number. Hard objections still preempt this in process_input.
+    _callback_active: bool = False
+    _callback_step: Optional[str] = None
 
     def __init__(self, call_sid: str, lead_context: dict = None, brokerage: dict = None):
         self.call_sid = call_sid
@@ -160,6 +209,16 @@ class PASEngine:
     async def process_input(self, transcript: str):
         self._log("lead", transcript)
 
+        # Mid-callback continuation — owns the turn so the lead's reply
+        # ("around 5 pm" / "yes that's my best number") isn't grabbed by
+        # the generic question deflector or routed back into qualification.
+        # DNC ("remove me", "stop calling") still wins via the hard-objection
+        # short-circuit below.
+        if self._callback_active:
+            if self._is_hard_objection(transcript):
+                return await self._handle_objection(transcript)
+            return await self._handle_callback_continuation(transcript)
+
         if self._is_ai_question(transcript):
             return self._handle_ai_question(), False
 
@@ -175,6 +234,12 @@ class PASEngine:
 
         if self._is_hard_objection(transcript):
             return await self._handle_objection(transcript)
+
+        # Callback initiation — placed AFTER hard-objection so DNC keeps priority,
+        # and BEFORE handler dispatch so the GREETING busy/no/call-back fallthrough
+        # can't end the call as a flat rejection.
+        if self._is_callback_request(transcript):
+            return await self._handle_callback_start(transcript)
 
         handler = self._get_handler(self.state.current)
         response, advance = await handler(transcript)
@@ -493,6 +558,222 @@ class PASEngine:
             system_prompt_override=self.trained_objection_prompt or None,
         )
         return response, False
+
+    # ───────────── CALLBACK CAPTURE (PAS128) ─────────────
+
+    def _is_callback_request(self, text: str) -> bool:
+        lowered = (text or "").lower()
+        if any(t in lowered for t in CALLBACK_TRIGGERS):
+            return True
+        if any(t in lowered for t in CALLBACK_TIME_HINTS) and any(
+            w in lowered for w in CALLBACK_HINT_WORDS
+        ):
+            return True
+        return False
+
+    def _extract_callback_time(self, text: str) -> str:
+        """Best-effort raw time-phrase capture. Returns '' if nothing found."""
+        lowered = (text or "").lower()
+        candidates = [
+            "tomorrow morning", "tomorrow afternoon", "tomorrow evening",
+            "this morning", "this afternoon", "this evening",
+            "later today", "tonight",
+            "in the morning", "in the afternoon", "in the evening",
+            "next week", "next monday", "next tuesday", "next wednesday",
+            "next thursday", "next friday", "next saturday", "next sunday",
+            "tomorrow", "today",
+            "monday", "tuesday", "wednesday", "thursday", "friday",
+            "saturday", "sunday",
+        ]
+        for c in candidates:
+            if c in lowered:
+                return c
+        m = re.search(r"\d{1,2}(?::\d{2})?\s*(?:am|pm)", lowered)
+        if m:
+            return m.group(0)
+        return ""
+
+    def _normalize_callback_time(self, raw: str) -> str:
+        """Conservative normalization. Returns '' when unsure."""
+        if not raw:
+            return ""
+        safe_map = {
+            "tomorrow morning":   "tomorrow_morning",
+            "tomorrow afternoon": "tomorrow_afternoon",
+            "tomorrow evening":   "tomorrow_evening",
+            "this morning":       "today_morning",
+            "this afternoon":     "today_afternoon",
+            "this evening":       "today_evening",
+            "later today":        "today_later",
+            "tonight":            "today_evening",
+            "in the morning":     "morning",
+            "in the afternoon":   "afternoon",
+            "in the evening":     "evening",
+            "next week":          "next_week",
+            "tomorrow":           "tomorrow",
+            "today":              "today",
+        }
+        return safe_map.get(raw, "")
+
+    async def _handle_callback_start(self, text: str):
+        self._callback_active = True
+        self.state.lead.callback_requested = True
+        self.state.lead.callback_reason = (text or "")[:200]
+        self.state.lead.followup_status = "callback_scheduled"
+
+        log_event_bg(
+            "callback.requested",
+            brokerage_id=self.brokerage_id,
+            call_id=self.call_sid,
+            event_category="lead",
+            event_source="state_machine",
+            state=self.state.current.value,
+            payload={
+                "from_state": self.state.current.value,
+                "trigger_excerpt": (text or "")[:200],
+            },
+        )
+
+        raw_time = self._extract_callback_time(text)
+        if raw_time:
+            self.state.lead.preferred_callback_time_raw = raw_time
+            norm = self._normalize_callback_time(raw_time)
+            if norm:
+                self.state.lead.preferred_callback_time_normalized = norm
+            # TODO(PAS128): emit callback.time_captured event when shape is finalized.
+            self._callback_step = "awaiting_number_confirm"
+            response = (
+                f"Got it. I'll mark {raw_time} as the preferred callback window. "
+                "Is this the best number to reach you on?"
+            )
+            self._log("pas", response)
+            return response, False
+
+        lowered = (text or "").lower()
+        if "text" in lowered:
+            response = (
+                "Got it. I'll note that the team should follow up with you later. "
+                "What time works best?"
+            )
+        elif "at work" in lowered:
+            response = "Totally fine. What time later today works best for you?"
+        elif "busy" in lowered:
+            response = "No problem. When would be a better time for the team to call you back?"
+        else:
+            response = "No problem. What would be a better time for the team to call you back?"
+
+        self._callback_step = "awaiting_time"
+        self._log("pas", response)
+        return response, False
+
+    async def _handle_callback_continuation(self, text: str):
+        step = self._callback_step
+        lowered = (text or "").lower()
+
+        if step == "awaiting_time":
+            raw_time = self._extract_callback_time(text) or (text or "").strip()[:80]
+            self.state.lead.preferred_callback_time_raw = raw_time
+            norm = self._normalize_callback_time(raw_time)
+            if norm:
+                self.state.lead.preferred_callback_time_normalized = norm
+            # TODO(PAS128): emit callback.time_captured event when shape is finalized.
+
+            # Confirm number only when we actually have a real one (outbound flow).
+            if (
+                self.state.lead.phone_number
+                and self.state.lead.phone_number != "simulated"
+            ):
+                self._callback_step = "awaiting_number_confirm"
+                response = f"Got it — {raw_time}. Is this the best number to reach you on?"
+                self._log("pas", response)
+                return response, False
+
+            if not self.state.lead.intent:
+                self._callback_step = "awaiting_qualifier"
+                response = (
+                    "Before I let you go, are you looking to buy, sell, or just exploring?"
+                )
+                self._log("pas", response)
+                return response, False
+
+            return self._end_callback()
+
+        if step == "awaiting_number_confirm":
+            if any(w in lowered for w in ["yes", "yeah", "yep", "correct", "right", "sure", "okay", "ok"]):
+                self.state.lead.best_number_confirmed = True
+                self.state.lead.callback_confirmed = True
+                # TODO(PAS128): emit callback.number_confirmed event.
+            elif any(w in lowered for w in ["no", "different", "another", "other"]):
+                self.state.lead.best_number_confirmed = False
+
+            if not self.state.lead.intent:
+                self._callback_step = "awaiting_qualifier"
+                response = (
+                    "Before I let you go, are you looking to buy, sell, or just exploring?"
+                )
+                self._log("pas", response)
+                return response, False
+
+            return self._end_callback()
+
+        if step == "awaiting_qualifier":
+            if any(w in lowered for w in ["buy", "buying", "purchase", "purchasing"]):
+                self.state.lead.intent = "buying"
+            elif any(w in lowered for w in ["sell", "selling", "listing", "list"]):
+                self.state.lead.intent = "selling"
+            elif any(w in lowered for w in ["explor", "browsing", "just looking", "early", "not sure", "looking around"]):
+                self.state.lead.intent = "exploring"
+            return self._end_callback()
+
+        # Defensive default — should not happen, but if state somehow drifts,
+        # close cleanly rather than spin.
+        return self._end_callback()
+
+    def _end_callback(self):
+        has_qualifying_data = bool(
+            self.state.lead.intent
+            or self.state.lead.budget
+            or self.state.lead.timeline
+        )
+        self.state.outcome = (
+            "qualified_callback_requested"
+            if has_qualifying_data
+            else "callback_requested"
+        )
+        self.state.previous = self.state.current
+        self.state.current = State.DONE
+        if "DONE" not in self.state.states_visited:
+            self.state.states_visited.append("DONE")
+
+        log_event_bg(
+            "call.ended_with_callback",
+            brokerage_id=self.brokerage_id,
+            call_id=self.call_sid,
+            event_category="call",
+            event_source="state_machine",
+            state="DONE",
+            payload={
+                "outcome": self.state.outcome,
+                "from_state": self.state.previous.value if self.state.previous else None,
+                "preferred_time_raw": self.state.lead.preferred_callback_time_raw,
+                "preferred_time_normalized": self.state.lead.preferred_callback_time_normalized,
+                "best_number_confirmed": self.state.lead.best_number_confirmed,
+                "callback_confirmed": self.state.lead.callback_confirmed,
+                "callback_reason_excerpt": (self.state.lead.callback_reason or "")[:120],
+                "intent": self.state.lead.intent,
+                "followup_status": self.state.lead.followup_status,
+            },
+        )
+
+        self._callback_active = False
+        self._callback_step = None
+
+        response = (
+            "Perfect — I've made a note. The team will reach out to you "
+            "at the time you mentioned. Have a great day!"
+        )
+        self._log("pas", response)
+        return response, True
 
     # ───────────── UTILS ─────────────
 
