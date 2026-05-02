@@ -23,6 +23,9 @@ pydub==0.25.1
 # Anthropic
 anthropic==0.40.0
 
+# OpenAI (alternative LLM provider — selected via LLM_PROVIDER=openai)
+openai==1.54.4
+
 # Supabase
 supabase==2.10.0
 

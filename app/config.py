@@ -20,8 +20,16 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: str = ""
     ELEVENLABS_VOICE_ID: str = "21m00Tcm4TlvDq8ikWAM"  # Rachel — professional, warm
 
+    # LLM provider selection — "anthropic" (default) or "openai".
+    # PAS routes objection handling through whichever is configured.
+    LLM_PROVIDER: str = "anthropic"
+
     # Anthropic (objection handling — optional, has safe fallback)
     ANTHROPIC_API_KEY: str = ""
+
+    # OpenAI (alternative LLM provider — optional, has safe fallback)
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4.1-mini"
 
     # Supabase (persistence — optional, logs a warning when missing)
     SUPABASE_URL: str = ""

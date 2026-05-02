@@ -1,32 +1,27 @@
 """
-Claude API Wrapper — Objection Handling ONLY
+Objection handler — provider-agnostic.
 
-Constraints:
+The file is named claude_client.py for backwards compatibility with existing
+imports (`from app.services.llm.claude_client import handle_objection`), but
+it no longer talks to Anthropic directly. It routes every call through
+`app.services.llm.factory.get_provider()` so the underlying LLM (Claude,
+OpenAI, …) is swappable via the LLM_PROVIDER env var without touching the
+state machine.
+
+Constraints preserved from the original Claude wrapper:
 - max_tokens: 100
 - temperature: 0.2
 - 2 sentences max
 - Always steers back toward booking
+- Safe canned fallback if no provider is available or the call fails
 """
 
 import logging
 
-import anthropic
-
-from app.config import get_settings
+from app.services.llm.factory import get_provider
 
 logger = logging.getLogger("pas.llm")
 
-_client: anthropic.AsyncAnthropic | None = None
-
-
-def _get_client() -> anthropic.AsyncAnthropic | None:
-    global _client
-    if _client is None:
-        key = get_settings().ANTHROPIC_API_KEY
-        if not key:
-            return None
-        _client = anthropic.AsyncAnthropic(api_key=key)
-    return _client
 
 OBJECTION_SYSTEM_PROMPT = """You are a professional real estate AI assistant handling a live phone call.
 Your ONLY job is to respond to objections and steer the conversation back toward booking a consultation.
@@ -40,6 +35,13 @@ Rules:
 
 Output ONLY the response text. No preamble. No explanation."""
 
+# Canned response used when no LLM provider is available or the call fails.
+# Kept identical to the previous Claude wrapper so behavior is unchanged.
+_FALLBACK_RESPONSE = (
+    "I completely understand — there's no pressure at all. "
+    "Would it be okay if I just asked one more quick question before you go?"
+)
+
 
 async def handle_objection(
     objection: str,
@@ -49,7 +51,8 @@ async def handle_objection(
 ) -> str:
     """
     Takes the lead's objection and returns a short rebuttal.
-    Falls back to a safe default if Claude fails.
+    Falls back to a safe canned response if no provider is configured or
+    the underlying API call fails.
     """
     context_str = ""
     if lead_context.get("intent"):
@@ -64,25 +67,21 @@ async def handle_objection(
         "Respond to this objection and guide them back toward scheduling a consultation."
     )
 
+    provider = get_provider()
+    if provider is None:
+        logger.warning("No LLM provider available — using canned objection response")
+        return _FALLBACK_RESPONSE
+
     try:
-        client = _get_client()
-        if client is None:
-            raise RuntimeError("ANTHROPIC_API_KEY not configured")
-        response = await client.messages.create(
-            model="claude-sonnet-4-20250514",
+        text = await provider.chat(
+            system=system_prompt_override or OBJECTION_SYSTEM_PROMPT,
+            user=user_prompt,
             max_tokens=100,
             temperature=0.2,
-            system=system_prompt_override or OBJECTION_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}]
         )
-        text = response.content[0].text.strip()
-        logger.info(f"Claude objection response: {text!r}")
-        return text
+        logger.info(f"[{provider.name}] objection response: {text!r}")
+        return text or _FALLBACK_RESPONSE
 
     except Exception as e:
-        logger.error(f"Claude API error: {e}")
-        # Safe fallback — keeps conversation alive
-        return (
-            "I completely understand — there's no pressure at all. "
-            "Would it be okay if I just asked one more quick question before you go?"
-        )
+        logger.error(f"[{provider.name}] objection call failed: {e}")
+        return _FALLBACK_RESPONSE
