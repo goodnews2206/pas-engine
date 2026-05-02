@@ -14,6 +14,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("pas.error_store")
@@ -35,15 +36,39 @@ def log_error(
 ) -> bool:
     """
     Write an error record to the error_logs table.
-    Never raises — if this fails we fall back to standard logger only.
+    Also dual-writes to pas_events (system.error) so the universal event
+    stream stays the single source of truth. error_logs is retained for
+    the resolved/admin_note workflow.
+
+    Never raises — if either DB write fails we fall back to standard
+    logger only.
     """
+    safe_service = service if service in VALID_SERVICES else "system"
+    safe_severity = severity if severity in VALID_SEVERITIES else "error"
+
+    # Mirror to pas_events first (fire-and-forget, non-blocking).
+    log_event_bg(
+        "system.error",
+        brokerage_id=brokerage_id,
+        call_id=call_sid,
+        event_category="ops",
+        event_source="error_store",
+        provider=safe_service if safe_service != "system" else None,
+        severity=safe_severity,
+        payload={
+            "service": safe_service,
+            "message": (message or "")[:500],
+            "detail_excerpt": (detail or "")[:1000] if detail else None,
+        },
+    )
+
     try:
         db = get_supabase()
         db.table("error_logs").insert({
-            "service": service if service in VALID_SERVICES else "system",
+            "service": safe_service,
             "brokerage_id": brokerage_id,
             "call_sid": call_sid,
-            "severity": severity if severity in VALID_SEVERITIES else "error",
+            "severity": safe_severity,
             "message": message,
             "detail": detail,
             "resolved": False,

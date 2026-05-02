@@ -18,6 +18,7 @@ Constraints preserved from the original Claude wrapper:
 
 import logging
 
+from app.db.event_logger import log_event_bg
 from app.services.llm.factory import get_provider
 
 logger = logging.getLogger("pas.llm")
@@ -85,4 +86,16 @@ async def handle_objection(
 
     except Exception as e:
         logger.error(f"[{provider.name}] objection call failed: {e}")
+        log_event_bg(
+            "provider.failed",
+            event_category="llm",
+            event_source="claude_client",
+            provider=provider.name,
+            severity="warning",
+            payload={
+                "purpose": "objection",
+                "error_class": type(e).__name__,
+                "message_excerpt": str(e)[:300],
+            },
+        )
         return _FALLBACK_RESPONSE

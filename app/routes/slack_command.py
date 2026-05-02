@@ -28,6 +28,7 @@ from app.db.brokerage_store import (
     set_brokerage_active,
     update_featured_properties,
 )
+from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
 from app.services.llm.factory import get_provider
 from app.services.notifications.slack_client import send_slack_message
@@ -124,6 +125,18 @@ async def _parse_intent(text: str) -> dict:
         return json.loads(raw.strip())
     except Exception as e:
         logger.error(f"[{provider.name}] intent parsing failed: {e}")
+        log_event_bg(
+            "provider.failed",
+            event_category="llm",
+            event_source="slack_command",
+            provider=provider.name,
+            severity="warning",
+            payload={
+                "purpose": "slack_intent",
+                "error_class": type(e).__name__,
+                "message_excerpt": str(e)[:300],
+            },
+        )
         return {"action": "unknown"}
 
 

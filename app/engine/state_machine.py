@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
+from app.db.event_logger import log_event_bg
 from app.services.llm.claude_client import handle_objection
 from app.services.booking.calcom_client import book_appointment
 from app.utils.slot_formatter import format_slot_for_speech
@@ -252,6 +253,7 @@ class PASEngine:
         else:
             return self._retry("Just to confirm — buy, sell, or rent?")
 
+        self._log_lead_extracted("intent", self.state.lead.intent, text)
         return self.prompts[State.BUDGET], True
 
     async def _handle_budget(self, text):
@@ -259,6 +261,7 @@ class PASEngine:
         if budget:
             self.state.lead.budget = budget
             self.state.attempt_count = 0
+            self._log_lead_extracted("budget", budget, text)
             return self.prompts[State.TIMELINE], True
 
         if self.state.attempt_count >= self.MAX_ATTEMPTS:
@@ -272,6 +275,8 @@ class PASEngine:
         timeline = self._extract_timeline(text)
         self.state.lead.timeline = timeline or "unspecified"
         self.state.attempt_count = 0
+        if timeline:
+            self._log_lead_extracted("timeline", timeline, text)
 
         # Tease featured properties if any are loaded for this brokerage
         booking_prompt = self.prompts[State.BOOKING]
@@ -312,6 +317,20 @@ class PASEngine:
             )
 
         if any(w in lowered for w in ["yes", "sure", "okay", "yeah", "go ahead", "do it", "please"]):
+            log_event_bg(
+                "booking.attempted",
+                brokerage_id=self.brokerage_id,
+                call_id=self.call_sid,
+                event_category="booking",
+                event_source="state_machine",
+                state=self.state.current.value,
+                payload={
+                    "intent": self.state.lead.intent,
+                    "budget": self.state.lead.budget,
+                    "timeline": self.state.lead.timeline,
+                    "has_email": bool(self.state.lead.email),
+                },
+            )
             result = await book_appointment(
                 phone=self.state.lead.phone_number,
                 name=self.state.lead.name or "Lead",
@@ -330,6 +349,20 @@ class PASEngine:
                 self.state.outcome = "booked"
                 self.state.lead.booking_confirmed = True
                 self.state.lead.booking_slot = result.get("slot", "")
+                log_event_bg(
+                    "booking.confirmed",
+                    brokerage_id=self.brokerage_id,
+                    call_id=self.call_sid,
+                    agent_id=self.assigned_agent_id,
+                    event_category="booking",
+                    event_source="state_machine",
+                    state=self.state.current.value,
+                    provider="calcom",
+                    payload={
+                        "slot": result.get("slot", ""),
+                        "booking_id": result.get("booking_id") or result.get("id"),
+                    },
+                )
 
                 slot_text = format_slot_for_speech(self.state.lead.booking_slot)
 
@@ -347,6 +380,17 @@ class PASEngine:
                 )
             else:
                 self.state.outcome = "not_booked"
+                log_event_bg(
+                    "booking.failed",
+                    brokerage_id=self.brokerage_id,
+                    call_id=self.call_sid,
+                    event_category="booking",
+                    event_source="state_machine",
+                    state=self.state.current.value,
+                    provider="calcom",
+                    severity="warning",
+                    payload={"error": str(result.get("error", "unknown"))[:300]},
+                )
                 return (
                     "Our calendar is a little full right now, but one of our agents will "
                     "call you back within the hour to lock in a time.",
@@ -417,6 +461,19 @@ class PASEngine:
         category = self._classify_objection(text)
         self.state.objection_count[category] = (
             self.state.objection_count.get(category, 0) + 1
+        )
+        log_event_bg(
+            "objection.detected",
+            brokerage_id=self.brokerage_id,
+            call_id=self.call_sid,
+            event_category="call",
+            event_source="state_machine",
+            state=self.state.current.value,
+            payload={
+                "category": category,
+                "text": text[:500],
+                "total_so_far": sum(self.state.objection_count.values()),
+            },
         )
 
         # Any "remove/stop" category ends the call immediately, no second chance.
@@ -500,11 +557,25 @@ class PASEngine:
     def _advance_state(self):
         idx = STATE_ORDER.index(self.state.current)
         if idx + 1 < len(STATE_ORDER):
+            from_state = self.state.current.value
             self.state.current = STATE_ORDER[idx + 1]
             state_name = self.state.current.value
             if state_name not in self.state.states_visited:
                 self.state.states_visited.append(state_name)
             self.state.attempt_count = 0
+            log_event_bg(
+                "state.transition",
+                brokerage_id=self.brokerage_id,
+                call_id=self.call_sid,
+                event_category="call",
+                event_source="state_machine",
+                state=state_name,
+                payload={
+                    "from": from_state,
+                    "to": state_name,
+                    "attempt_count": self.state.attempt_count,
+                },
+            )
             self._skip_if_prefilled()
 
     def _skip_if_prefilled(self):
@@ -558,6 +629,21 @@ class PASEngine:
             "state": self.state.current,
             "ts": datetime.now(timezone.utc).isoformat(),
         })
+
+    def _log_lead_extracted(self, field: str, value: str, raw_text: str):
+        log_event_bg(
+            "lead.extracted",
+            brokerage_id=self.brokerage_id,
+            call_id=self.call_sid,
+            event_category="lead",
+            event_source="state_machine",
+            state=self.state.current.value,
+            payload={
+                "field": field,
+                "value": value,
+                "raw_text": (raw_text or "")[:300],
+            },
+        )
 
     # ───────────── RESULT ACCESSORS ─────────────
 

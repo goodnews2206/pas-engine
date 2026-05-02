@@ -20,6 +20,7 @@ from app.engine.state_machine import PASEngine
 from app.services.stt.deepgram_client import DeepgramStreamClient
 from app.services.tts.elevenlabs_client import synthesize_speech
 from app.db.call_logger import update_call_outcome
+from app.db.event_logger import log_event_bg
 from app.db.lead_memory import get_lead, upsert_lead, mark_booked
 from app.db.brokerage_store import get_brokerage_by_id, increment_call_count
 from app.db.agent_store import get_best_available_agent, record_assignment
@@ -170,6 +171,23 @@ async def media_stream(websocket: WebSocket, call_sid: str):
             outcome=outcome,
             transcript=transcript,
             metadata=metadata,
+        )
+
+        log_event_bg(
+            "call.ended",
+            brokerage_id=brokerage_id,
+            call_id=call_sid,
+            event_category="call",
+            event_source="websocket",
+            state=metadata.get("final_state"),
+            payload={
+                "outcome": outcome,
+                "duration_seconds": duration,
+                "final_state": metadata.get("final_state"),
+                "states_visited": metadata.get("states_visited"),
+                "is_outbound": metadata.get("is_outbound"),
+                "objections_detected": metadata.get("objections_detected"),
+            },
         )
 
         # Increment call count; trigger self-training if threshold reached

@@ -11,6 +11,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("pas.memory")
@@ -57,6 +58,17 @@ def upsert_lead(brokerage_id: str, phone_number: str, updates: dict):
             updates["updated_at"] = now
             db.table("leads").update(updates).eq("id", existing["id"]).execute()
             logger.info(f"Lead updated | brokerage={brokerage_id} | phone={phone_number}")
+            log_event_bg(
+                "lead.updated",
+                brokerage_id=brokerage_id,
+                lead_id=existing.get("id"),
+                event_category="lead",
+                event_source="lead_memory",
+                payload={
+                    "is_new": False,
+                    "fields_changed": sorted(updates.keys()),
+                },
+            )
         else:
             db.table("leads").insert({
                 "brokerage_id": brokerage_id,
@@ -67,6 +79,16 @@ def upsert_lead(brokerage_id: str, phone_number: str, updates: dict):
                 **updates,
             }).execute()
             logger.info(f"Lead created | brokerage={brokerage_id} | phone={phone_number}")
+            log_event_bg(
+                "lead.updated",
+                brokerage_id=brokerage_id,
+                event_category="lead",
+                event_source="lead_memory",
+                payload={
+                    "is_new": True,
+                    "fields_changed": sorted(updates.keys()),
+                },
+            )
     except Exception as e:
         logger.error(f"Lead upsert failed for {phone_number}: {e}")
 

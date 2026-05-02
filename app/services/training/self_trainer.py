@@ -21,6 +21,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
 from app.services.llm.factory import get_provider
 
@@ -130,6 +131,19 @@ async def run_training(brokerage_id: str) -> dict:
 
     except Exception as e:
         logger.error(f"[{provider.name}] training analysis failed: {e}")
+        log_event_bg(
+            "provider.failed",
+            brokerage_id=brokerage_id,
+            event_category="llm",
+            event_source="self_trainer",
+            provider=provider.name,
+            severity="warning",
+            payload={
+                "purpose": "training",
+                "error_class": type(e).__name__,
+                "message_excerpt": str(e)[:300],
+            },
+        )
         return {}
 
     training_config = {

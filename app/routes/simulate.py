@@ -51,6 +51,7 @@ from pydantic import BaseModel
 
 from app.db.brokerage_store import get_brokerage_by_id
 from app.db.call_logger import create_call_record, update_call_outcome
+from app.db.event_logger import log_event_bg
 from app.db.lead_memory import upsert_lead, mark_booked
 from app.engine.state_machine import PASEngine
 from app.services.summary.call_summary import generate_call_summary
@@ -230,6 +231,23 @@ async def _finalize_session(call_sid: str, engine: PASEngine):
             duration_seconds=duration,
         )
         logger.info(f"[{call_sid}] Simulation finalized | outcome={outcome} | duration={duration}s")
+        log_event_bg(
+            "call.ended",
+            brokerage_id=getattr(engine, "brokerage_id", None),
+            call_id=call_sid,
+            event_category="call",
+            event_source="simulate",
+            state=metadata.get("final_state"),
+            payload={
+                "outcome": outcome,
+                "duration_seconds": duration,
+                "final_state": metadata.get("final_state"),
+                "states_visited": metadata.get("states_visited"),
+                "is_outbound": metadata.get("is_outbound"),
+                "objections_detected": metadata.get("objections_detected"),
+                "source": "simulated",
+            },
+        )
     except Exception as e:
         logger.warning(f"[{call_sid}] Could not finalize call record: {e}")
 
