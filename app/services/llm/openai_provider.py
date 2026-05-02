@@ -55,7 +55,12 @@ class OpenAIProvider(LLMProvider):
         user: str,
         max_tokens: int,
         temperature: float,
+        purpose: str | None = None,
     ) -> str:
+        # `purpose` is accepted for interface parity. OpenAI uses one model
+        # (OPENAI_MODEL) across all tasks; per-purpose env vars can be
+        # added later if a real cost/quality split is needed.
+        del purpose
         client = self._get_client()
         response = await client.chat.completions.create(
             model=self._model,

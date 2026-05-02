@@ -4,7 +4,7 @@ Slack Command Interface — brokerages control PAS in plain English.
 Setup: Create a Slack app → Slash Commands → point /pas to POST /slack/command
        Add the Signing Secret to the brokerage record in Supabase.
 
-Supported commands (natural language, Claude interprets them):
+Supported commands (natural language, the configured LLM interprets them):
   /pas pause                          → stop making outbound calls
   /pas resume                         → start making outbound calls
   /pas push 123 Main St, $500k, 3bed  → add a featured property
@@ -20,17 +20,16 @@ import json
 import logging
 import time
 
-import anthropic
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
-from app.config import get_settings
 from app.db.brokerage_store import (
     get_brokerage_by_slack_team,
     set_brokerage_active,
     update_featured_properties,
 )
 from app.db.supabase_client import get_supabase
+from app.services.llm.factory import get_provider
 from app.services.notifications.slack_client import send_slack_message
 
 router = APIRouter()
@@ -110,19 +109,21 @@ async def slack_command(request: Request):
 # ───────────── INTENT PARSING ─────────────
 
 async def _parse_intent(text: str) -> dict:
+    provider = get_provider()
+    if provider is None:
+        logger.warning("No LLM provider available — Slack intent set to unknown")
+        return {"action": "unknown"}
     try:
-        settings = get_settings()
-        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-        resp = await client.messages.create(
-            model="claude-haiku-4-5-20251001",
+        raw = await provider.chat(
+            system=_INTENT_SYSTEM,
+            user=text,
             max_tokens=150,
             temperature=0,
-            system=_INTENT_SYSTEM,
-            messages=[{"role": "user", "content": text}],
+            purpose="slack_intent",
         )
-        return json.loads(resp.content[0].text.strip())
+        return json.loads(raw.strip())
     except Exception as e:
-        logger.error(f"Intent parsing failed: {e}")
+        logger.error(f"[{provider.name}] intent parsing failed: {e}")
         return {"action": "unknown"}
 
 

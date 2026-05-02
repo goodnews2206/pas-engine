@@ -78,6 +78,7 @@ async def handle_objection(
             user=user_prompt,
             max_tokens=100,
             temperature=0.2,
+            purpose="objection",
         )
         logger.info(f"[{provider.name}] objection response: {text!r}")
         return text or _FALLBACK_RESPONSE

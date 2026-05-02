@@ -1,14 +1,16 @@
 """
-Call Summary Generator — uses Claude to produce a concise, structured summary
-of each call for the brokerage's Slack channel and call record.
-Falls back to a template summary if Claude is unavailable.
+Call Summary Generator — produces a concise, structured summary of each call
+for the brokerage's Slack channel and call record.
+
+Routes through the LLM provider abstraction (factory.get_provider) so the
+underlying model (Claude, OpenAI, …) is swappable via LLM_PROVIDER. Falls
+back to a deterministic template summary if no provider is available or
+the call fails — summary generation must never break call finalization.
 """
 
 import logging
 
-import anthropic
-
-from app.config import get_settings
+from app.services.llm.factory import get_provider
 
 logger = logging.getLogger("pas.summary")
 
@@ -23,35 +25,36 @@ async def generate_call_summary(
     lead: dict,
     duration_seconds: int,
 ) -> str:
+    name = lead.get("name") or "Lead"
+    intent = lead.get("intent") or "unknown intent"
+    budget = lead.get("budget") or "not specified"
+    timeline = lead.get("timeline") or "not specified"
+    slot = lead.get("booking_slot") or ""
+
+    user_msg = (
+        f"Call outcome: {outcome}\n"
+        f"Lead: {name} | Intent: {intent} | Budget: {budget} | Timeline: {timeline}\n"
+        + (f"Viewing booked for: {slot}\n" if slot else "")
+        + f"Duration: {duration_seconds}s\n\n"
+        f"Transcript:\n{transcript or '(no transcript)'}"
+    )
+
+    provider = get_provider()
+    if provider is None:
+        logger.warning("No LLM provider available — using template summary")
+        return _template_summary(outcome, lead)
+
     try:
-        settings = get_settings()
-        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-
-        name = lead.get("name") or "Lead"
-        intent = lead.get("intent") or "unknown intent"
-        budget = lead.get("budget") or "not specified"
-        timeline = lead.get("timeline") or "not specified"
-        slot = lead.get("booking_slot") or ""
-
-        user_msg = (
-            f"Call outcome: {outcome}\n"
-            f"Lead: {name} | Intent: {intent} | Budget: {budget} | Timeline: {timeline}\n"
-            + (f"Viewing booked for: {slot}\n" if slot else "")
-            + f"Duration: {duration_seconds}s\n\n"
-            f"Transcript:\n{transcript or '(no transcript)'}"
-        )
-
-        resp = await client.messages.create(
-            model="claude-haiku-4-5-20251001",  # fast + cheap for summaries
+        text = await provider.chat(
+            system=_SYSTEM,
+            user=user_msg,
             max_tokens=200,
             temperature=0.2,
-            system=_SYSTEM,
-            messages=[{"role": "user", "content": user_msg}],
+            purpose="summary",
         )
-        return resp.content[0].text.strip()
-
+        return text or _template_summary(outcome, lead)
     except Exception as e:
-        logger.warning(f"Claude summary failed, using template: {e}")
+        logger.warning(f"[{provider.name}] summary failed, using template: {e}")
         return _template_summary(outcome, lead)
 
 

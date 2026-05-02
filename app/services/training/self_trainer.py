@@ -1,14 +1,15 @@
 """
 PAS Self-Trainer
 
-After every TRAINING_THRESHOLD calls, Claude reads recent transcripts for a brokerage,
-identifies what worked vs. what didn't, and writes improved scripts back into the
+After every TRAINING_THRESHOLD calls, the configured LLM (via the provider
+abstraction) reads recent transcripts for a brokerage, identifies what
+worked vs. what didn't, and writes improved scripts back into the
 brokerage's training_config. The engine loads these on the next call.
 
 Training loop:
   1. Pull last N completed calls with transcripts
   2. Split by outcome (booked / not_booked)
-  3. Claude analyses patterns and writes improved prompts
+  3. LLM analyses patterns and writes improved prompts
   4. Store result in brokerages.training_config + log to training_logs
   5. Increment training_version
 
@@ -20,15 +21,13 @@ import json
 import logging
 from datetime import datetime, timezone
 
-import anthropic
-
-from app.config import get_settings
 from app.db.supabase_client import get_supabase
+from app.services.llm.factory import get_provider
 
 logger = logging.getLogger("pas.trainer")
 
 TRAINING_THRESHOLD = 25   # retrain after every N calls
-MAX_TRANSCRIPTS = 30      # transcripts to feed Claude (context budget)
+MAX_TRANSCRIPTS = 30      # transcripts to feed the LLM (context budget)
 
 _ANALYSIS_SYSTEM = """You are a conversion optimisation analyst for a real estate AI phone agent.
 You will receive transcripts of real calls — some that ended in a booked property viewing,
@@ -39,7 +38,7 @@ Your job:
 2. Identify the most common failure point (which state/question caused drop-offs)
 3. Identify the top 3 objections and how they were handled
 4. Write an improved BOOKING_PROMPT (the line that asks the lead to book a viewing)
-5. Write improved OBJECTION_SYSTEM_PROMPT (instructions for the objection-handling Claude call)
+5. Write improved OBJECTION_SYSTEM_PROMPT (instructions for the objection-handling LLM call)
 
 Rules for the prompts you write:
 - Sound natural and human, not salesy
@@ -93,18 +92,21 @@ async def run_training(brokerage_id: str) -> dict:
 
     user_message = _build_analysis_prompt(booked, not_booked)
 
+    provider = get_provider()
+    if provider is None:
+        logger.warning("No LLM provider available — skipping training")
+        return {}
+
     try:
-        settings = get_settings()
-        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-        resp = await client.messages.create(
-            model="claude-sonnet-4-20250514",
+        raw = await provider.chat(
+            system=_ANALYSIS_SYSTEM,
+            user=user_message,
             max_tokens=800,
             temperature=0.3,
-            system=_ANALYSIS_SYSTEM,
-            messages=[{"role": "user", "content": user_message}],
+            purpose="training",
         )
-        raw = resp.content[0].text.strip()
-        # Strip markdown code fences if Claude wrapped the JSON
+        raw = raw.strip()
+        # Strip markdown code fences if the model wrapped the JSON
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -127,7 +129,7 @@ async def run_training(brokerage_id: str) -> dict:
             return {}
 
     except Exception as e:
-        logger.error(f"Training analysis failed: {e}")
+        logger.error(f"[{provider.name}] training analysis failed: {e}")
         return {}
 
     training_config = {
