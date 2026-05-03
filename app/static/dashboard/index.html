@@ -273,6 +273,49 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 @media(max-width:420px){
   .g4{grid-template-columns:1fr 1fr}
 }
+
+/* ═══════════════════════════════════════════════
+   PAS129/PAS130 — INTELLIGENCE COMMAND CENTRE
+═══════════════════════════════════════════════ */
+.intel-grid7{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:980px){.intel-grid7{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.intel-grid7{grid-template-columns:1fr}}
+
+.intel-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--bo);border-radius:10px;background:var(--bg2);box-shadow:var(--sh);margin-bottom:8px}
+.intel-row .intel-bar{width:5px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.intel-row .intel-bar.red{background:var(--re)}
+.intel-row .intel-bar.amber{background:var(--am)}
+.intel-row .intel-bar.green{background:var(--gr)}
+.intel-row .intel-bar.gray{background:var(--bo)}
+.intel-row .intel-name{font-weight:600;font-size:13.5px;color:var(--text);min-width:170px}
+.intel-row .intel-expl{font-size:12px;color:var(--mu);flex:1;line-height:1.5}
+.intel-row .intel-cnt{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--text);min-width:48px;text-align:right}
+
+.intel-tl{position:relative;padding-left:22px;margin-top:14px}
+.intel-tl::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--bo)}
+.intel-tl-node{position:relative;padding:10px 0 14px 16px;border-bottom:1px dashed var(--bo)}
+.intel-tl-node:last-child{border-bottom:none}
+.intel-tl-node::before{content:"";position:absolute;left:-22px;top:14px;width:14px;height:14px;border-radius:50%;background:var(--bg2);border:2px solid var(--p)}
+.intel-tl-node.warning::before{border-color:var(--am)}
+.intel-tl-node.error::before,.intel-tl-node.critical::before{border-color:var(--re)}
+.intel-tl-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);letter-spacing:.04em}
+.intel-tl-line{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.intel-tl-line .intel-evtype{font-weight:600;font-size:13px;color:var(--text)}
+.intel-tl-line .intel-state{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);background:var(--bg3);padding:2px 6px;border-radius:4px}
+.intel-tl-desc{font-size:12px;color:var(--mu);margin-top:4px;line-height:1.5}
+
+.intel-mono{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--text)}
+.intel-mu-mono{font-family:'DM Mono',monospace;font-size:11px;color:var(--mu)}
+.intel-loadbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.intel-loadbox input{flex:1;min-width:240px;border:1px solid var(--bo);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);background:var(--bg);outline:none}
+.intel-loadbox input:focus{border-color:var(--p)}
+
+.intel-health-strip{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--bo);border-radius:10px;background:var(--bg2);box-shadow:var(--sh);margin-bottom:14px}
+.intel-health-strip .intel-h-status{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.intel-health-strip .intel-h-status.green{color:var(--gr)}
+.intel-health-strip .intel-h-status.amber{color:var(--am)}
+.intel-health-strip .intel-h-status.red{color:var(--re)}
+.intel-health-strip .intel-h-detail{font-size:12px;color:var(--mu);flex:1}
 </style>
 </head>
 <body>
@@ -310,6 +353,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
   <div class="tabbar" id="adminTabbar">
     <button class="tab on"  data-tab="a-dashboard"  onclick="adminGo(this)">Dashboard</button>
+    <button class="tab"     data-tab="a-intel"      onclick="adminGo(this)">Intelligence</button>
     <button class="tab"     data-tab="a-brokerages" onclick="adminGo(this)">Brokerages</button>
     <button class="tab"     data-tab="a-calls"      onclick="adminGo(this)">Calls</button>
     <button class="tab"     data-tab="a-errors"     onclick="adminGo(this)">Errors</button>
@@ -317,6 +361,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <button class="tab"     data-tab="a-onboard"    onclick="adminGo(this)">Onboard</button>
   </div>
   <div class="pg on" id="a-dashboard"><div class="wrap" id="aDashContent"><div class="loading-box"><div class="spinner"></div><br>Loading fleet data…</div></div></div>
+  <div class="pg"    id="a-intel"><div class="wrap" id="aIntelContent"></div></div>
   <div class="pg"    id="a-brokerages"><div class="wrap" id="aBrokContent"><div class="loading-box"><div class="spinner"></div><br>Loading brokerages…</div></div></div>
   <div class="pg"    id="a-calls"><div class="wrap" id="aCallsContent"></div></div>
   <div class="pg"    id="a-errors"><div class="wrap" id="aErrContent"><div class="loading-box"><div class="spinner"></div><br>Loading error logs…</div></div></div>
@@ -730,6 +775,7 @@ function adminGo(el) {
 
   switch(tab) {
     case 'a-dashboard':  loadAdminDashboard(); break;
+    case 'a-intel':      loadIntelligence();   break;
     case 'a-brokerages': loadBrokerages();     break;
     case 'a-calls':      loadAdminCalls();     break;
     case 'a-errors':     loadErrors();         break;
@@ -2674,6 +2720,317 @@ window.addEventListener('unhandledrejection', function(e) {
     });
   }
 })();
+
+/* ═══════════════════════════════════════════════
+   PAS129/PAS130 — INTELLIGENCE COMMAND CENTRE (admin)
+═══════════════════════════════════════════════ */
+
+/* Operator-facing labels + 1-line explanations + severity colour. */
+var INTEL_LEAKAGE_META = {
+  scheduling_leakage:    { label:'Scheduling Leakage',    expl:'Booking attempted but failed and never confirmed.',                       sev:'red'   },
+  provider_leakage:      { label:'Provider Leakage',      expl:'External provider failed near a booking attempt.',                       sev:'red'   },
+  callback_leakage:      { label:'Callback Leakage',      expl:'Callback requested but lead not yet contacted.',                         sev:'amber' },
+  qualification_leakage: { label:'Qualification Leakage', expl:'Call ended without intent / budget / timeline captured.',                sev:'amber' },
+  response_leakage:      { label:'Response Leakage',      expl:'Lead engaged but call ended without booking, callback, or objection.',   sev:'amber' },
+  source_leakage:        { label:'Source Leakage',        expl:'Inbound call failed before any qualifying data was captured.',           sev:'amber' },
+  no_leak_detected:      { label:'No Leak Detected',      expl:'Healthy call group — no leak signals.',                                  sev:'green' }
+};
+
+/* All recognised event categories → chip colour. */
+var INTEL_CATEGORY_TAG = {
+  call:'purple', lead:'blue', booking:'green', llm:'amber', ops:'red'
+};
+
+/* Severity → chip colour. */
+var INTEL_SEVERITY_TAG = {
+  info:'gray', debug:'gray', warning:'amber', error:'red', critical:'red'
+};
+
+/* SECURITY: never echo these payload keys, even in admin view. */
+var INTEL_FORBIDDEN_PAYLOAD_KEYS = {
+  api_key:1, x_api_key:1, x_admin_key:1, authorization:1, secret:1,
+  password:1, token:1
+};
+
+function intelTrunc(s, n) {
+  if (s == null) return '';
+  s = String(s);
+  if (s.length <= n) return s;
+  return s.slice(0, n) + '…';
+}
+
+function intelFmtTime(iso) {
+  if (!iso) return '—';
+  try {
+    var d = new Date(iso);
+    return d.toLocaleString('en-US', {
+      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'
+    });
+  } catch(_) { return iso; }
+}
+
+function intelShortId(s) {
+  if (!s) return '—';
+  s = String(s);
+  return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
+}
+
+/* Render a single payload-derived "safe description". Skips secrets,
+   truncates strings, and only shows top-level scalar fields. */
+function intelSafeDescribe(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  var bits = [];
+  Object.keys(payload).forEach(function(k) {
+    if (INTEL_FORBIDDEN_PAYLOAD_KEYS[String(k).toLowerCase()]) return;
+    var v = payload[k];
+    if (v == null) return;
+    if (typeof v === 'object') return; // skip nested
+    var s = String(v);
+    if (s.length > 60) s = s.slice(0, 60) + '…';
+    bits.push(escHtml(k) + '=' + escHtml(s));
+    if (bits.length >= 3) return;
+  });
+  return bits.join('  ·  ');
+}
+
+function loadIntelligence() {
+  var root = document.getElementById('aIntelContent');
+  root.innerHTML = '<h1 class="pg-title">Intelligence</h1>'
+    + '<p class="pg-sub">Response intelligence command centre — events, leakage, callbacks, timelines.</p>'
+
+    + '<span class="sec-label">Overview (last 7 days)</span>'
+    + '<div id="intelOverview"><div class="loading-box"><div class="spinner"></div><br>Loading summary…</div></div>'
+
+    + '<span class="sec-label" style="margin-top:18px">Provider / System Health</span>'
+    + '<div id="intelHealth"></div>'
+
+    + '<span class="sec-label" style="margin-top:18px">Leakage Breakdown</span>'
+    + '<div id="intelLeakage"><div style="color:var(--mu);font-size:13px">—</div></div>'
+
+    + '<span class="sec-label" style="margin-top:24px">Callback Queue</span>'
+    + '<div id="intelCallbacks"><div class="loading-box"><div class="spinner"></div><br>Loading callbacks…</div></div>'
+
+    + '<span class="sec-label" style="margin-top:24px">Recent PAS Events</span>'
+    + '<div id="intelEvents"><div class="loading-box"><div class="spinner"></div><br>Loading events…</div></div>'
+
+    + '<span class="sec-label" style="margin-top:24px">Call Timeline Viewer</span>'
+    + '<div class="card">'
+    +   '<div class="intel-loadbox">'
+    +     '<input id="intelTlInput" type="text" placeholder="Enter call_id (e.g. SIM-4056D95E757D)" autocomplete="off" />'
+    +     '<button class="btn btn-primary btn-sm" onclick="intelLoadTimeline()">Load Timeline</button>'
+    +   '</div>'
+    +   '<div id="intelTimeline" style="color:var(--mu);font-size:13px">Enter a call_id and click <strong>Load Timeline</strong> to render the event sequence.</div>'
+    + '</div>';
+
+  intelLoadSummary();
+  intelLoadCallbacks();
+  intelLoadRecentEvents();
+}
+
+function intelLoadSummary() {
+  apiFetch('/admin/intelligence/summary').then(function(d) {
+    intelRenderOverview(d);
+    intelRenderHealth(d);
+    intelRenderLeakage(d);
+  }).catch(function(e) {
+    document.getElementById('intelOverview').innerHTML =
+      '<div class="card" style="color:var(--re);font-size:13px">Failed to load summary: ' + escHtml(e.message) + '</div>';
+  });
+}
+
+function intelRenderOverview(d) {
+  var byType = d.events_by_type || {};
+  var bySev  = d.events_by_severity || {};
+  var leak   = d.leakage_breakdown || {};
+  var cards = [
+    ['Events tracked',       d.events_total != null ? d.events_total : '—', 'last ' + (d.period_since ? '7d' : '—')],
+    ['Calls analyzed',       d.calls_analyzed != null ? d.calls_analyzed : '—', 'distinct call_ids'],
+    ['Callback events',      d.callback_events_count != null ? d.callback_events_count : 0, 'requested + ended'],
+    ['Scheduling leaks',     leak.scheduling_leakage || 0, 'booking failed → no confirm'],
+    ['Qualification leaks',  leak.qualification_leakage || 0, 'no intent/budget/timeline'],
+    ['Provider failures',    byType['provider.failed'] || 0, 'external provider 4xx/5xx'],
+    ['Warning events',       bySev.warning || 0, 'severity=warning'],
+    ['Error events',         (bySev.error || 0) + (bySev.critical || 0), 'severity=error / critical']
+  ];
+  var html = '';
+  cards.forEach(function(c) {
+    var n = c[1];
+    var nClass = (typeof n === 'number' && n > 0 && /leaks|failures|Warning|Error/i.test(c[0])) ? ' red' : '';
+    html += '<div class="stat-card">'
+      + '<div class="stat-label">' + escHtml(c[0]) + '</div>'
+      + '<div class="stat-val' + nClass + '">' + escHtml(String(n)) + '</div>'
+      + '<div class="stat-sub">' + escHtml(c[2]) + '</div>'
+      + '</div>';
+  });
+  document.getElementById('intelOverview').innerHTML = '<div class="intel-grid7">' + html + '</div>';
+}
+
+function intelRenderHealth(d) {
+  var byType = d.events_by_type || {};
+  var bySev  = d.events_by_severity || {};
+  var providerFails = byType['provider.failed'] || 0;
+  var warnings = bySev.warning || 0;
+  var errors = (bySev.error || 0) + (bySev.critical || 0);
+  var status, statusClass, detail;
+  if (errors > 0 || providerFails >= 5) {
+    status = 'Degraded'; statusClass = 'red';
+    detail = providerFails + ' provider failure(s), ' + errors + ' error(s), ' + warnings + ' warning(s) in window.';
+  } else if (providerFails > 0 || warnings > 0) {
+    status = 'Watch'; statusClass = 'amber';
+    detail = providerFails + ' provider failure(s), ' + warnings + ' warning(s) in window.';
+  } else {
+    status = 'Healthy'; statusClass = 'green';
+    detail = 'No provider failures and no warnings in window.';
+  }
+  document.getElementById('intelHealth').innerHTML =
+    '<div class="intel-health-strip">'
+    +   '<span class="intel-h-status ' + statusClass + '">' + status + '</span>'
+    +   '<span class="intel-h-detail">' + escHtml(detail) + '</span>'
+    + '</div>';
+}
+
+function intelRenderLeakage(d) {
+  var leak = d.leakage_breakdown || {};
+  var keys = Object.keys(leak);
+  if (keys.length === 0) {
+    document.getElementById('intelLeakage').innerHTML =
+      '<div class="card" style="color:var(--mu);font-size:13px">No leakage detected in the current window.</div>';
+    return;
+  }
+  // Sort by count descending, then by red-severity first.
+  var sevOrder = { red:0, amber:1, green:2, gray:3 };
+  keys.sort(function(a, b) {
+    var ca = leak[a] || 0, cb = leak[b] || 0;
+    if (cb !== ca) return cb - ca;
+    var sa = sevOrder[(INTEL_LEAKAGE_META[a]||{}).sev] || 9;
+    var sb = sevOrder[(INTEL_LEAKAGE_META[b]||{}).sev] || 9;
+    return sa - sb;
+  });
+  var rows = keys.map(function(k) {
+    var meta = INTEL_LEAKAGE_META[k] || { label:k, expl:'(unknown leakage category)', sev:'gray' };
+    return '<div class="intel-row">'
+      + '<div class="intel-bar ' + meta.sev + '"></div>'
+      + '<div class="intel-name">' + escHtml(meta.label) + '</div>'
+      + '<div class="intel-expl">' + escHtml(meta.expl) + '</div>'
+      + '<div class="intel-cnt">' + (leak[k] || 0) + '</div>'
+      + '</div>';
+  }).join('');
+  document.getElementById('intelLeakage').innerHTML = rows;
+}
+
+function intelLoadRecentEvents() {
+  apiFetch('/admin/events/recent?limit=25').then(function(d) {
+    var events = d.events || [];
+    if (events.length === 0) {
+      document.getElementById('intelEvents').innerHTML =
+        emptyHtml('📭', 'No recent events', 'Nothing in pas_events for the current window.');
+      return;
+    }
+    var rows = events.map(function(e) {
+      var sevTag  = tagHtml(e.severity || 'info', INTEL_SEVERITY_TAG[e.severity] || 'gray');
+      var catTag  = tagHtml(e.event_category || '—', INTEL_CATEGORY_TAG[e.event_category] || 'gray');
+      return '<tr>'
+        + '<td class="intel-mu-mono">' + escHtml(intelFmtTime(e.created_at)) + '</td>'
+        + '<td><span class="intel-mono">' + escHtml(e.event_type || '—') + '</span></td>'
+        + '<td>' + catTag + '</td>'
+        + '<td>' + sevTag + '</td>'
+        + '<td class="intel-mu-mono">' + escHtml(e.state || '—') + '</td>'
+        + '<td class="intel-mu-mono"><a href="javascript:void(0)" onclick="intelOpenTimeline(\'' + escAttr(e.call_id || '') + '\')" style="color:var(--p);text-decoration:none">' + escHtml(intelShortId(e.call_id)) + '</a></td>'
+        + '<td class="intel-mu-mono">' + escHtml(e.event_source || '—') + '</td>'
+        + '</tr>';
+    }).join('');
+    document.getElementById('intelEvents').innerHTML =
+      '<div class="card" style="padding:0;overflow-x:auto">'
+      + '<table class="tbl"><thead><tr>'
+      + '<th>Time</th><th>Event Type</th><th>Category</th><th>Severity</th><th>State</th><th>Call ID</th><th>Source</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table>'
+      + '</div>';
+  }).catch(function(e) {
+    document.getElementById('intelEvents').innerHTML =
+      '<div class="card" style="color:var(--re);font-size:13px">Failed to load events: ' + escHtml(e.message) + '</div>';
+  });
+}
+
+function intelLoadCallbacks() {
+  apiFetch('/admin/events/callbacks?limit=25').then(function(d) {
+    var events = d.events || [];
+    if (events.length === 0) {
+      document.getElementById('intelCallbacks').innerHTML =
+        emptyHtml('📞', 'No callbacks', 'No callback.requested or call.ended_with_callback events in the window.');
+      return;
+    }
+    var rows = events.map(function(e) {
+      var p = e.payload || {};
+      var requested = intelFmtTime(e.created_at);
+      var preferred = p.preferred_time_normalized || p.preferred_time_raw || '—';
+      var reason    = p.callback_reason_excerpt || p.from_state || '—';
+      var idShort   = intelShortId(e.call_id);
+      return '<tr>'
+        + '<td class="intel-mono"><a href="javascript:void(0)" onclick="intelOpenTimeline(\'' + escAttr(e.call_id || '') + '\')" style="color:var(--p);text-decoration:none">' + escHtml(idShort) + '</a></td>'
+        + '<td class="intel-mu-mono">' + escHtml(requested) + '</td>'
+        + '<td class="intel-mu-mono">' + escHtml(intelTrunc(preferred, 40)) + '</td>'
+        + '<td class="intel-mu-mono">' + escHtml(intelTrunc(reason, 60)) + '</td>'
+        + '<td>' + tagHtml(e.state || '—', 'gray') + '</td>'
+        + '<td><button class="btn btn-ghost btn-sm" disabled title="Wired in PAS131 — read-only for now">Call Back</button></td>'
+        + '</tr>';
+    }).join('');
+    document.getElementById('intelCallbacks').innerHTML =
+      '<div class="card" style="padding:0;overflow-x:auto">'
+      + '<table class="tbl"><thead><tr>'
+      + '<th>Call ID</th><th>Requested</th><th>Preferred Time</th><th>Reason</th><th>State</th><th>Action</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table>'
+      + '</div>';
+  }).catch(function(e) {
+    document.getElementById('intelCallbacks').innerHTML =
+      '<div class="card" style="color:var(--re);font-size:13px">Failed to load callbacks: ' + escHtml(e.message) + '</div>';
+  });
+}
+
+function intelOpenTimeline(callId) {
+  if (!callId) return;
+  var input = document.getElementById('intelTlInput');
+  if (input) input.value = callId;
+  intelLoadTimeline();
+  // Scroll into view
+  var card = document.getElementById('intelTimeline');
+  if (card && card.scrollIntoView) card.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function intelLoadTimeline() {
+  var input = document.getElementById('intelTlInput');
+  var callId = input ? input.value.trim() : '';
+  var box = document.getElementById('intelTimeline');
+  if (!callId) {
+    box.innerHTML = '<span style="color:var(--am);font-size:12px">Enter a call_id first.</span>';
+    return;
+  }
+  box.innerHTML = loadingHtml('Loading timeline…');
+  apiFetch('/admin/events/calls/' + encodeURIComponent(callId)).then(function(d) {
+    var events = d.events || [];
+    if (events.length === 0) {
+      box.innerHTML = emptyHtml('🔍', 'No events', 'No pas_events found for call_id ' + escHtml(intelTrunc(callId, 40)));
+      return;
+    }
+    var nodes = events.map(function(e) {
+      var sevClass = (e.severity === 'warning' || e.severity === 'error' || e.severity === 'critical') ? e.severity : '';
+      var sevTag   = tagHtml(e.severity || 'info', INTEL_SEVERITY_TAG[e.severity] || 'gray');
+      var desc     = intelSafeDescribe(e.payload);
+      return '<div class="intel-tl-node ' + sevClass + '">'
+        + '<div class="intel-tl-time">' + escHtml(intelFmtTime(e.created_at)) + '</div>'
+        + '<div class="intel-tl-line">'
+        +   '<span class="intel-evtype">' + escHtml(e.event_type || '—') + '</span>'
+        +   (e.state ? '<span class="intel-state">' + escHtml(e.state) + '</span>' : '')
+        +   sevTag
+        + '</div>'
+        + (desc ? '<div class="intel-tl-desc">' + desc + '</div>' : '')
+        + '</div>';
+    }).join('');
+    box.innerHTML = '<div class="intel-mu-mono" style="margin-bottom:6px">' + events.length + ' event(s) for <strong class="intel-mono">' + escHtml(intelTrunc(callId, 40)) + '</strong></div>'
+      + '<div class="intel-tl">' + nodes + '</div>';
+  }).catch(function(e) {
+    box.innerHTML = '<span style="color:var(--re);font-size:12px">Failed to load timeline: ' + escHtml(e.message) + '</span>';
+  });
+}
 </script>
 </body>
 </html>
