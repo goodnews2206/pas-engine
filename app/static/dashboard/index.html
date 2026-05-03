@@ -53,6 +53,37 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .demo-unlock{display:none;width:100%;box-sizing:border-box;min-height:42px;margin-top:10px;background:transparent;color:var(--mu);border:1px dashed var(--bo);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:color .2s,border-color .2s}
 .demo-unlock:hover{color:var(--p);border-color:var(--p)}
 .demo-unlock.on{display:block}
+
+/* ═══════════════════════════════════════════════
+   HOMEPAGE — "How PAS Works" walkthrough
+   Sits above the login card on the unauth landing screen.
+═══════════════════════════════════════════════ */
+.home-shell{display:flex;flex-direction:column;align-items:center;width:100%;max-width:1100px;margin:0 auto;padding:48px 24px 24px}
+.home-hero{text-align:center;margin-bottom:40px}
+.home-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mu);margin-bottom:12px}
+.home-title{font-family:'Syne',sans-serif;font-weight:800;font-size:42px;line-height:1.1;color:var(--text);margin-bottom:14px;letter-spacing:-0.01em}
+.home-sub{font-size:15px;color:var(--mu);max-width:560px;margin:0 auto;line-height:1.6}
+
+.home-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;width:100%;margin-bottom:36px}
+.home-step{padding:28px 26px;border:1px solid var(--bo);border-radius:14px;background:var(--bg2);box-shadow:var(--sh);display:flex;flex-direction:column;gap:14px;position:relative;transition:transform .2s,box-shadow .2s}
+.home-step:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.home-step-num{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--p);color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:15px}
+.home-step-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--p);font-weight:700}
+.home-step-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);line-height:1.25;letter-spacing:-0.005em}
+.home-step-body{font-size:13.5px;color:var(--mu);line-height:1.65}
+.home-step-list{margin:0;padding-left:18px;font-size:13px;color:var(--text);line-height:1.7}
+.home-step-list li{margin-bottom:4px}
+
+.home-cta-wrap{text-align:center;margin-bottom:32px}
+.home-cta{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:var(--p);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;transition:background .2s,transform .15s;min-height:48px;box-shadow:var(--sh-md)}
+.home-cta:hover{background:var(--pl);transform:translateY(-1px)}
+.home-cta-arrow{font-size:18px;line-height:1}
+
+@media(max-width:880px){
+  .home-steps{grid-template-columns:1fr}
+  .home-title{font-size:32px}
+  .home-shell{padding:32px 16px 16px}
+}
 .login-err{display:none;color:var(--re);font-size:12px;margin-top:10px;font-family:'DM Mono',monospace}
 .login-note{font-size:11px;color:var(--mu);margin-top:18px;text-align:center}
 
@@ -397,28 +428,171 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .intel-tl-node.evt-booking::before{border-color:var(--am);background:#fff}
 .intel-tl-node.evt-provider::before{border-color:var(--re);background:#fff}
 .intel-tl-node.evt-callback::before{border-color:var(--p);background:#fff}
+
+/* ═══════════════════════════════════════════════
+   BROKERAGE — REVENUE COMMAND CENTRE (cc-* prefix)
+   Three-zone DETECT → DECIDE → ACT layout. Business-tone.
+═══════════════════════════════════════════════ */
+.cc-zone{margin-bottom:28px}
+.cc-zone-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cc-zone-step{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--p);color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:12px}
+.cc-zone-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text);letter-spacing:.02em}
+.cc-zone-sub{font-size:12px;color:var(--mu);margin-left:8px}
+
+/* DETECT — signal cards with count + short explanation. */
+.cc-detect-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.cc-signal{padding:18px;border:1px solid var(--bo);border-radius:12px;background:var(--bg2);box-shadow:var(--sh);display:flex;flex-direction:column;gap:6px}
+.cc-signal-cnt{font-family:'Syne',sans-serif;font-weight:800;font-size:36px;line-height:1;color:var(--text)}
+.cc-signal-cnt.amber{color:var(--am)}
+.cc-signal-cnt.red{color:var(--re)}
+.cc-signal-cnt.green{color:var(--gr)}
+.cc-signal-label{font-family:'Syne',sans-serif;font-weight:600;font-size:13.5px;color:var(--text)}
+.cc-signal-expl{font-size:11.5px;color:var(--mu);line-height:1.5}
+
+/* DECIDE — interpretation row with "why action is needed". */
+.cc-decide-list{display:flex;flex-direction:column;gap:8px}
+.cc-decide{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border:1px solid var(--bo);border-left:3px solid var(--p);border-radius:10px;background:var(--bg2);box-shadow:var(--sh)}
+.cc-decide.amber{border-left-color:var(--am)}
+.cc-decide.red{border-left-color:var(--re)}
+.cc-decide.green{border-left-color:var(--gr)}
+.cc-decide-icon{font-size:18px;line-height:1.2;flex-shrink:0}
+.cc-decide-text{font-size:13px;color:var(--text);line-height:1.55;flex:1}
+.cc-decide-text strong{font-weight:700}
+
+/* ACT — primary action panel + callback priority cards. */
+.cc-act-panel{padding:22px;border:1px solid var(--bo);border-radius:12px;background:var(--bg2);box-shadow:var(--sh)}
+.cc-act-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--bo);flex-wrap:wrap}
+.cc-act-row:last-child{border-bottom:none}
+.cc-act-row .cc-act-label{font-size:13px;color:var(--text);font-weight:600}
+.cc-act-row .cc-act-sub{font-size:11.5px;color:var(--mu);margin-top:2px}
+.cc-act-buttons{display:flex;gap:8px;flex-wrap:wrap}
+
+.cc-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:8px;border:1px solid var(--bo);background:var(--bg2);color:var(--text);cursor:pointer;transition:all .15s;min-height:40px}
+.cc-btn:hover{border-color:var(--p);color:var(--p)}
+.cc-btn.primary{background:var(--p);border-color:var(--p);color:#fff}
+.cc-btn.primary:hover{background:var(--pl);border-color:var(--pl);color:#fff}
+.cc-btn.ghost{color:var(--mu)}
+.cc-btn.ghost:hover{color:var(--text);border-color:var(--mu)}
+.cc-btn:disabled{opacity:.5;cursor:default;pointer-events:none}
+
+/* Callback priority cards (brokerage flavor). */
+.cc-cb-list{display:flex;flex-direction:column;gap:10px}
+.cc-cb{position:relative;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:16px 18px 16px 22px;border:1px solid var(--bo);border-radius:10px;background:var(--bg2);box-shadow:var(--sh);transition:opacity .2s}
+.cc-cb::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 3px 3px 0;background:var(--am)}
+.cc-cb.urgent::before{background:var(--re)}
+.cc-cb.done{opacity:.55}
+.cc-cb.done::before{background:var(--bo)}
+.cc-cb.done .cc-cb-id,.cc-cb.done .cc-cb-meta{text-decoration:line-through;text-decoration-color:var(--mu)}
+.cc-cb-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cc-cb-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cc-cb-id{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--p);cursor:default}
+.cc-cb-pref{font-size:11.5px;color:var(--text);background:var(--bg3);padding:3px 9px;border-radius:5px;font-weight:600}
+.cc-cb-pref.urgent{color:var(--re);background:rgba(220,38,38,.07);border:1px solid var(--re)}
+.cc-cb-meta{font-size:12.5px;color:var(--mu);line-height:1.5}
+.cc-cb-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:700px){
+  .cc-cb{grid-template-columns:1fr}
+  .cc-cb-actions{justify-content:flex-start}
+}
+
+/* Leakage rows (brokerage). */
+.cc-leak-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--bo);border-radius:10px;background:var(--bg2);box-shadow:var(--sh);margin-bottom:8px}
+.cc-leak-bar{width:5px;align-self:stretch;border-radius:3px;flex-shrink:0;background:var(--bo)}
+.cc-leak-bar.amber{background:var(--am)}
+.cc-leak-bar.red{background:var(--re)}
+.cc-leak-name{font-weight:700;font-size:14px;color:var(--text);min-width:170px}
+.cc-leak-expl{font-size:12.5px;color:var(--mu);flex:1;line-height:1.5}
+.cc-leak-cnt{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--text);min-width:36px;text-align:right}
+@media(max-width:700px){
+  .cc-leak-row{flex-wrap:wrap}
+  .cc-leak-name{min-width:auto;width:100%}
+}
 </style>
 </head>
 <body>
 
 <!-- ══════════════════════════════════════════
-     LOGIN
+     LOGIN + HOMEPAGE WALKTHROUGH
+     Unauth visitors see the "How PAS Works" intro above the login card.
 ══════════════════════════════════════════ -->
 <div class="login-screen" id="loginView">
-  <div class="login-card">
-    <div class="login-lockup">
-      <div class="login-logo">ORVN</div>
-      <span class="login-sub">PAS PORTAL</span>
+  <div class="home-shell">
+
+    <!-- Hero -->
+    <div class="home-hero">
+      <div class="home-eyebrow">ORVN · PAS</div>
+      <h1 class="home-title">How PAS Works</h1>
+      <p class="home-sub">PAS is the AI operating layer for real estate brokerages. It listens to every lead conversation, decides what matters, and acts — so no opportunity slips through.</p>
     </div>
-    <p class="login-tagline">AI first-touch infrastructure for real estate brokerages.</p>
-    <div class="fl">
-      <label>API Key</label>
-      <input class="fi" id="keyInput" type="password" placeholder="Enter brokerage key or admin key…" autocomplete="off">
+
+    <!-- DETECT → DECIDE → ACT -->
+    <div class="home-steps">
+
+      <div class="home-step">
+        <span class="home-step-num">1</span>
+        <span class="home-step-tag">DETECT</span>
+        <h2 class="home-step-title">PAS Detects What You Miss</h2>
+        <p class="home-step-body">PAS listens to every lead interaction the moment it begins, surfacing what would otherwise go unseen:</p>
+        <ul class="home-step-list">
+          <li>missed callbacks</li>
+          <li>failed bookings</li>
+          <li>unqualified conversations</li>
+          <li>delayed responses</li>
+        </ul>
+      </div>
+
+      <div class="home-step">
+        <span class="home-step-num">2</span>
+        <span class="home-step-tag">DECIDE</span>
+        <h2 class="home-step-title">PAS Decides What Matters</h2>
+        <p class="home-step-body">PAS reads intent from each conversation and decides where to focus:</p>
+        <ul class="home-step-list">
+          <li>which leads need follow-up</li>
+          <li>which are ready to close</li>
+          <li>which require nurturing</li>
+          <li>which are dead</li>
+        </ul>
+      </div>
+
+      <div class="home-step">
+        <span class="home-step-num">3</span>
+        <span class="home-step-tag">ACT</span>
+        <h2 class="home-step-title">PAS Takes Action Instantly</h2>
+        <p class="home-step-body">PAS doesn't stop at insight — it acts on every signal in real time:</p>
+        <ul class="home-step-list">
+          <li>calls back leads</li>
+          <li>schedules appointments</li>
+          <li>routes to agents</li>
+          <li>prevents leakage</li>
+        </ul>
+      </div>
+
     </div>
-    <div class="login-err" id="loginErr">Invalid key — check with your ORVN account manager.</div>
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Portal →</button>
-    <button class="demo-unlock" id="demoUnlock" type="button">Use Demo Access</button>
-    <p class="login-note">Brokerage API key or ORVN admin key accepted.</p>
+
+    <!-- CTA -->
+    <div class="home-cta-wrap">
+      <button type="button" class="home-cta" onclick="document.getElementById('loginCard').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('keyInput').focus()">
+        See PAS in Action <span class="home-cta-arrow">→</span>
+      </button>
+    </div>
+
+    <!-- Login card -->
+    <div class="login-card" id="loginCard">
+      <div class="login-lockup">
+        <div class="login-logo">ORVN</div>
+        <span class="login-sub">PAS PORTAL</span>
+      </div>
+      <p class="login-tagline">AI first-touch infrastructure for real estate brokerages.</p>
+      <div class="fl">
+        <label>API Key</label>
+        <input class="fi" id="keyInput" type="password" placeholder="Enter brokerage key or admin key…" autocomplete="off">
+      </div>
+      <div class="login-err" id="loginErr">Invalid key — check with your ORVN account manager.</div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Portal →</button>
+      <button class="demo-unlock" id="demoUnlock" type="button">Use Demo Access</button>
+      <p class="login-note">Brokerage API key or ORVN admin key accepted.</p>
+    </div>
+
   </div>
 </div>
 
@@ -1474,6 +1648,27 @@ function genInvite() {
 /* ═══════════════════════════════════════════════
    CLIENT — DASHBOARD
 ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   CLIENT — REVENUE COMMAND CENTRE (DETECT → DECIDE → ACT)
+═══════════════════════════════════════════════ */
+
+/* Brokerage callback status — local-only mark-complete state per call_id.
+   Mirrors INTEL.callbackStatus but stays brokerage-scoped. */
+var CC_CB_LS = 'pas_brokerage_callback_status';
+var CC = {
+  callbackStatus: {},
+  overview: null,
+  callbacks: []  // populated when /portal/callbacks is wired (PAS131+)
+};
+try {
+  CC.callbackStatus = JSON.parse(localStorage.getItem(CC_CB_LS) || '{}') || {};
+} catch (e) { CC.callbackStatus = {}; }
+
+function ccPersistCallbackStatus() {
+  try { localStorage.setItem(CC_CB_LS, JSON.stringify(CC.callbackStatus)); }
+  catch (e) {}
+}
+
 function loadClientDashboard(preloaded) {
   var el = document.getElementById('cDashContent');
   if (S.loaded['c-dashboard'] && !preloaded) return;
@@ -1481,49 +1676,40 @@ function loadClientDashboard(preloaded) {
   if (!preloaded) el.innerHTML = loadingHtml('Loading dashboard…');
 
   function render(d) {
+    CC.overview = d;
     S.brokerageName = d.brokerage_name || S.brokerageName;
     if (d.brokerage_name) document.getElementById('clientTopName').textContent = d.brokerage_name;
 
-    var week    = d.calls_this_week || 0;
-    var booked  = d.booked_this_week || 0;
-    var bookPct = d.booking_rate_pct || 0;
-    var isEmpty = week === 0;
+    var week     = d.calls_this_week || 0;
+    var booked   = d.booked_this_week || 0;
+    var leads    = d.total_leads || 0;
+    var avail    = d.available_agents || 0;
+    var totalAgt = d.total_agents || 0;
+    var isEmpty  = week === 0;
 
-    var nextActions = [
-      ['Review unbooked qualified leads', 'c-leads'],
-      ['Check after-hours lead volume',   'c-insights'],
-      ['View call outcomes this week',    'c-calls']
-    ];
-    if ((d.total_agents || 0) === 0) nextActions.push(['Add a fallback agent', 'c-agents']);
+    /* Derived business signals from /portal/overview. Conservative —
+       these are the only counts available without new endpoints. */
+    var followUp     = Math.max(0, leads - booked);
+    var bookingsLost = Math.max(0, week - booked);
+    var callbacksPending = (CC.callbacks || []).filter(function(c) {
+      return CC.callbackStatus[c.call_id] !== 'done';
+    }).length;
 
-    el.innerHTML = (isEmpty ? '<div style="margin-bottom:14px"><span class="demo-badge">DEMO MODE — no live calls yet</span></div>' : '')
-      + '<h1 class="pg-title">PAS Control Room</h1>'
-      + '<p class="pg-sub">PAS handled <strong>' + week + '</strong> lead conversation' + (week!==1?'s':'') + ' this week and booked <strong>' + booked + '</strong> appointment' + (booked!==1?'s':'') + '.</p>'
-      + '<div class="g4" style="margin-bottom:20px">'
-      + '<div class="stat-card"><div class="stat-label">Calls Today</div><div class="stat-val">' + (d.calls_today||0) + '</div><div class="stat-sub">inbound + sim</div></div>'
-      + '<div class="stat-card"><div class="stat-label">Calls This Week</div><div class="stat-val purple">' + week + '</div><div class="stat-sub">all sources</div></div>'
-      + '<div class="stat-card"><div class="stat-label">Appointments Booked</div><div class="stat-val green">' + booked + '</div><div class="stat-sub">this week</div></div>'
-      + '<div class="stat-card"><div class="stat-label">Booking Rate</div><div class="stat-val">' + fmtPct(bookPct) + '</div><div class="stat-sub">this week</div></div>'
-      + '</div>'
-      + '<div class="g3" style="margin-bottom:24px">'
-      + '<div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val">' + (d.total_leads||0) + '</div><div class="stat-sub">in memory</div></div>'
-      + '<div class="stat-card"><div class="stat-label">Active Agents</div><div class="stat-val">' + (d.available_agents||0) + ' <span style="font-size:16px;color:var(--mu)">/ ' + (d.total_agents||0) + '</span></div><div class="stat-sub">available now</div></div>'
-      + '<div class="stat-card"><div class="stat-label">PAS Credits</div><div class="stat-val purple">4,000</div><div class="stat-sub">remaining · demo</div></div>'
-      + '</div>'
-      + (d.best_agent ? '<span class="sec-label">Top Agent This Period</span>'
-        + '<div class="card" style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">'
-        + '<div><div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:20px">' + escHtml(d.best_agent.name) + '</div>'
-        + '<div style="font-size:12px;color:var(--mu);margin-top:2px">' + (d.best_agent.total_closed||0) + ' deals closed · ' + (d.best_agent.total_assigned||0) + ' leads assigned</div></div>'
-        + '<div style="text-align:right"><div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:38px;color:var(--gr);line-height:1">' + fmtPct(d.best_agent.close_rate) + '</div>'
-        + '<div style="font-size:11px;color:var(--mu)">close rate</div></div></div>' : '')
-      + '<span class="sec-label">Next Best Actions</span>'
-      + '<div class="card" style="padding:0;overflow:hidden">'
-      + nextActions.map(function(pair) {
-          return '<button onclick="clientGo(document.querySelector(\'[data-tab=' + pair[1] + ']\'))" '
-            + 'style="display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--bo);padding:13px 22px;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:color .2s;font-family:\'DM Sans\',sans-serif" '
-            + 'onmouseover="this.style.color=\'var(--p)\'" onmouseout="this.style.color=\'var(--text)\'">→ ' + pair[0] + '</button>';
-        }).join('')
-      + '</div>'
+    var detect = ccBuildDetect(followUp, bookingsLost, callbacksPending, avail, totalAgt);
+    var decide = ccBuildDecide(followUp, bookingsLost, callbacksPending, avail, totalAgt, isEmpty);
+    var act    = ccBuildAct(followUp, bookingsLost, callbacksPending, avail, totalAgt);
+    var leakageHtml   = ccBuildLeakagePanel();
+    var callbacksHtml = ccBuildCallbackPanel();
+
+    el.innerHTML =
+      (isEmpty ? '<div style="margin-bottom:14px"><span class="demo-badge">DEMO MODE — no live calls yet</span></div>' : '')
+      + '<h1 class="pg-title">Command Centre</h1>'
+      + '<p class="pg-sub">PAS detected <strong>' + leads + '</strong> lead' + (leads!==1?'s':'') + ', completed <strong>' + week + '</strong> conversation' + (week!==1?'s':'') + ', and confirmed <strong>' + booked + '</strong> booking' + (booked!==1?'s':'') + ' this week.</p>'
+      + detect
+      + decide
+      + act
+      + callbacksHtml
+      + leakageHtml
       + (isEmpty ? '<div class="callout callout-amber" style="margin-top:24px"><div class="callout-label cl-amber">Demo Mode Active</div>'
         + '<p>Demo data shown until live calls are connected. Contact <strong>ORVN Support</strong> to enable your live voice stack and start handling real inbound leads.</p></div>' : '');
 
@@ -1533,9 +1719,322 @@ function loadClientDashboard(preloaded) {
   if (preloaded) { render(preloaded); return; }
 
   apiFetch('/portal/overview').then(render).catch(function(e) {
-    el.innerHTML = '<h1 class="pg-title">Dashboard</h1>'
+    el.innerHTML = '<h1 class="pg-title">Command Centre</h1>'
       + emptyHtml('📊','Dashboard unavailable','Could not connect to PAS. ' + escHtml(e.message));
   });
+}
+
+/* ───── ZONE A — DETECT ─────
+   What PAS is seeing right now: counts + short business explanation. */
+function ccBuildDetect(followUp, bookingsLost, callbacksPending, avail, totalAgt) {
+  var signals = [
+    {
+      cnt: followUp, sevClass: followUp > 0 ? 'amber' : 'green',
+      label: followUp + ' lead' + (followUp !== 1 ? 's' : '') + ' awaiting follow-up',
+      expl: 'Captured leads not yet booked into an appointment.'
+    },
+    {
+      cnt: bookingsLost, sevClass: bookingsLost > 0 ? 'red' : 'green',
+      label: bookingsLost + ' booking' + (bookingsLost !== 1 ? 's' : '') + ' did not confirm',
+      expl: 'Conversations that ended without a confirmed appointment this week.'
+    },
+    {
+      cnt: callbacksPending, sevClass: callbacksPending > 0 ? 'amber' : 'green',
+      label: callbacksPending + ' callback' + (callbacksPending !== 1 ? 's' : '') + ' pending',
+      expl: 'Leads who asked PAS to call them back at a specific time.'
+    },
+    {
+      cnt: avail, sevClass: avail === 0 && totalAgt > 0 ? 'red' : (totalAgt === 0 ? 'amber' : 'green'),
+      label: avail + ' agent' + (avail !== 1 ? 's' : '') + ' available now',
+      expl: totalAgt === 0 ? 'No agents on file yet — add agents to enable routing.'
+                           : 'Out of ' + totalAgt + ' on file.'
+    }
+  ];
+  var cards = signals.map(function(s) {
+    return '<div class="cc-signal">'
+      +   '<div class="cc-signal-cnt ' + s.sevClass + '">' + s.cnt + '</div>'
+      +   '<div class="cc-signal-label">' + escHtml(s.label) + '</div>'
+      +   '<div class="cc-signal-expl">' + escHtml(s.expl) + '</div>'
+      + '</div>';
+  }).join('');
+  return '<div class="cc-zone">'
+    +   '<div class="cc-zone-head"><span class="cc-zone-step">1</span><span class="cc-zone-title">Detect</span><span class="cc-zone-sub">— what PAS is seeing</span></div>'
+    +   '<div class="cc-detect-grid">' + cards + '</div>'
+    + '</div>';
+}
+
+/* ───── ZONE B — DECIDE ─────
+   PAS interpretation of the detected signals. Explains WHY action is needed. */
+function ccBuildDecide(followUp, bookingsLost, callbacksPending, avail, totalAgt, isEmpty) {
+  var rows = [];
+  if (callbacksPending > 0) {
+    rows.push({
+      sev: 'red', icon: '◆',
+      text: '<strong>Follow-up required within 2 hours</strong> on ' + callbacksPending + ' pending callback' + (callbacksPending !== 1 ? 's' : '') + ' to prevent loss.'
+    });
+  }
+  if (bookingsLost > 0) {
+    rows.push({
+      sev: 'amber', icon: '⚠',
+      text: '<strong>Booking attempts ended without confirmation</strong> on ' + bookingsLost + ' conversation' + (bookingsLost !== 1 ? 's' : '') + ' — retry or assign an agent.'
+    });
+  }
+  if (followUp > 0 && bookingsLost === 0 && callbacksPending === 0) {
+    rows.push({
+      sev: 'amber', icon: '◇',
+      text: '<strong>' + followUp + ' qualified lead' + (followUp !== 1 ? 's' : '') + '</strong> ready to be assigned to an agent.'
+    });
+  }
+  if (avail === 0 && totalAgt === 0) {
+    rows.push({
+      sev: 'amber', icon: '◇',
+      text: '<strong>No agents configured</strong> — PAS cannot route or transfer until at least one agent is added.'
+    });
+  } else if (avail === 0 && totalAgt > 0) {
+    rows.push({
+      sev: 'amber', icon: '◇',
+      text: '<strong>All ' + totalAgt + ' agents are unavailable</strong> — incoming leads will queue for callback.'
+    });
+  }
+  if (rows.length === 0) {
+    rows.push({
+      sev: 'green', icon: '✓',
+      text: isEmpty
+        ? '<strong>Standing by.</strong> No live conversations yet — PAS is ready when leads arrive.'
+        : '<strong>All clear.</strong> No urgent decisions required right now.'
+    });
+  }
+  var list = rows.map(function(r) {
+    return '<div class="cc-decide ' + r.sev + '">'
+      +   '<div class="cc-decide-icon">' + r.icon + '</div>'
+      +   '<div class="cc-decide-text">' + r.text + '</div>'
+      + '</div>';
+  }).join('');
+  return '<div class="cc-zone">'
+    +   '<div class="cc-zone-head"><span class="cc-zone-step">2</span><span class="cc-zone-title">Decide</span><span class="cc-zone-sub">— what matters and why</span></div>'
+    +   '<div class="cc-decide-list">' + list + '</div>'
+    + '</div>';
+}
+
+/* ───── ZONE C — ACT ─────
+   Direct, decisive action buttons. The most important zone. */
+function ccBuildAct(followUp, bookingsLost, callbacksPending, avail, totalAgt) {
+  var rows = [];
+  if (callbacksPending > 0) {
+    rows.push({
+      label: 'Pending callbacks',
+      sub:   callbacksPending + ' lead' + (callbacksPending !== 1 ? 's' : '') + ' waiting for a return call.',
+      buttons: [
+        { label: 'Call Now',     kind: 'primary', call: 'ccActionCallNextCallback()' },
+        { label: 'Reschedule',   kind: '',        call: 'ccActionRescheduleNext()' }
+      ]
+    });
+  }
+  if (bookingsLost > 0) {
+    rows.push({
+      label: 'Failed bookings',
+      sub:   bookingsLost + ' conversation' + (bookingsLost !== 1 ? 's' : '') + ' ended without a confirmed time.',
+      buttons: [
+        { label: 'Retry Booking', kind: 'primary', call: "ccActionRetry('booking')" },
+        { label: 'Assign Agent',  kind: '',        call: "ccActionAssignAgent('booking')" }
+      ]
+    });
+  }
+  if (followUp > 0) {
+    rows.push({
+      label: 'Leads to assign',
+      sub:   followUp + ' captured lead' + (followUp !== 1 ? 's' : '') + ' awaiting an agent.',
+      buttons: [
+        { label: 'Assign Agent',  kind: 'primary', call: "ccActionAssignAgent('lead')" },
+        { label: 'View Leads',    kind: 'ghost',   call: "clientGo(document.querySelector('[data-tab=c-leads]'))" }
+      ]
+    });
+  }
+  if (avail === 0 && totalAgt === 0) {
+    rows.push({
+      label: 'No agents on file',
+      sub:   'PAS needs at least one agent to route or transfer leads.',
+      buttons: [
+        { label: 'Add Agent',     kind: 'primary', call: "clientGo(document.querySelector('[data-tab=c-agents]'))" }
+      ]
+    });
+  }
+  if (rows.length === 0) {
+    rows.push({
+      label: 'Nothing to do right now',
+      sub:   'No pending actions. PAS will surface new ones as conversations come in.',
+      buttons: []
+    });
+  }
+  var rowHtml = rows.map(function(r) {
+    var btns = r.buttons.map(function(b) {
+      return '<button class="cc-btn ' + b.kind + '" onclick="' + b.call + '">' + escHtml(b.label) + '</button>';
+    }).join('');
+    return '<div class="cc-act-row">'
+      +   '<div><div class="cc-act-label">' + escHtml(r.label) + '</div><div class="cc-act-sub">' + escHtml(r.sub) + '</div></div>'
+      +   '<div class="cc-act-buttons">' + btns + '</div>'
+      + '</div>';
+  }).join('');
+  return '<div class="cc-zone">'
+    +   '<div class="cc-zone-head"><span class="cc-zone-step">3</span><span class="cc-zone-title">Act</span><span class="cc-zone-sub">— what to do now</span></div>'
+    +   '<div class="cc-act-panel">' + rowHtml + '</div>'
+    + '</div>';
+}
+
+/* Callback priority cards — brokerage flavor. Empty state shows the
+   structure ready for when /portal/callbacks lands. Each card includes
+   call_id, reason, preferred time, urgency, and three actions. */
+function ccBuildCallbackPanel() {
+  var head = '<span class="sec-label" style="margin-top:8px">Callback queue</span>';
+  if (!CC.callbacks || CC.callbacks.length === 0) {
+    return head
+      + '<div class="card" style="color:var(--mu);font-size:13px;margin-bottom:24px">No callbacks pending right now. New callback requests will appear here.</div>';
+  }
+  var ordered = CC.callbacks.slice().sort(function(a, b) {
+    var sa = CC.callbackStatus[a.call_id] === 'done' ? 1 : 0;
+    var sb = CC.callbackStatus[b.call_id] === 'done' ? 1 : 0;
+    return sa - sb;
+  });
+  var cards = ordered.map(function(e) {
+    var p = e.payload || {};
+    var callId = e.call_id || '';
+    var idAttr = escAttr(callId);
+    var idShort = (typeof intelShortId === 'function') ? intelShortId(callId) : callId;
+    var preferred = p.preferred_time_normalized || p.preferred_time_raw || '—';
+    var reason = p.callback_reason_excerpt || p.from_state || '—';
+    var status = CC.callbackStatus[callId];
+    var isDone = status === 'done';
+    var urgent = false;
+    try {
+      urgent = !isDone && (Date.now() - new Date(e.created_at).getTime()) > 4 * 3600 * 1000;
+    } catch (err) {}
+    var actions = isDone
+      ? '<button class="cc-btn ghost" onclick="ccActionUndoCallback(\'' + idAttr + '\')">Undo</button>'
+      : '<button class="cc-btn primary" onclick="ccActionCallNow(\'' + idAttr + '\')">Call Now</button>'
+        + '<button class="cc-btn" onclick="ccActionReschedule(\'' + idAttr + '\')">Reschedule</button>'
+        + '<button class="cc-btn ghost" onclick="ccActionMarkDone(\'' + idAttr + '\')">Mark Done</button>';
+    return '<div class="cc-cb' + (isDone ? ' done' : '') + (urgent ? ' urgent' : '') + '">'
+      +   '<div class="cc-cb-main">'
+      +     '<div class="cc-cb-top">'
+      +       '<span class="cc-cb-id">' + escHtml(idShort) + '</span>'
+      +       '<span class="cc-cb-pref' + (urgent ? ' urgent' : '') + '">⏱ ' + escHtml(String(preferred).slice(0, 36)) + '</span>'
+      +     '</div>'
+      +     '<div class="cc-cb-meta">' + escHtml(String(reason).slice(0, 140)) + '</div>'
+      +   '</div>'
+      +   '<div class="cc-cb-actions">' + actions + '</div>'
+      + '</div>';
+  }).join('');
+  return head + '<div class="cc-cb-list" style="margin-bottom:24px">' + cards + '</div>';
+}
+
+/* Leakage panel — count + plain-language explanation + action button.
+   Uses the same INTEL_LEAKAGE_META map the admin side built; brokerage
+   labels are translated to business outcomes locally. */
+var CC_LEAKAGE_BUSINESS = {
+  scheduling_leakage:    { label:'Scheduling leakage', expl:'Bookings attempted but not confirmed.', action:'Recover Bookings' },
+  callback_leakage:      { label:'Callback leakage',   expl:'Callbacks asked for but not yet returned.', action:'Trigger Follow-up' },
+  qualification_leakage: { label:'Lead drop-off',      expl:'Conversations ended before the lead was fully qualified.', action:'Re-qualify' },
+  response_leakage:      { label:'Engagement gap',     expl:'Leads engaged but no booking, callback, or handoff.', action:'Re-engage' },
+  provider_leakage:      { label:'System issue',       expl:'A booking interruption affected this group.', action:'Notify ORVN' },
+  source_leakage:        { label:'Source drop-off',    expl:'Inbound calls failed before lead capture.', action:'Audit Source' }
+};
+function ccBuildLeakagePanel() {
+  var head = '<span class="sec-label" style="margin-top:8px">Where opportunities are leaking</span>';
+  var d = CC.overview || {};
+  var leak = d.leakage_breakdown || {};
+  var keys = Object.keys(CC_LEAKAGE_BUSINESS).filter(function(k) { return (leak[k] || 0) > 0; });
+  if (keys.length === 0) {
+    return head
+      + '<div class="card" style="color:var(--mu);font-size:13px;margin-bottom:24px">No leakage detected this week. PAS will surface gaps as they appear.</div>';
+  }
+  var rows = keys.map(function(k) {
+    var meta = CC_LEAKAGE_BUSINESS[k];
+    var cnt  = leak[k] || 0;
+    var sev  = cnt >= 5 ? 'red' : (cnt > 0 ? 'amber' : '');
+    return '<div class="cc-leak-row">'
+      +   '<div class="cc-leak-bar ' + sev + '"></div>'
+      +   '<div class="cc-leak-name">' + escHtml(meta.label) + '</div>'
+      +   '<div class="cc-leak-expl">' + escHtml(meta.expl) + '</div>'
+      +   '<div class="cc-leak-cnt">' + cnt + '</div>'
+      +   '<button class="cc-btn primary" onclick="ccActionLeakage(\'' + escAttr(k) + '\',' + cnt + ')">' + escHtml(meta.action) + '</button>'
+      + '</div>';
+  }).join('');
+  return head + '<div style="margin-bottom:24px">' + rows + '</div>';
+}
+
+/* ─── ACT handlers — frontend-only placeholders. ───
+   Real backend wiring lands in PAS131+; until then each one logs intent,
+   gives the operator a toast, and re-renders local state where needed. */
+function ccActionCallNow(callId) {
+  if (!callId) return;
+  console.info('[PAS131-intent] cc.call_now', { call_id: callId });
+  trackEvent('cc_action_call_now', { call_id: callId });
+  toast('Calling lead ' + callId.slice(0, 8) + '… (PAS131 dial pending)', 'info');
+}
+function ccActionReschedule(callId) {
+  if (!callId) return;
+  var when = window.prompt('Reschedule callback\nNew preferred time (free text):');
+  if (when == null) return;
+  when = when.trim();
+  if (!when) return;
+  CC.callbackStatus[callId] = 'rescheduled';
+  ccPersistCallbackStatus();
+  console.info('[PAS131-intent] cc.reschedule', { call_id: callId, when: when });
+  trackEvent('cc_action_reschedule', { call_id: callId });
+  toast('Rescheduled — saved locally', 'info');
+  loadClientDashboard(CC.overview);
+}
+function ccActionMarkDone(callId) {
+  if (!callId) return;
+  CC.callbackStatus[callId] = 'done';
+  ccPersistCallbackStatus();
+  console.info('[PAS131-intent] cc.mark_done', { call_id: callId });
+  trackEvent('cc_action_mark_done', { call_id: callId });
+  toast('Marked done', 'ok');
+  loadClientDashboard(CC.overview);
+}
+function ccActionUndoCallback(callId) {
+  if (!callId) return;
+  delete CC.callbackStatus[callId];
+  ccPersistCallbackStatus();
+  trackEvent('cc_action_undo_callback', { call_id: callId });
+  toast('Restored', 'info');
+  loadClientDashboard(CC.overview);
+}
+function ccActionCallNextCallback() {
+  var pending = (CC.callbacks || []).filter(function(c) {
+    return CC.callbackStatus[c.call_id] !== 'done';
+  });
+  if (pending.length === 0) {
+    toast('No pending callbacks', 'info');
+    return;
+  }
+  ccActionCallNow(pending[0].call_id);
+}
+function ccActionRescheduleNext() {
+  var pending = (CC.callbacks || []).filter(function(c) {
+    return CC.callbackStatus[c.call_id] !== 'done';
+  });
+  if (pending.length === 0) {
+    toast('No pending callbacks', 'info');
+    return;
+  }
+  ccActionReschedule(pending[0].call_id);
+}
+function ccActionRetry(kind) {
+  console.info('[PAS131-intent] cc.retry', { kind: kind });
+  trackEvent('cc_action_retry', { kind: kind });
+  toast('Retry queued for ' + kind + ' (PAS131 backend pending)', 'info');
+}
+function ccActionAssignAgent(kind) {
+  console.info('[PAS131-intent] cc.assign_agent', { kind: kind });
+  trackEvent('cc_action_assign_agent', { kind: kind });
+  toast('Assignment flow opening… (PAS131 backend pending)', 'info');
+}
+function ccActionLeakage(category, count) {
+  console.info('[PAS131-intent] cc.leakage_action', { category: category, count: count });
+  trackEvent('cc_action_leakage', { category: category, count: count });
+  toast(CC_LEAKAGE_BUSINESS[category].action + ' for ' + count + ' lead' + (count !== 1 ? 's' : '') + ' (PAS131 backend pending)', 'info');
 }
 
 /* ═══════════════════════════════════════════════
@@ -2866,14 +3365,15 @@ var INTEL_SEVERITY_TAG = {
   info:'gray', debug:'gray', warning:'amber', error:'red', critical:'red'
 };
 
-/* Recovery-action label per leakage category. */
+/* Inspection-action label per leakage category — operator framing.
+   Each label opens linked events / state traces, not a business workflow. */
 var INTEL_LEAKAGE_ACTION = {
-  scheduling_leakage:    'Recover Bookings',
-  provider_leakage:      'Investigate Provider',
-  callback_leakage:      'Trigger Follow-up',
-  qualification_leakage: 'Re-qualify Leads',
-  response_leakage:      'Re-engage Leads',
-  source_leakage:        'Audit Source'
+  scheduling_leakage:    'Show booking_failed events',
+  provider_leakage:      'Show provider.failed events',
+  callback_leakage:      'Show callback_requested events',
+  qualification_leakage: 'Inspect state transitions',
+  response_leakage:      'Inspect linked calls',
+  source_leakage:        'Audit source events'
 };
 
 /* Module state — cached responses, callback statuses, client-side filters.
@@ -2943,25 +3443,25 @@ function intelSafeDescribe(payload) {
 
 function loadIntelligence() {
   var root = document.getElementById('aIntelContent');
-  root.innerHTML = '<h1 class="pg-title">Intelligence</h1>'
-    + '<p class="pg-sub">Response intelligence command centre — events, leakage, callbacks, timelines.</p>'
+  root.innerHTML = '<h1 class="pg-title">Operations Console</h1>'
+    + '<p class="pg-sub">PAS internal — system status, raw events, pipeline signals. window=7d.</p>'
 
-    + '<span class="sec-label">Overview (last 7 days)</span>'
+    + '<span class="sec-label">A. System Status</span>'
+    + '<div id="intelHealth"><div class="loading-box"><div class="spinner"></div><br>Loading status…</div></div>'
+
+    + '<span class="sec-label" style="margin-top:18px">Signal strip · Event counters (last 7d)</span>'
     + '<div id="intelOverview"><div class="loading-box"><div class="spinner"></div><br>Loading summary…</div></div>'
 
-    + '<span class="sec-label" style="margin-top:18px">Provider / System Health</span>'
-    + '<div id="intelHealth"></div>'
-
-    + '<span class="sec-label" style="margin-top:18px">Leakage Breakdown</span>'
-    + '<div id="intelLeakage"><div style="color:var(--mu);font-size:13px">—</div></div>'
-
-    + '<span class="sec-label" style="margin-top:24px">Callback Queue</span>'
-    + '<div id="intelCallbacks"><div class="loading-box"><div class="spinner"></div><br>Loading callbacks…</div></div>'
-
-    + '<span class="sec-label" style="margin-top:24px">Recent PAS Events</span>'
+    + '<span class="sec-label" style="margin-top:24px">B. Event Intelligence — pas_events (raw)</span>'
     + '<div id="intelEvents"><div class="loading-box"><div class="spinner"></div><br>Loading events…</div></div>'
 
-    + '<span class="sec-label" style="margin-top:24px">Call Timeline Viewer</span>'
+    + '<span class="sec-label" style="margin-top:24px">C. Pipeline Signals — leakage by category</span>'
+    + '<div id="intelLeakage"><div style="color:var(--mu);font-size:13px">—</div></div>'
+
+    + '<span class="sec-label" style="margin-top:24px">callback_requested events — pending dispatch</span>'
+    + '<div id="intelCallbacks"><div class="loading-box"><div class="spinner"></div><br>Loading callbacks…</div></div>'
+
+    + '<span class="sec-label" style="margin-top:24px">Per-call event timeline (state transitions)</span>'
     + '<div class="card">'
     +   '<div class="intel-loadbox">'
     +     '<input id="intelTlInput" type="text" placeholder="Enter call_id (e.g. SIM-4056D95E757D)" autocomplete="off" />'
@@ -2991,25 +3491,25 @@ function intelRenderOverview(d) {
   var bySev  = d.events_by_severity || {};
   var leak   = d.leakage_breakdown || {};
 
-  /* ───── PAS131-prep: command strip ─────
-     Lift critical, actionable signals above the raw stats grid. Each card
-     names the consequence and offers at least one operational action. */
+  /* ───── Operations console: signal strip ─────
+     Surfaces critical event signals above the raw counters. Operator-facing
+     framing — references event types, severities, and inspection actions. */
   var cmds = [];
   var schedLeaks = leak.scheduling_leakage || 0;
   if (schedLeaks > 0) {
     cmds.push({
-      sev: 'red', icon: '⚠️',
-      head: schedLeaks + ' Lead' + (schedLeaks === 1 ? '' : 's') + ' Lost — Booking Not Confirmed',
-      conseq: 'PAS attempted to book but the calendar provider never returned a confirmation.',
-      actions: [{ label: 'Recover Bookings', kind: 'primary', call: "intelActionRecover('scheduling_leakage'," + schedLeaks + ")" }]
+      sev: 'red', icon: '⚠',
+      head: schedLeaks + ' booking_failed event' + (schedLeaks === 1 ? '' : 's') + ' (no confirm)',
+      conseq: 'booking.attempted not followed by booking.confirmed within the window. Booking pipeline degraded.',
+      actions: [{ label: 'Show linked events', kind: 'primary', call: "intelActionRecover('scheduling_leakage'," + schedLeaks + ")" }]
     });
   }
   var provFails = byType['provider.failed'] || 0;
   if (provFails > 0) {
     cmds.push({
-      sev: 'red', icon: '🚨',
-      head: provFails + ' Provider Failure' + (provFails === 1 ? '' : 's') + ' — Calls May Drop',
-      conseq: 'External provider returned 4xx/5xx during a call. Booking and voice paths are at risk.',
+      sev: 'red', icon: '⚠',
+      head: provFails + ' provider.failed event' + (provFails === 1 ? '' : 's'),
+      conseq: 'External provider returned non-2xx during call processing. Voice/booking paths affected.',
       actions: [
         { label: 'View Failures', kind: 'primary', call: 'intelActionViewFailures()' },
         { label: 'Retry', kind: 'ghost', call: 'intelActionRetrySystem()' }
@@ -3019,26 +3519,26 @@ function intelRenderOverview(d) {
   var cbLeaks = leak.callback_leakage || 0;
   if (cbLeaks > 0) {
     cmds.push({
-      sev: 'amber', icon: '📞',
-      head: cbLeaks + ' Callback' + (cbLeaks === 1 ? '' : 's') + ' Pending — Customer Waiting',
-      conseq: 'Lead asked for a callback and PAS has not contacted them yet.',
-      actions: [{ label: 'Open Queue', kind: 'primary', call: 'intelActionScrollToCallbacks()' }]
+      sev: 'amber', icon: '◆',
+      head: cbLeaks + ' callback_requested event' + (cbLeaks === 1 ? '' : 's') + ' pending dispatch',
+      conseq: 'Captured callback requests with no subsequent dispatch event in the window.',
+      actions: [{ label: 'Inspect Queue', kind: 'primary', call: 'intelActionScrollToCallbacks()' }]
     });
   }
   var warnErr = (bySev.warning || 0) + (bySev.error || 0) + (bySev.critical || 0);
   if (warnErr > 0 && cmds.length < 4) {
     cmds.push({
-      sev: 'amber', icon: '⚡',
-      head: warnErr + ' Warning' + (warnErr === 1 ? '' : 's') + '/Error' + (warnErr === 1 ? '' : 's') + ' — Review Required',
-      conseq: 'Severity-elevated events were emitted in this window.',
-      actions: [{ label: 'View Events', kind: 'primary', call: 'intelActionViewFailures()' }]
+      sev: 'amber', icon: '◇',
+      head: warnErr + ' elevated-severity event' + (warnErr === 1 ? '' : 's') + ' (warning + error + critical)',
+      conseq: 'severity ∈ {warning, error, critical} emitted within the window.',
+      actions: [{ label: 'Filter Events', kind: 'primary', call: 'intelActionViewFailures()' }]
     });
   }
   if (cmds.length === 0) {
     cmds.push({
       sev: 'green', icon: '✓',
-      head: 'All Clear — No Critical Actions',
-      conseq: 'No leakage, no provider failures, no warnings in the current window.',
+      head: 'No degraded signals in window',
+      conseq: 'No leakage events, no provider.failed, no elevated-severity events in the period.',
       actions: []
     });
   }
@@ -3087,18 +3587,18 @@ function intelRenderHealth(d) {
   var errors = (bySev.error || 0) + (bySev.critical || 0);
   var status, statusClass, detail, decisionHead, impact;
   if (errors > 0 || providerFails >= 5) {
-    status = 'Degraded'; statusClass = 'red';
-    decisionHead = '⚠️ System Risk Detected';
-    impact = 'Calls may degrade or fail to book if not addressed.';
-    detail = providerFails + ' provider failure(s) · ' + errors + ' error(s) · ' + warnings + ' warning(s) in window.';
+    status = 'CRITICAL'; statusClass = 'red';
+    decisionHead = 'CRITICAL — system degraded';
+    impact = 'Call processing latency may increase; booking and voice paths may fail.';
+    detail = providerFails + ' provider.failed · ' + errors + ' error/critical · ' + warnings + ' warning · window=7d';
   } else if (providerFails > 0 || warnings > 0) {
-    status = 'Watch'; statusClass = 'amber';
-    decisionHead = '⚠ Watch — Minor Issues Detected';
-    impact = 'No active outage, but elevated event signals warrant a glance.';
-    detail = providerFails + ' provider failure(s) · ' + warnings + ' warning(s) in window.';
+    status = 'DEGRADED'; statusClass = 'amber';
+    decisionHead = 'DEGRADED — elevated signals';
+    impact = 'No outage. Elevated severities present; latency or retry rate may rise.';
+    detail = providerFails + ' provider.failed · ' + warnings + ' warning · window=7d';
   } else {
-    status = 'Healthy'; statusClass = 'green';
-    detail = 'No provider failures and no warnings in window.';
+    status = 'HEALTHY'; statusClass = 'green';
+    detail = '0 provider.failed · 0 warning · 0 error · window=7d';
   }
 
   /* Healthy OR ignored-this-session → compact strip. Decision block otherwise. */
@@ -3115,13 +3615,13 @@ function intelRenderHealth(d) {
   }
   document.getElementById('intelHealth').innerHTML =
     '<div class="intel-decision ' + (statusClass === 'red' ? '' : 'amber') + '">'
-    +   '<div class="intel-decision-head"><span class="intel-d-icon">' + (statusClass === 'red' ? '⚠️' : '⚠') + '</span>'
+    +   '<div class="intel-decision-head"><span class="intel-d-icon">' + (statusClass === 'red' ? '⚠' : '◇') + '</span>'
     +     '<span>' + escHtml(decisionHead) + '</span></div>'
     +   '<div class="intel-decision-impact">' + escHtml(impact) + '</div>'
     +   '<div class="intel-decision-detail">' + escHtml(detail) + '</div>'
     +   '<div class="intel-decision-actions">'
     +     '<button class="intel-act primary" onclick="intelActionViewFailures()">View Failures</button>'
-    +     '<button class="intel-act" onclick="intelActionRetrySystem()">Retry / Refresh</button>'
+    +     '<button class="intel-act" onclick="intelActionRetrySystem()">Retry Systems</button>'
     +     '<button class="intel-act ghost" onclick="intelActionIgnoreHealth()">Ignore</button>'
     +   '</div>'
     + '</div>';
@@ -3263,19 +3763,19 @@ function intelRenderCallbacks() {
 
     var idAttr = escAttr(callId);
     var actions = isDone
-      ? '<button class="intel-act ghost" onclick="intelActionUndoCallback(\'' + idAttr + '\')">Undo</button>'
-      : '<button class="intel-act primary" onclick="intelActionCallNow(\'' + idAttr + '\')">Call Now</button>'
-        + '<button class="intel-act" onclick="intelActionReschedule(\'' + idAttr + '\')">Reschedule</button>'
-        + '<button class="intel-act ghost" onclick="intelActionMarkDone(\'' + idAttr + '\')">Mark Done</button>';
+      ? '<button class="intel-act ghost" onclick="intelActionUndoCallback(\'' + idAttr + '\')">Unmark</button>'
+      : '<button class="intel-act primary" onclick="intelOpenTimeline(\'' + idAttr + '\')">View Trace</button>'
+        + '<button class="intel-act" onclick="intelActionReschedule(\'' + idAttr + '\')">Annotate</button>'
+        + '<button class="intel-act ghost" onclick="intelActionMarkDone(\'' + idAttr + '\')">Mark Reviewed</button>';
 
     return '<div class="intel-cb' + (isDone ? ' done' : '') + (urgent ? ' urgent' : '') + '">'
       +   '<div class="intel-cb-main">'
       +     '<div class="intel-cb-top">'
       +       '<a class="intel-cb-id" href="javascript:void(0)" onclick="intelOpenTimeline(\'' + idAttr + '\')">' + escHtml(idShort) + '</a>'
-      +       '<span class="intel-cb-pref">⏱ ' + escHtml(intelTrunc(preferred, 36)) + '</span>'
-      +       (status === 'rescheduled' ? '<span class="intel-cb-pref" style="color:var(--am);border:1px solid var(--am);background:transparent">RESCHEDULED</span>' : '')
+      +       '<span class="intel-cb-pref">preferred=' + escHtml(intelTrunc(preferred, 36)) + '</span>'
+      +       (status === 'rescheduled' ? '<span class="intel-cb-pref" style="color:var(--am);border:1px solid var(--am);background:transparent">ANNOTATED</span>' : '')
       +     '</div>'
-      +     '<div class="intel-cb-meta">' + escHtml(intelTrunc(reason, 120)) + ' · requested ' + escHtml(requested) + '</div>'
+      +     '<div class="intel-cb-meta">from_state=' + escHtml(intelTrunc(reason, 120)) + ' · created_at=' + escHtml(requested) + '</div>'
       +   '</div>'
       +   '<div class="intel-cb-actions">' + actions + '</div>'
       + '</div>';
@@ -3351,9 +3851,9 @@ function intelPersistCallbackStatus() {
 }
 
 function intelActionRecover(category, count) {
-  console.info('[PAS131-intent] recover', { category: category, count: count });
-  trackEvent('intel_action_recover', { category: category, count: count });
-  toast('Recovery flow queued for ' + category + ' (' + count + ') — wired in PAS131', 'info');
+  console.info('[PAS131-intent] inspect_linked_events', { category: category, count: count });
+  trackEvent('intel_action_inspect_linked', { category: category, count: count });
+  toast('Inspecting linked events for ' + category + ' (n=' + count + ') — wired in PAS131', 'info');
 }
 
 function intelActionViewFailures() {
@@ -3396,24 +3896,17 @@ function intelActionScrollToCallbacks() {
   trackEvent('intel_action_open_callbacks');
 }
 
-function intelActionCallNow(callId) {
-  if (!callId) return;
-  console.info('[PAS131-intent] call_now', { call_id: callId });
-  trackEvent('intel_action_call_now', { call_id: callId });
-  toast('Outbound dial queued for ' + intelShortId(callId) + ' — wired in PAS131', 'info');
-}
-
 function intelActionReschedule(callId) {
   if (!callId) return;
-  var when = window.prompt('Reschedule callback for ' + intelShortId(callId) + '\nEnter new preferred time (free text):');
-  if (when == null) return;
-  when = when.trim();
-  if (!when) return;
+  var note = window.prompt('Annotate callback ' + intelShortId(callId) + '\nFree-text annotation (operator note):');
+  if (note == null) return;
+  note = note.trim();
+  if (!note) return;
   INTEL.callbackStatus[callId] = 'rescheduled';
   intelPersistCallbackStatus();
-  console.info('[PAS131-intent] reschedule', { call_id: callId, when: when });
-  trackEvent('intel_action_reschedule', { call_id: callId });
-  toast('Rescheduled ' + intelShortId(callId) + ' → "' + when + '" (local only)', 'info');
+  console.info('[PAS131-intent] annotate', { call_id: callId, note: note });
+  trackEvent('intel_action_annotate', { call_id: callId });
+  toast('Annotated ' + intelShortId(callId) + ' (local-only)', 'info');
   intelRenderCallbacks();
 }
 
@@ -3421,9 +3914,9 @@ function intelActionMarkDone(callId) {
   if (!callId) return;
   INTEL.callbackStatus[callId] = 'done';
   intelPersistCallbackStatus();
-  console.info('[PAS131-intent] mark_done', { call_id: callId });
-  trackEvent('intel_action_mark_done', { call_id: callId });
-  toast('Marked ' + intelShortId(callId) + ' done', 'ok');
+  console.info('[PAS131-intent] mark_reviewed', { call_id: callId });
+  trackEvent('intel_action_mark_reviewed', { call_id: callId });
+  toast('Marked reviewed: ' + intelShortId(callId), 'ok');
   intelRenderCallbacks();
 }
 
@@ -3431,8 +3924,8 @@ function intelActionUndoCallback(callId) {
   if (!callId) return;
   delete INTEL.callbackStatus[callId];
   intelPersistCallbackStatus();
-  trackEvent('intel_action_undo_callback', { call_id: callId });
-  toast('Restored ' + intelShortId(callId), 'info');
+  trackEvent('intel_action_unmark', { call_id: callId });
+  toast('Unmarked ' + intelShortId(callId), 'info');
   intelRenderCallbacks();
 }
 </script>
