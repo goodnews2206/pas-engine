@@ -45,11 +45,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .login-tagline{font-size:13px;color:var(--mu);margin-bottom:32px}
 .fl{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .fl label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
-.fi{width:100%;border:1px solid var(--bo);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:12px 14px;outline:none;transition:border-color .2s;background:var(--bg)}
+.fi{width:100%;box-sizing:border-box;border:1px solid var(--bo);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:12px 14px;outline:none;transition:border-color .2s;background:var(--bg)}
 .fi:focus{border-color:var(--p)}
-.login-btn{width:100%;margin-top:8px;background:var(--p);color:#fff;border:none;border-radius:8px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s}
+.login-btn{width:100%;box-sizing:border-box;min-height:48px;margin-top:8px;background:var(--p);color:#fff;border:none;border-radius:8px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s}
 .login-btn:hover{background:var(--pl)}
 .login-btn:disabled{opacity:.5;cursor:default}
+.demo-unlock{display:none;width:100%;box-sizing:border-box;min-height:42px;margin-top:10px;background:transparent;color:var(--mu);border:1px dashed var(--bo);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:color .2s,border-color .2s}
+.demo-unlock:hover{color:var(--p);border-color:var(--p)}
+.demo-unlock.on{display:block}
 .login-err{display:none;color:var(--re);font-size:12px;margin-top:10px;font-family:'DM Mono',monospace}
 .login-note{font-size:11px;color:var(--mu);margin-top:18px;text-align:center}
 
@@ -264,7 +267,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   .g3,.g2,.form-row{grid-template-columns:1fr}
   .wrap{padding:20px 14px 60px}
   .topbar,.tabbar{padding-left:14px;padding-right:14px}
-  .login-card{padding:32px 24px}
+  .login-screen{padding:16px;min-height:100dvh}
+  .login-card{padding:28px 20px;max-width:100%}
+  .login-card .fi{font-size:16px;padding:14px}
   .bk-topbar{padding:12px 14px}
   .bk-tabs{padding:0 12px;top:auto}
   .bk-wrap{padding:20px 14px 60px}
@@ -336,6 +341,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     </div>
     <div class="login-err" id="loginErr">Invalid key — check with your ORVN account manager.</div>
     <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Portal →</button>
+    <button class="demo-unlock" id="demoUnlock" type="button">Use Demo Access</button>
     <p class="login-note">Brokerage API key or ORVN admin key accepted.</p>
   </div>
 </div>
@@ -471,9 +477,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 /* ═══════════════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════════════ */
-var API = 'http://localhost:8000';
+/* Same-origin API base. Empty string keeps fetch URLs relative, so the
+   dashboard works from localhost, a LAN IP (phone testing), and Railway
+   without rebuilding. The dashboard is mounted at /dashboard on the same
+   FastAPI server that serves /admin, /portal, etc. */
+var API = '';
 var ADMIN_KEY_LS  = 'pas_admin_key';
 var CLIENT_KEY_LS = 'pas_portal_key';
+var DEMO_MODE     = window.location.hostname.indexOf('railway.app') !== -1;
 
 /* ═══════════════════════════════════════════════
    STATE
@@ -665,48 +676,66 @@ function apiFetch(path, opts) {
 ═══════════════════════════════════════════════ */
 function doLogin() {
   var key = document.getElementById('keyInput').value.trim();
-  if (!key) { showLoginErr('Enter your API key.'); return; }
+  if (!key) { showLoginErr('Enter your admin key.'); return; }
 
   var btn = document.getElementById('loginBtn');
   btn.disabled = true;
   btn.textContent = 'Verifying…';
   hideLoginErr();
 
-  /* 1. Try client portal */
+  function resetBtn() {
+    btn.disabled = false;
+    btn.textContent = 'Access Portal →';
+  }
+
+  /* fetch resolves with `r` for any HTTP status; only true network/CORS
+     failures hit .catch(). We want to distinguish auth (401/403) from other
+     HTTP errors from network errors so the user sees an actionable message. */
   fetch(API + '/portal/overview', { headers: { 'X-API-Key': key } })
     .then(function(r) {
-      if (!r.ok) throw new Error(r.status);
-      return r.json();
+      if (r.ok) return r.json().then(function(d) { return { kind: 'client', data: d }; });
+      return { kind: 'reject', status: r.status };
     })
-    .then(function(data) {
-      S.clientKey     = key;
-      S.portalType    = 'client';
-      S.brokerageName = data.brokerage_name || 'Your Brokerage';
-      localStorage.setItem(CLIENT_KEY_LS, key);
-      trackEvent('client_logged_in');
-      showClientPortal(data);
-    })
-    .catch(function() {
-      /* 2. Try admin portal */
-      fetch(API + '/admin/brokerages', { headers: { 'X-Admin-Key': key } })
+    .then(function(clientResult) {
+      if (clientResult.kind === 'client') {
+        S.clientKey     = key;
+        S.portalType    = 'client';
+        S.brokerageName = clientResult.data.brokerage_name || 'Your Brokerage';
+        localStorage.setItem(CLIENT_KEY_LS, key);
+        trackEvent('client_logged_in');
+        showClientPortal(clientResult.data);
+        return;
+      }
+
+      /* Client portal rejected — try admin. */
+      return fetch(API + '/admin/brokerages', { headers: { 'X-Admin-Key': key } })
         .then(function(r) {
-          if (!r.ok) throw new Error(r.status);
-          return r.json();
-        })
-        .then(function() {
-          S.adminKey   = key;
-          S.portalType = 'admin';
-          localStorage.setItem(ADMIN_KEY_LS, key);
-          trackEvent('admin_logged_in');
-          showAdminPortal();
-        })
-        .catch(function() {
+          if (r.ok) {
+            S.adminKey   = key;
+            S.portalType = 'admin';
+            localStorage.setItem(ADMIN_KEY_LS, key);
+            trackEvent('admin_logged_in');
+            showAdminPortal();
+            return;
+          }
+          /* Stale key — purge so a refresh doesn't loop on the bad key. */
+          localStorage.removeItem(ADMIN_KEY_LS);
+          localStorage.removeItem(CLIENT_KEY_LS);
           trackEvent('admin_login_failed');
           trackEvent('client_login_failed');
-          showLoginErr('Invalid key — check with your ORVN account manager.');
-          btn.disabled = false;
-          btn.textContent = 'Access Portal →';
+          if (r.status === 401 || r.status === 403) {
+            showLoginErr('Invalid admin key (check environment — local vs Railway mismatch).');
+          } else {
+            showLoginErr('Login failed (HTTP ' + r.status + ') — check server.');
+          }
+          resetBtn();
         });
+    })
+    .catch(function() {
+      /* TypeError / network failure — server unreachable, DNS, CORS, offline. */
+      trackEvent('admin_login_failed');
+      showLoginErr('Server unreachable — check deployment or internet.');
+      resetBtn();
     });
 }
 
@@ -2718,6 +2747,21 @@ window.addEventListener('unhandledrejection', function(e) {
     document.getElementById('keyInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') doLogin();
     });
+    /* On Railway demo deploys, expose a one-click unlock that tries the
+       literal "DEMO_MODE" sentinel as the admin key. Backend remains the
+       authority — if it doesn't recognise the sentinel the user sees the
+       standard 401 error. No security model change. */
+    if (DEMO_MODE) {
+      var demoBtn = document.getElementById('demoUnlock');
+      if (demoBtn) {
+        demoBtn.classList.add('on');
+        demoBtn.addEventListener('click', function() {
+          var input = document.getElementById('keyInput');
+          input.value = 'DEMO_MODE';
+          doLogin();
+        });
+      }
+    }
   }
 })();
 
