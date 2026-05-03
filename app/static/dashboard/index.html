@@ -321,6 +321,82 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .intel-health-strip .intel-h-status.amber{color:var(--am)}
 .intel-health-strip .intel-h-status.red{color:var(--re)}
 .intel-health-strip .intel-h-detail{font-size:12px;color:var(--mu);flex:1}
+
+/* ═══════════════════════════════════════════════
+   INTEL — COMMAND CENTRE (PAS131-prep)
+   Action-driven affordances overlaid on the existing
+   passive analytics views. detect → decide → act.
+═══════════════════════════════════════════════ */
+
+/* Command strip: critical metrics surface as actionable cards
+   above the raw stat grid. */
+.intel-cmd-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:18px}
+.intel-cmd{position:relative;display:flex;flex-direction:column;gap:8px;padding:18px 18px 16px;border:1px solid var(--bo);border-left:4px solid var(--bo);border-radius:10px;background:var(--bg2);box-shadow:var(--sh)}
+.intel-cmd.red{border-left-color:var(--re)}
+.intel-cmd.amber{border-left-color:var(--am)}
+.intel-cmd.purple{border-left-color:var(--p)}
+.intel-cmd.green{border-left-color:var(--gr)}
+.intel-cmd-headline{display:flex;align-items:baseline;gap:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);line-height:1.3}
+.intel-cmd-headline .intel-cmd-icon{font-size:16px;flex-shrink:0}
+.intel-cmd-conseq{font-size:12px;color:var(--mu);line-height:1.5}
+.intel-cmd-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+
+/* Operational action buttons — small, decisive, monospace label.
+   Reuses existing tokens; not decorative. */
+.intel-act{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;border-radius:6px;border:1px solid var(--bo);background:var(--bg2);color:var(--text);cursor:pointer;transition:all .15s}
+.intel-act:hover{border-color:var(--p);color:var(--p)}
+.intel-act.primary{background:var(--p);border-color:var(--p);color:#fff}
+.intel-act.primary:hover{background:var(--pl);border-color:var(--pl);color:#fff}
+.intel-act.danger{border-color:var(--re);color:var(--re)}
+.intel-act.danger:hover{background:var(--re);color:#fff}
+.intel-act.ghost{color:var(--mu)}
+.intel-act.ghost:hover{color:var(--text);border-color:var(--mu)}
+.intel-act:disabled{opacity:.5;cursor:default;pointer-events:none}
+
+/* Decision block — replaces the strip when system is degraded/watch. */
+.intel-decision{padding:18px 20px;border:1px solid var(--bo);border-left:4px solid var(--re);border-radius:10px;background:var(--bg2);box-shadow:var(--sh);margin-bottom:14px}
+.intel-decision.amber{border-left-color:var(--am)}
+.intel-decision-head{display:flex;align-items:baseline;gap:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:6px}
+.intel-decision-head .intel-d-icon{font-size:17px}
+.intel-decision-impact{font-size:12.5px;color:var(--mu);line-height:1.5;margin-bottom:8px}
+.intel-decision-detail{font-family:'DM Mono',monospace;font-size:11px;color:var(--mu);background:var(--bg3);padding:8px 10px;border-radius:6px;margin-bottom:12px;line-height:1.55}
+.intel-decision-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Leakage row — append an action button without disrupting the existing layout. */
+.intel-row .intel-act{flex-shrink:0;margin-left:6px}
+
+/* Callback cards — replace the table with a high-urgency action panel. */
+.intel-cb-list{display:flex;flex-direction:column;gap:10px}
+.intel-cb{position:relative;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:14px 18px 14px 22px;border:1px solid var(--bo);border-radius:10px;background:var(--bg2);box-shadow:var(--sh);transition:opacity .2s}
+.intel-cb::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 3px 3px 0;background:var(--am)}
+.intel-cb.urgent::before{background:var(--re)}
+.intel-cb.done{opacity:.55}
+.intel-cb.done::before{background:var(--bo)}
+.intel-cb.done .intel-cb-id,.intel-cb.done .intel-cb-meta{text-decoration:line-through;text-decoration-color:var(--mu)}
+.intel-cb-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.intel-cb-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.intel-cb-id{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--p);cursor:pointer;text-decoration:none}
+.intel-cb-id:hover{text-decoration:underline}
+.intel-cb-pref{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);background:var(--bg3);padding:2px 8px;border-radius:4px}
+.intel-cb-meta{font-size:12px;color:var(--mu);line-height:1.5}
+.intel-cb-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:700px){
+  .intel-cb{grid-template-columns:1fr}
+  .intel-cb-actions{justify-content:flex-start}
+}
+
+/* Recent-events row tinting — light wash for warn/fail rows. */
+.tbl tr.intel-row-warn td{background:rgba(217,119,6,.06)}
+.tbl tr.intel-row-fail td{background:rgba(220,38,38,.07)}
+
+/* Filter status pill above events table when a client-side filter is active. */
+.intel-filter-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--p);background:rgba(91,63,212,.07);border:1px solid var(--p);border-radius:6px;margin-bottom:10px}
+.intel-filter-pill button{background:transparent;border:none;color:var(--p);font-family:inherit;font-size:11px;cursor:pointer;padding:0;text-decoration:underline}
+
+/* Timeline event-type accents (PAS131 prep — colored left dot). */
+.intel-tl-node.evt-booking::before{border-color:var(--am);background:#fff}
+.intel-tl-node.evt-provider::before{border-color:var(--re);background:#fff}
+.intel-tl-node.evt-callback::before{border-color:var(--p);background:#fff}
 </style>
 </head>
 <body>
@@ -2790,10 +2866,38 @@ var INTEL_SEVERITY_TAG = {
   info:'gray', debug:'gray', warning:'amber', error:'red', critical:'red'
 };
 
-/* SECURITY: never echo these payload keys, even in admin view. */
+/* Recovery-action label per leakage category. */
+var INTEL_LEAKAGE_ACTION = {
+  scheduling_leakage:    'Recover Bookings',
+  provider_leakage:      'Investigate Provider',
+  callback_leakage:      'Trigger Follow-up',
+  qualification_leakage: 'Re-qualify Leads',
+  response_leakage:      'Re-engage Leads',
+  source_leakage:        'Audit Source'
+};
+
+/* Module state — cached responses, callback statuses, client-side filters.
+   Persisted bits use localStorage; everything else is session-scoped. */
+var INTEL_CB_LS = 'pas_intel_callback_status';
+var INTEL = {
+  events: [],
+  callbacks: [],
+  callbackStatus: {},  // { [callId]: 'done' | 'rescheduled' }
+  eventFilter: null,   // null | 'errors'
+  healthIgnored: false
+};
+try {
+  INTEL.callbackStatus = JSON.parse(localStorage.getItem(INTEL_CB_LS) || '{}') || {};
+} catch (e) { INTEL.callbackStatus = {}; }
+
+/* SECURITY: never echo these payload keys, even in admin view.
+   raw_text/text/message added per PAS130 smoke-test finding — these
+   commonly carry user utterances, transcripts, or error bodies that
+   can include PII or quoted credentials. */
 var INTEL_FORBIDDEN_PAYLOAD_KEYS = {
   api_key:1, x_api_key:1, x_admin_key:1, authorization:1, secret:1,
-  password:1, token:1
+  password:1, token:1,
+  raw_text:1, text:1, message:1
 };
 
 function intelTrunc(s, n) {
@@ -2886,6 +2990,70 @@ function intelRenderOverview(d) {
   var byType = d.events_by_type || {};
   var bySev  = d.events_by_severity || {};
   var leak   = d.leakage_breakdown || {};
+
+  /* ───── PAS131-prep: command strip ─────
+     Lift critical, actionable signals above the raw stats grid. Each card
+     names the consequence and offers at least one operational action. */
+  var cmds = [];
+  var schedLeaks = leak.scheduling_leakage || 0;
+  if (schedLeaks > 0) {
+    cmds.push({
+      sev: 'red', icon: '⚠️',
+      head: schedLeaks + ' Lead' + (schedLeaks === 1 ? '' : 's') + ' Lost — Booking Not Confirmed',
+      conseq: 'PAS attempted to book but the calendar provider never returned a confirmation.',
+      actions: [{ label: 'Recover Bookings', kind: 'primary', call: "intelActionRecover('scheduling_leakage'," + schedLeaks + ")" }]
+    });
+  }
+  var provFails = byType['provider.failed'] || 0;
+  if (provFails > 0) {
+    cmds.push({
+      sev: 'red', icon: '🚨',
+      head: provFails + ' Provider Failure' + (provFails === 1 ? '' : 's') + ' — Calls May Drop',
+      conseq: 'External provider returned 4xx/5xx during a call. Booking and voice paths are at risk.',
+      actions: [
+        { label: 'View Failures', kind: 'primary', call: 'intelActionViewFailures()' },
+        { label: 'Retry', kind: 'ghost', call: 'intelActionRetrySystem()' }
+      ]
+    });
+  }
+  var cbLeaks = leak.callback_leakage || 0;
+  if (cbLeaks > 0) {
+    cmds.push({
+      sev: 'amber', icon: '📞',
+      head: cbLeaks + ' Callback' + (cbLeaks === 1 ? '' : 's') + ' Pending — Customer Waiting',
+      conseq: 'Lead asked for a callback and PAS has not contacted them yet.',
+      actions: [{ label: 'Open Queue', kind: 'primary', call: 'intelActionScrollToCallbacks()' }]
+    });
+  }
+  var warnErr = (bySev.warning || 0) + (bySev.error || 0) + (bySev.critical || 0);
+  if (warnErr > 0 && cmds.length < 4) {
+    cmds.push({
+      sev: 'amber', icon: '⚡',
+      head: warnErr + ' Warning' + (warnErr === 1 ? '' : 's') + '/Error' + (warnErr === 1 ? '' : 's') + ' — Review Required',
+      conseq: 'Severity-elevated events were emitted in this window.',
+      actions: [{ label: 'View Events', kind: 'primary', call: 'intelActionViewFailures()' }]
+    });
+  }
+  if (cmds.length === 0) {
+    cmds.push({
+      sev: 'green', icon: '✓',
+      head: 'All Clear — No Critical Actions',
+      conseq: 'No leakage, no provider failures, no warnings in the current window.',
+      actions: []
+    });
+  }
+  var cmdHtml = cmds.map(function(c) {
+    var actions = c.actions.map(function(a) {
+      return '<button class="intel-act ' + a.kind + '" onclick="' + a.call + '">' + escHtml(a.label) + '</button>';
+    }).join('');
+    return '<div class="intel-cmd ' + c.sev + '">'
+      +   '<div class="intel-cmd-headline"><span class="intel-cmd-icon">' + c.icon + '</span><span>' + escHtml(c.head) + '</span></div>'
+      +   '<div class="intel-cmd-conseq">' + escHtml(c.conseq) + '</div>'
+      +   (actions ? '<div class="intel-cmd-actions">' + actions + '</div>' : '')
+      + '</div>';
+  }).join('');
+
+  /* ───── Existing raw stats grid — unchanged, kept as the source of truth ───── */
   var cards = [
     ['Events tracked',       d.events_total != null ? d.events_total : '—', 'last ' + (d.period_since ? '7d' : '—')],
     ['Calls analyzed',       d.calls_analyzed != null ? d.calls_analyzed : '—', 'distinct call_ids'],
@@ -2896,17 +3064,19 @@ function intelRenderOverview(d) {
     ['Warning events',       bySev.warning || 0, 'severity=warning'],
     ['Error events',         (bySev.error || 0) + (bySev.critical || 0), 'severity=error / critical']
   ];
-  var html = '';
+  var gridHtml = '';
   cards.forEach(function(c) {
     var n = c[1];
     var nClass = (typeof n === 'number' && n > 0 && /leaks|failures|Warning|Error/i.test(c[0])) ? ' red' : '';
-    html += '<div class="stat-card">'
+    gridHtml += '<div class="stat-card">'
       + '<div class="stat-label">' + escHtml(c[0]) + '</div>'
       + '<div class="stat-val' + nClass + '">' + escHtml(String(n)) + '</div>'
       + '<div class="stat-sub">' + escHtml(c[2]) + '</div>'
       + '</div>';
   });
-  document.getElementById('intelOverview').innerHTML = '<div class="intel-grid7">' + html + '</div>';
+  document.getElementById('intelOverview').innerHTML =
+    '<div class="intel-cmd-strip">' + cmdHtml + '</div>'
+    + '<div class="intel-grid7">' + gridHtml + '</div>';
 }
 
 function intelRenderHealth(d) {
@@ -2915,21 +3085,45 @@ function intelRenderHealth(d) {
   var providerFails = byType['provider.failed'] || 0;
   var warnings = bySev.warning || 0;
   var errors = (bySev.error || 0) + (bySev.critical || 0);
-  var status, statusClass, detail;
+  var status, statusClass, detail, decisionHead, impact;
   if (errors > 0 || providerFails >= 5) {
     status = 'Degraded'; statusClass = 'red';
-    detail = providerFails + ' provider failure(s), ' + errors + ' error(s), ' + warnings + ' warning(s) in window.';
+    decisionHead = '⚠️ System Risk Detected';
+    impact = 'Calls may degrade or fail to book if not addressed.';
+    detail = providerFails + ' provider failure(s) · ' + errors + ' error(s) · ' + warnings + ' warning(s) in window.';
   } else if (providerFails > 0 || warnings > 0) {
     status = 'Watch'; statusClass = 'amber';
-    detail = providerFails + ' provider failure(s), ' + warnings + ' warning(s) in window.';
+    decisionHead = '⚠ Watch — Minor Issues Detected';
+    impact = 'No active outage, but elevated event signals warrant a glance.';
+    detail = providerFails + ' provider failure(s) · ' + warnings + ' warning(s) in window.';
   } else {
     status = 'Healthy'; statusClass = 'green';
     detail = 'No provider failures and no warnings in window.';
   }
+
+  /* Healthy OR ignored-this-session → compact strip. Decision block otherwise. */
+  if (statusClass === 'green' || INTEL.healthIgnored) {
+    document.getElementById('intelHealth').innerHTML =
+      '<div class="intel-health-strip">'
+      +   '<span class="intel-h-status ' + statusClass + '">' + status + '</span>'
+      +   '<span class="intel-h-detail">' + escHtml(detail) + '</span>'
+      +   (INTEL.healthIgnored && statusClass !== 'green'
+            ? '<button class="intel-act ghost" onclick="intelActionUnignoreHealth()">Restore</button>'
+            : '')
+      + '</div>';
+    return;
+  }
   document.getElementById('intelHealth').innerHTML =
-    '<div class="intel-health-strip">'
-    +   '<span class="intel-h-status ' + statusClass + '">' + status + '</span>'
-    +   '<span class="intel-h-detail">' + escHtml(detail) + '</span>'
+    '<div class="intel-decision ' + (statusClass === 'red' ? '' : 'amber') + '">'
+    +   '<div class="intel-decision-head"><span class="intel-d-icon">' + (statusClass === 'red' ? '⚠️' : '⚠') + '</span>'
+    +     '<span>' + escHtml(decisionHead) + '</span></div>'
+    +   '<div class="intel-decision-impact">' + escHtml(impact) + '</div>'
+    +   '<div class="intel-decision-detail">' + escHtml(detail) + '</div>'
+    +   '<div class="intel-decision-actions">'
+    +     '<button class="intel-act primary" onclick="intelActionViewFailures()">View Failures</button>'
+    +     '<button class="intel-act" onclick="intelActionRetrySystem()">Retry / Refresh</button>'
+    +     '<button class="intel-act ghost" onclick="intelActionIgnoreHealth()">Ignore</button>'
+    +   '</div>'
     + '</div>';
 }
 
@@ -2952,11 +3146,17 @@ function intelRenderLeakage(d) {
   });
   var rows = keys.map(function(k) {
     var meta = INTEL_LEAKAGE_META[k] || { label:k, expl:'(unknown leakage category)', sev:'gray' };
+    var cnt  = leak[k] || 0;
+    var actLabel = INTEL_LEAKAGE_ACTION[k] || 'Recover';
+    var actBtn   = cnt > 0
+      ? '<button class="intel-act primary" onclick="intelActionRecover(\'' + escAttr(k) + '\',' + cnt + ')">' + escHtml(actLabel) + '</button>'
+      : '<button class="intel-act" disabled title="Nothing to recover">' + escHtml(actLabel) + '</button>';
     return '<div class="intel-row">'
       + '<div class="intel-bar ' + meta.sev + '"></div>'
       + '<div class="intel-name">' + escHtml(meta.label) + '</div>'
       + '<div class="intel-expl">' + escHtml(meta.expl) + '</div>'
-      + '<div class="intel-cnt">' + (leak[k] || 0) + '</div>'
+      + '<div class="intel-cnt">' + cnt + '</div>'
+      + actBtn
       + '</div>';
   }).join('');
   document.getElementById('intelLeakage').innerHTML = rows;
@@ -2964,70 +3164,123 @@ function intelRenderLeakage(d) {
 
 function intelLoadRecentEvents() {
   apiFetch('/admin/events/recent?limit=25').then(function(d) {
-    var events = d.events || [];
-    if (events.length === 0) {
-      document.getElementById('intelEvents').innerHTML =
-        emptyHtml('📭', 'No recent events', 'Nothing in pas_events for the current window.');
-      return;
-    }
-    var rows = events.map(function(e) {
-      var sevTag  = tagHtml(e.severity || 'info', INTEL_SEVERITY_TAG[e.severity] || 'gray');
-      var catTag  = tagHtml(e.event_category || '—', INTEL_CATEGORY_TAG[e.event_category] || 'gray');
-      return '<tr>'
-        + '<td class="intel-mu-mono">' + escHtml(intelFmtTime(e.created_at)) + '</td>'
-        + '<td><span class="intel-mono">' + escHtml(e.event_type || '—') + '</span></td>'
-        + '<td>' + catTag + '</td>'
-        + '<td>' + sevTag + '</td>'
-        + '<td class="intel-mu-mono">' + escHtml(e.state || '—') + '</td>'
-        + '<td class="intel-mu-mono"><a href="javascript:void(0)" onclick="intelOpenTimeline(\'' + escAttr(e.call_id || '') + '\')" style="color:var(--p);text-decoration:none">' + escHtml(intelShortId(e.call_id)) + '</a></td>'
-        + '<td class="intel-mu-mono">' + escHtml(e.event_source || '—') + '</td>'
-        + '</tr>';
-    }).join('');
-    document.getElementById('intelEvents').innerHTML =
-      '<div class="card" style="padding:0;overflow-x:auto">'
-      + '<table class="tbl"><thead><tr>'
-      + '<th>Time</th><th>Event Type</th><th>Category</th><th>Severity</th><th>State</th><th>Call ID</th><th>Source</th>'
-      + '</tr></thead><tbody>' + rows + '</tbody></table>'
-      + '</div>';
+    INTEL.events = d.events || [];
+    intelRenderEvents();
   }).catch(function(e) {
     document.getElementById('intelEvents').innerHTML =
       '<div class="card" style="color:var(--re);font-size:13px">Failed to load events: ' + escHtml(e.message) + '</div>';
   });
 }
 
+/* Renders cached events with optional client-side filter + row tinting
+   for warning/error/critical rows. */
+function intelRenderEvents() {
+  var raw = INTEL.events || [];
+  if (raw.length === 0) {
+    document.getElementById('intelEvents').innerHTML =
+      emptyHtml('📭', 'No recent events', 'Nothing in pas_events for the current window.');
+    return;
+  }
+  var events = raw;
+  if (INTEL.eventFilter === 'errors') {
+    events = raw.filter(function(e) {
+      return e.severity === 'warning' || e.severity === 'error' || e.severity === 'critical';
+    });
+  }
+  var pill = INTEL.eventFilter
+    ? '<div class="intel-filter-pill">Showing: errors &amp; warnings only · ' + events.length + '/' + raw.length + ' rows <button onclick="intelActionClearEventFilter()">clear</button></div>'
+    : '';
+  if (events.length === 0) {
+    document.getElementById('intelEvents').innerHTML = pill
+      + emptyHtml('🔍', 'No matching events', 'Filter hides all current rows.');
+    return;
+  }
+  var rows = events.map(function(e) {
+    var sevTag  = tagHtml(e.severity || 'info', INTEL_SEVERITY_TAG[e.severity] || 'gray');
+    var catTag  = tagHtml(e.event_category || '—', INTEL_CATEGORY_TAG[e.event_category] || 'gray');
+    var rowCls = '';
+    if (e.severity === 'error' || e.severity === 'critical') rowCls = 'intel-row-fail';
+    else if (e.severity === 'warning') rowCls = 'intel-row-warn';
+    return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + '>'
+      + '<td class="intel-mu-mono">' + escHtml(intelFmtTime(e.created_at)) + '</td>'
+      + '<td><span class="intel-mono">' + escHtml(e.event_type || '—') + '</span></td>'
+      + '<td>' + catTag + '</td>'
+      + '<td>' + sevTag + '</td>'
+      + '<td class="intel-mu-mono">' + escHtml(e.state || '—') + '</td>'
+      + '<td class="intel-mu-mono"><a href="javascript:void(0)" onclick="intelOpenTimeline(\'' + escAttr(e.call_id || '') + '\')" style="color:var(--p);text-decoration:none">' + escHtml(intelShortId(e.call_id)) + '</a></td>'
+      + '<td class="intel-mu-mono">' + escHtml(e.event_source || '—') + '</td>'
+      + '</tr>';
+  }).join('');
+  document.getElementById('intelEvents').innerHTML = pill
+    + '<div class="card" style="padding:0;overflow-x:auto">'
+    + '<table class="tbl"><thead><tr>'
+    + '<th>Time</th><th>Event Type</th><th>Category</th><th>Severity</th><th>State</th><th>Call ID</th><th>Source</th>'
+    + '</tr></thead><tbody>' + rows + '</tbody></table>'
+    + '</div>';
+}
+
 function intelLoadCallbacks() {
   apiFetch('/admin/events/callbacks?limit=25').then(function(d) {
-    var events = d.events || [];
-    if (events.length === 0) {
-      document.getElementById('intelCallbacks').innerHTML =
-        emptyHtml('📞', 'No callbacks', 'No callback.requested or call.ended_with_callback events in the window.');
-      return;
-    }
-    var rows = events.map(function(e) {
-      var p = e.payload || {};
-      var requested = intelFmtTime(e.created_at);
-      var preferred = p.preferred_time_normalized || p.preferred_time_raw || '—';
-      var reason    = p.callback_reason_excerpt || p.from_state || '—';
-      var idShort   = intelShortId(e.call_id);
-      return '<tr>'
-        + '<td class="intel-mono"><a href="javascript:void(0)" onclick="intelOpenTimeline(\'' + escAttr(e.call_id || '') + '\')" style="color:var(--p);text-decoration:none">' + escHtml(idShort) + '</a></td>'
-        + '<td class="intel-mu-mono">' + escHtml(requested) + '</td>'
-        + '<td class="intel-mu-mono">' + escHtml(intelTrunc(preferred, 40)) + '</td>'
-        + '<td class="intel-mu-mono">' + escHtml(intelTrunc(reason, 60)) + '</td>'
-        + '<td>' + tagHtml(e.state || '—', 'gray') + '</td>'
-        + '<td><button class="btn btn-ghost btn-sm" disabled title="Wired in PAS131 — read-only for now">Call Back</button></td>'
-        + '</tr>';
-    }).join('');
-    document.getElementById('intelCallbacks').innerHTML =
-      '<div class="card" style="padding:0;overflow-x:auto">'
-      + '<table class="tbl"><thead><tr>'
-      + '<th>Call ID</th><th>Requested</th><th>Preferred Time</th><th>Reason</th><th>State</th><th>Action</th>'
-      + '</tr></thead><tbody>' + rows + '</tbody></table>'
-      + '</div>';
+    INTEL.callbacks = d.events || [];
+    intelRenderCallbacks();
   }).catch(function(e) {
     document.getElementById('intelCallbacks').innerHTML =
       '<div class="card" style="color:var(--re);font-size:13px">Failed to load callbacks: ' + escHtml(e.message) + '</div>';
   });
+}
+
+/* Renders the cached callback queue as a priority action panel.
+   Status overlay (done / rescheduled) is local-only until PAS131 wires
+   server-side mutations. */
+function intelRenderCallbacks() {
+  var events = INTEL.callbacks || [];
+  if (events.length === 0) {
+    document.getElementById('intelCallbacks').innerHTML =
+      emptyHtml('📞', 'No callbacks', 'No callback.requested or call.ended_with_callback events in the window.');
+    return;
+  }
+  /* Pending first, done last. */
+  var ordered = events.slice().sort(function(a, b) {
+    var sa = INTEL.callbackStatus[a.call_id] === 'done' ? 1 : 0;
+    var sb = INTEL.callbackStatus[b.call_id] === 'done' ? 1 : 0;
+    return sa - sb;
+  });
+  var cards = ordered.map(function(e) {
+    var p = e.payload || {};
+    var callId    = e.call_id || '';
+    var idShort   = intelShortId(callId);
+    var requested = intelFmtTime(e.created_at);
+    var preferred = p.preferred_time_normalized || p.preferred_time_raw || '—';
+    var reason    = p.callback_reason_excerpt || p.from_state || '—';
+    var status    = INTEL.callbackStatus[callId];  // 'done' | 'rescheduled' | undefined
+    var isDone    = status === 'done';
+    /* Urgent if the requested timestamp is older than 4h and not done. */
+    var urgent = false;
+    try {
+      var ageMs = Date.now() - new Date(e.created_at).getTime();
+      urgent = !isDone && ageMs > 4 * 3600 * 1000;
+    } catch (err) {}
+
+    var idAttr = escAttr(callId);
+    var actions = isDone
+      ? '<button class="intel-act ghost" onclick="intelActionUndoCallback(\'' + idAttr + '\')">Undo</button>'
+      : '<button class="intel-act primary" onclick="intelActionCallNow(\'' + idAttr + '\')">Call Now</button>'
+        + '<button class="intel-act" onclick="intelActionReschedule(\'' + idAttr + '\')">Reschedule</button>'
+        + '<button class="intel-act ghost" onclick="intelActionMarkDone(\'' + idAttr + '\')">Mark Done</button>';
+
+    return '<div class="intel-cb' + (isDone ? ' done' : '') + (urgent ? ' urgent' : '') + '">'
+      +   '<div class="intel-cb-main">'
+      +     '<div class="intel-cb-top">'
+      +       '<a class="intel-cb-id" href="javascript:void(0)" onclick="intelOpenTimeline(\'' + idAttr + '\')">' + escHtml(idShort) + '</a>'
+      +       '<span class="intel-cb-pref">⏱ ' + escHtml(intelTrunc(preferred, 36)) + '</span>'
+      +       (status === 'rescheduled' ? '<span class="intel-cb-pref" style="color:var(--am);border:1px solid var(--am);background:transparent">RESCHEDULED</span>' : '')
+      +     '</div>'
+      +     '<div class="intel-cb-meta">' + escHtml(intelTrunc(reason, 120)) + ' · requested ' + escHtml(requested) + '</div>'
+      +   '</div>'
+      +   '<div class="intel-cb-actions">' + actions + '</div>'
+      + '</div>';
+  }).join('');
+  document.getElementById('intelCallbacks').innerHTML = '<div class="intel-cb-list">' + cards + '</div>';
 }
 
 function intelOpenTimeline(callId) {
@@ -3057,9 +3310,10 @@ function intelLoadTimeline() {
     }
     var nodes = events.map(function(e) {
       var sevClass = (e.severity === 'warning' || e.severity === 'error' || e.severity === 'critical') ? e.severity : '';
+      var typeClass = intelEventTypeAccent(e.event_type);
       var sevTag   = tagHtml(e.severity || 'info', INTEL_SEVERITY_TAG[e.severity] || 'gray');
       var desc     = intelSafeDescribe(e.payload);
-      return '<div class="intel-tl-node ' + sevClass + '">'
+      return '<div class="intel-tl-node ' + sevClass + ' ' + typeClass + '">'
         + '<div class="intel-tl-time">' + escHtml(intelFmtTime(e.created_at)) + '</div>'
         + '<div class="intel-tl-line">'
         +   '<span class="intel-evtype">' + escHtml(e.event_type || '—') + '</span>'
@@ -3074,6 +3328,112 @@ function intelLoadTimeline() {
   }).catch(function(e) {
     box.innerHTML = '<span style="color:var(--re);font-size:12px">Failed to load timeline: ' + escHtml(e.message) + '</span>';
   });
+}
+
+/* ═══════════════════════════════════════════════
+   INTEL — ACTION HANDLERS (PAS131-prep)
+   Frontend-only placeholders. Backend mutations land in PAS131; until
+   then each handler logs intent, gives the operator a toast, and
+   updates client-side state where appropriate. No backend writes.
+═══════════════════════════════════════════════ */
+
+function intelEventTypeAccent(eventType) {
+  if (!eventType) return '';
+  if (eventType === 'booking.attempted') return 'evt-booking';
+  if (eventType === 'provider.failed')   return 'evt-provider';
+  if (eventType === 'call.ended_with_callback') return 'evt-callback';
+  return '';
+}
+
+function intelPersistCallbackStatus() {
+  try { localStorage.setItem(INTEL_CB_LS, JSON.stringify(INTEL.callbackStatus)); }
+  catch (e) {}
+}
+
+function intelActionRecover(category, count) {
+  console.info('[PAS131-intent] recover', { category: category, count: count });
+  trackEvent('intel_action_recover', { category: category, count: count });
+  toast('Recovery flow queued for ' + category + ' (' + count + ') — wired in PAS131', 'info');
+}
+
+function intelActionViewFailures() {
+  INTEL.eventFilter = 'errors';
+  intelRenderEvents();
+  trackEvent('intel_action_view_failures');
+  var el = document.getElementById('intelEvents');
+  if (el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function intelActionClearEventFilter() {
+  INTEL.eventFilter = null;
+  intelRenderEvents();
+  trackEvent('intel_action_clear_filter');
+}
+
+function intelActionRetrySystem() {
+  trackEvent('intel_action_retry');
+  toast('Refreshing intelligence data…', 'info');
+  intelLoadSummary();
+  intelLoadRecentEvents();
+  intelLoadCallbacks();
+}
+
+function intelActionIgnoreHealth() {
+  INTEL.healthIgnored = true;
+  trackEvent('intel_action_ignore_health');
+  intelLoadSummary();
+}
+
+function intelActionUnignoreHealth() {
+  INTEL.healthIgnored = false;
+  trackEvent('intel_action_unignore_health');
+  intelLoadSummary();
+}
+
+function intelActionScrollToCallbacks() {
+  var el = document.getElementById('intelCallbacks');
+  if (el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  trackEvent('intel_action_open_callbacks');
+}
+
+function intelActionCallNow(callId) {
+  if (!callId) return;
+  console.info('[PAS131-intent] call_now', { call_id: callId });
+  trackEvent('intel_action_call_now', { call_id: callId });
+  toast('Outbound dial queued for ' + intelShortId(callId) + ' — wired in PAS131', 'info');
+}
+
+function intelActionReschedule(callId) {
+  if (!callId) return;
+  var when = window.prompt('Reschedule callback for ' + intelShortId(callId) + '\nEnter new preferred time (free text):');
+  if (when == null) return;
+  when = when.trim();
+  if (!when) return;
+  INTEL.callbackStatus[callId] = 'rescheduled';
+  intelPersistCallbackStatus();
+  console.info('[PAS131-intent] reschedule', { call_id: callId, when: when });
+  trackEvent('intel_action_reschedule', { call_id: callId });
+  toast('Rescheduled ' + intelShortId(callId) + ' → "' + when + '" (local only)', 'info');
+  intelRenderCallbacks();
+}
+
+function intelActionMarkDone(callId) {
+  if (!callId) return;
+  INTEL.callbackStatus[callId] = 'done';
+  intelPersistCallbackStatus();
+  console.info('[PAS131-intent] mark_done', { call_id: callId });
+  trackEvent('intel_action_mark_done', { call_id: callId });
+  toast('Marked ' + intelShortId(callId) + ' done', 'ok');
+  intelRenderCallbacks();
+}
+
+function intelActionUndoCallback(callId) {
+  if (!callId) return;
+  delete INTEL.callbackStatus[callId];
+  intelPersistCallbackStatus();
+  trackEvent('intel_action_undo_callback', { call_id: callId });
+  toast('Restored ' + intelShortId(callId), 'info');
+  intelRenderCallbacks();
 }
 </script>
 </body>
