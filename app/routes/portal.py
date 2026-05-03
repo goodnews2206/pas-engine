@@ -38,6 +38,15 @@ from app.db.brokerage_store import (
 )
 from app.db.agent_store import list_agents, get_agent_leaderboard
 from app.db.supabase_client import get_supabase
+from app.services.intelligence.leakage import detect_leakage
+from app.services.intelligence.queries import (
+    callback_events,
+    events_for_call,
+    fetch_call_and_lead_context,
+    recent_events,
+)
+from app.services.intelligence.sanitize import sanitize_event_for_portal
+from app.services.intelligence.scoring import SCORING_VERSION
 
 router = APIRouter()
 logger = logging.getLogger("pas.portal")
@@ -674,4 +683,167 @@ async def portal_update_notifications(body: NotificationConfigUpdate, brokerage=
         "status": "updated",
         "brokerage_id": brokerage["id"],
         "notification_config": merged,
+    }
+
+
+# ───────────── EVENT VISIBILITY + INTELLIGENCE (PAS129/PAS130) ─────────────
+
+_PORTAL_CALLBACK_EVENT_TYPES = ("callback.requested", "call.ended_with_callback")
+_PORTAL_SUMMARY_DEFAULT_DAYS = 7
+_PORTAL_SUMMARY_MAX_EVENTS = 100
+
+
+@router.get("/events/recent")
+async def portal_events_recent(
+    event_type: Optional[str] = Query(default=None),
+    severity: Optional[str] = Query(default=None),
+    since_iso: Optional[str] = Query(default=None),
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    brokerage=Depends(require_brokerage),
+):
+    """Most recent pas_events for this brokerage. Payloads are sanitised."""
+    events = recent_events(
+        brokerage_id=brokerage["id"],
+        event_type=event_type,
+        severity=severity,
+        since_iso=since_iso,
+        limit=limit,
+        offset=offset,
+    )
+    cleaned = [sanitize_event_for_portal(e) for e in events]
+    return {
+        "events": cleaned,
+        "count": len(cleaned),
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/callbacks")
+async def portal_callbacks(
+    since_iso: Optional[str] = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    brokerage=Depends(require_brokerage),
+):
+    """Callback queue for this brokerage. Payloads are sanitised."""
+    events = callback_events(
+        brokerage_id=brokerage["id"],
+        since_iso=since_iso,
+        limit=limit,
+        offset=offset,
+    )
+    cleaned = [sanitize_event_for_portal(e) for e in events]
+    return {
+        "events": cleaned,
+        "count": len(cleaned),
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/calls/{call_id}/timeline")
+async def portal_call_timeline(call_id: str, brokerage=Depends(require_brokerage)):
+    """
+    Full event timeline for a single call. Sanitised payloads.
+
+    SECURITY: must verify the call belongs to the authenticated brokerage
+    BEFORE returning its timeline. Mirrors the portal_call_detail pattern.
+    """
+    if not call_id:
+        raise HTTPException(status_code=400, detail="call_id required")
+    try:
+        db = get_supabase()
+        result = (
+            db.table("calls")
+            .select("id")
+            .eq("id", call_id)
+            .eq("brokerage_id", brokerage["id"])
+            .limit(1)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Call not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"portal_call_timeline ownership check failed for {call_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to verify call ownership")
+
+    events = events_for_call(call_id, brokerage_id=brokerage["id"])
+    cleaned = [sanitize_event_for_portal(e) for e in events]
+    return {"call_id": call_id, "events": cleaned, "count": len(cleaned)}
+
+
+@router.get("/intelligence/summary")
+async def portal_intelligence_summary(
+    since_iso: Optional[str] = Query(default=None),
+    brokerage=Depends(require_brokerage),
+):
+    """
+    Aggregate KPIs for this brokerage over a window (default 7 days).
+    Counts only — no PII. Returns leakage-category breakdown.
+    """
+    from collections import Counter
+
+    if not since_iso:
+        since_iso = (
+            datetime.now(timezone.utc) - timedelta(days=_PORTAL_SUMMARY_DEFAULT_DAYS)
+        ).isoformat()
+
+    events = recent_events(
+        brokerage_id=brokerage["id"],
+        since_iso=since_iso,
+        limit=_PORTAL_SUMMARY_MAX_EVENTS,
+    )
+
+    by_category: Counter = Counter()
+    by_severity: Counter = Counter()
+    by_event_type: Counter = Counter()
+    callback_count = 0
+    by_call: dict = {}
+
+    for e in events:
+        by_category[(e or {}).get("event_category") or "unknown"] += 1
+        by_severity[(e or {}).get("severity") or "unknown"] += 1
+        by_event_type[(e or {}).get("event_type") or "unknown"] += 1
+        if (e or {}).get("event_type") in _PORTAL_CALLBACK_EVENT_TYPES:
+            callback_count += 1
+        cid = (e or {}).get("call_id")
+        if cid:
+            by_call.setdefault(cid, []).append(e)
+
+    # Enrich detect_leakage with real call + lead context. Without these
+    # rows, response_leakage / qualification_leakage / DNC paths cannot
+    # classify correctly. Fetches degrade to {} on failure (never raise).
+    # Brokerage filter forced — defence in depth against stray foreign ids.
+    distinct_lead_ids = {(e or {}).get("lead_id") for e in events if (e or {}).get("lead_id")}
+    calls_by_id, leads_by_id = fetch_call_and_lead_context(
+        list(by_call.keys()),
+        list(distinct_lead_ids),
+        brokerage_id=brokerage["id"],
+    )
+
+    leakage_counts: Counter = Counter()
+    for cid, evs in by_call.items():
+        call_row = calls_by_id.get(cid, {})
+        cid_lead_id = next(
+            ((e or {}).get("lead_id") for e in evs if (e or {}).get("lead_id")),
+            None,
+        )
+        lead_row = leads_by_id.get(cid_lead_id, {}) if cid_lead_id else {}
+        leakage_counts[detect_leakage(lead_row, call_row, evs)] += 1
+
+    return {
+        "period_since": since_iso,
+        "brokerage_id": brokerage["id"],
+        "events_total": len(events),
+        "events_by_category": dict(by_category),
+        "events_by_severity": dict(by_severity),
+        "events_by_type": dict(by_event_type),
+        "callback_events_count": callback_count,
+        "leakage_breakdown": dict(leakage_counts),
+        "calls_analyzed": len(by_call),
+        "version": SCORING_VERSION,
     }

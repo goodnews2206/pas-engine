@@ -92,6 +92,69 @@ def events_for_call(
         return []
 
 
+def fetch_call_and_lead_context(
+    call_ids,
+    lead_ids,
+    brokerage_id: Optional[str] = None,
+) -> tuple:
+    """
+    Batch-fetch call rows and lead rows for leakage classification context.
+
+    Returns ``(calls_by_id, leads_by_id)``. Both are dicts keyed by primary
+    key id. On any DB failure the failing half degrades to ``{}`` — never
+    raises. Bounded to MAX_LIMIT (100) ids per side.
+
+    The `brokerage_id` filter, when supplied, is applied to BOTH queries so
+    a portal caller cannot pull foreign-brokerage rows even if a stray
+    call_id sneaks in.
+
+    Selected columns are the minimum needed by detect_leakage:
+      calls : id, outcome, call_status, source, brokerage_id
+      leads : id, status, intent, budget, timeline, outcome, brokerage_id
+    """
+    calls_by_id: dict = {}
+    leads_by_id: dict = {}
+
+    cap_call_ids = [cid for cid in (call_ids or []) if cid][:MAX_LIMIT]
+    cap_lead_ids = [lid for lid in (lead_ids or []) if lid][:MAX_LIMIT]
+
+    if cap_call_ids:
+        try:
+            db = get_supabase()
+            q = (
+                db.table("calls")
+                .select("id, outcome, call_status, source, brokerage_id")
+                .in_("id", cap_call_ids)
+            )
+            if brokerage_id:
+                q = q.eq("brokerage_id", brokerage_id)
+            for row in q.execute().data or []:
+                rid = (row or {}).get("id")
+                if rid:
+                    calls_by_id[rid] = row
+        except Exception as e:
+            logger.warning(f"fetch_call_and_lead_context (calls) failed: {e}")
+
+    if cap_lead_ids:
+        try:
+            db = get_supabase()
+            q = (
+                db.table("leads")
+                .select("id, status, intent, budget, timeline, outcome, brokerage_id")
+                .in_("id", cap_lead_ids)
+            )
+            if brokerage_id:
+                q = q.eq("brokerage_id", brokerage_id)
+            for row in q.execute().data or []:
+                rid = (row or {}).get("id")
+                if rid:
+                    leads_by_id[rid] = row
+        except Exception as e:
+            logger.warning(f"fetch_call_and_lead_context (leads) failed: {e}")
+
+    return calls_by_id, leads_by_id
+
+
 def callback_events(
     brokerage_id: Optional[str] = None,
     since_iso: Optional[str] = None,

@@ -23,6 +23,7 @@ from app.routes.demo import router as demo_router
 from app.routes.simulate import router as simulate_router
 from app.routes.onboarding import router as onboarding_router
 from app.routes.system import router as system_router
+from app.routes.events import router as events_router
 from app.db.supabase_client import init_supabase
 from app.config import get_settings
 
@@ -138,6 +139,7 @@ app.include_router(slack_router, prefix="/slack", tags=["Slack"])
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 app.include_router(agents_router, prefix="/admin", tags=["Agents"])
 app.include_router(system_router, prefix="/admin", tags=["System"])
+app.include_router(events_router, prefix="/admin", tags=["Intelligence"])
 app.include_router(portal_router, prefix="/portal", tags=["Portal"])
 app.include_router(demo_router, prefix="/demo", tags=["Demo"])
 app.include_router(simulate_router, tags=["Simulation"])
