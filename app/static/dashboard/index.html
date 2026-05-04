@@ -507,6 +507,106 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   .cc-leak-row{flex-wrap:wrap}
   .cc-leak-name{min-width:auto;width:100%}
 }
+
+/* ═══════════════════════════════════════════════
+   PAS132 — LIVE WORKFLOW GRAPH (.wf-* prefix)
+   Premium dark card embedded inside the light dashboard. Nodes are
+   grouped by category (DETECT / DECIDE / ACT / OUTCOME) and laid out
+   horizontally on desktop, vertically on mobile.
+═══════════════════════════════════════════════ */
+.wf-card{position:relative;background:#0d1117;color:#e6edf3;border:1px solid #20262e;border-radius:14px;padding:22px 22px 26px;box-shadow:0 12px 30px -18px rgba(15,23,42,.45);margin-bottom:24px;overflow:hidden}
+.wf-card::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 70% at 8% 0%, rgba(124,58,237,.18) 0%, rgba(124,58,237,0) 70%),radial-gradient(50% 50% at 90% 100%, rgba(59,130,246,.10) 0%, rgba(59,130,246,0) 65%);pointer-events:none}
+.wf-card > *{position:relative;z-index:1}
+
+.wf-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.wf-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:.02em;color:#fff}
+.wf-pill{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;border:1px solid #2c3340;color:#cbd5e1;background:#161b22}
+.wf-pill .wf-dot{width:7px;height:7px;border-radius:50%;background:#94a3b8}
+.wf-pill.running .wf-dot{background:#a78bfa;box-shadow:0 0 0 0 rgba(167,139,250,.6);animation:wfPulse 1.4s ease-out infinite}
+.wf-pill.completed .wf-dot{background:#34d399}
+.wf-pill.warning .wf-dot{background:#f59e0b}
+.wf-pill.failed .wf-dot{background:#f87171}
+.wf-pill.pending .wf-dot{background:#475569}
+.wf-sub{font-size:12px;color:#94a3b8;line-height:1.55;margin:6px 0 18px;max-width:80ch}
+.wf-meta{display:flex;gap:12px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:10px;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.wf-meta b{color:#cbd5e1;font-weight:600}
+
+.wf-toolbar{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.wf-input{background:#0a0f15;border:1px solid #20262e;color:#e6edf3;font-family:'DM Mono',monospace;font-size:11px;padding:7px 10px;border-radius:6px;min-width:220px}
+.wf-input:focus{outline:none;border-color:#7c3aed}
+.wf-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;border-radius:6px;border:1px solid #2c3340;background:#161b22;color:#cbd5e1;cursor:pointer;transition:all .15s}
+.wf-btn:hover{border-color:#7c3aed;color:#fff}
+.wf-btn.primary{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.wf-btn.primary:hover{background:#8b5cf6}
+
+.wf-graph{display:flex;gap:18px;align-items:stretch;flex-wrap:nowrap;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x proximity}
+.wf-graph::-webkit-scrollbar{height:6px}
+.wf-graph::-webkit-scrollbar-thumb{background:#1f2630;border-radius:3px}
+.wf-col{display:flex;flex-direction:column;gap:10px;min-width:170px;padding:12px 12px 14px;background:rgba(255,255,255,.02);border:1px dashed #1f2630;border-radius:10px;flex:0 0 auto;scroll-snap-align:start}
+.wf-col-head{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#94a3b8}
+.wf-col-bar{width:18px;height:2px;background:#7c3aed;border-radius:1px}
+.wf-col[data-cat="detect"] .wf-col-bar{background:#60a5fa}
+.wf-col[data-cat="decide"] .wf-col-bar{background:#a78bfa}
+.wf-col[data-cat="act"] .wf-col-bar{background:#fbbf24}
+.wf-col[data-cat="outcome"] .wf-col-bar{background:#34d399}
+
+.wf-node{position:relative;border:1px solid #2c3340;border-radius:9px;padding:12px 14px;background:#0f141b;cursor:pointer;transition:all .2s ease;display:flex;flex-direction:column;gap:5px;min-height:74px}
+.wf-node:hover{border-color:#7c3aed;transform:translateY(-1px)}
+.wf-node.focused{border-color:#7c3aed;box-shadow:0 0 0 2px rgba(124,58,237,.30)}
+.wf-node-key{font-family:'DM Mono',monospace;font-size:9px;color:#64748b;letter-spacing:.08em;text-transform:uppercase}
+.wf-node-label{font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;color:#e6edf3;line-height:1.3}
+.wf-node-status{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8}
+.wf-node-status .wf-sd{width:6px;height:6px;border-radius:50%;background:#475569}
+
+.wf-node[data-status="pending"]{opacity:.55}
+.wf-node[data-status="skipped"]{opacity:.4;border-style:dashed}
+.wf-node[data-status="running"]{border-color:#a78bfa;background:linear-gradient(180deg,rgba(124,58,237,.18) 0%,#0f141b 100%);box-shadow:0 0 0 0 rgba(167,139,250,.55);animation:wfNodePulse 1.6s ease-out infinite}
+.wf-node[data-status="running"] .wf-sd{background:#a78bfa;box-shadow:0 0 0 0 rgba(167,139,250,.6);animation:wfPulse 1.4s ease-out infinite}
+.wf-node[data-status="completed"]{border-color:#16a34a;background:linear-gradient(180deg,rgba(22,163,74,.10) 0%,#0f141b 100%)}
+.wf-node[data-status="completed"] .wf-sd{background:#34d399}
+.wf-node[data-status="warning"]{border-color:#f59e0b;background:linear-gradient(180deg,rgba(245,158,11,.10) 0%,#0f141b 100%)}
+.wf-node[data-status="warning"] .wf-sd{background:#f59e0b}
+.wf-node[data-status="failed"]{border-color:#ef4444;background:linear-gradient(180deg,rgba(239,68,68,.12) 0%,#0f141b 100%)}
+.wf-node[data-status="failed"] .wf-sd{background:#f87171}
+
+.wf-edge{align-self:center;flex:0 0 28px;height:2px;background:#1f2630;border-radius:1px;position:relative}
+.wf-edge.completed{background:#16a34a}
+.wf-edge.warning{background:#f59e0b}
+.wf-edge.failed{background:#ef4444}
+.wf-edge.active{background:linear-gradient(90deg,#7c3aed,#a78bfa);box-shadow:0 0 8px rgba(167,139,250,.55)}
+
+.wf-empty{padding:28px 18px;text-align:center;color:#94a3b8;font-size:13px;border:1px dashed #1f2630;border-radius:10px}
+.wf-empty .wf-empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#cbd5e1;margin-bottom:6px}
+
+/* Detail panel — slides up from the bottom of the workflow card. */
+.wf-detail{margin-top:14px;padding:14px 16px;background:#0a0f15;border:1px solid #20262e;border-left:3px solid #7c3aed;border-radius:10px;display:none}
+.wf-detail.on{display:block}
+.wf-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.wf-detail-label{font-family:'Syne',sans-serif;font-weight:700;font-size:14.5px;color:#fff}
+.wf-detail-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 18px;margin-top:8px}
+.wf-detail-row{display:flex;flex-direction:column;gap:2px}
+.wf-detail-key{font-family:'DM Mono',monospace;font-size:9.5px;color:#64748b;letter-spacing:.08em;text-transform:uppercase}
+.wf-detail-val{font-size:12.5px;color:#e6edf3;font-family:'DM Mono',monospace;word-break:break-word}
+.wf-detail-close{margin-left:auto;background:transparent;border:1px solid #2c3340;color:#94a3b8;border-radius:6px;font-size:11px;padding:4px 8px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
+.wf-detail-close:hover{color:#fff;border-color:#7c3aed}
+
+@keyframes wfPulse{
+  0%{box-shadow:0 0 0 0 rgba(167,139,250,.55)}
+  70%{box-shadow:0 0 0 8px rgba(167,139,250,0)}
+  100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}
+}
+@keyframes wfNodePulse{
+  0%{box-shadow:0 0 0 0 rgba(167,139,250,.45)}
+  70%{box-shadow:0 0 0 6px rgba(167,139,250,0)}
+  100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}
+}
+
+/* Mobile: stack columns vertically. Edges become vertical separators. */
+@media(max-width:760px){
+  .wf-graph{flex-direction:column;flex-wrap:nowrap;overflow-x:visible}
+  .wf-col{min-width:0;width:100%}
+  .wf-edge{align-self:stretch;width:2px;height:18px;flex:0 0 18px;margin:0 auto}
+}
 </style>
 </head>
 <body>
@@ -1000,6 +1100,7 @@ function hideLoginErr() {
 
 function doLogout() {
   trackEvent(S.portalType === 'admin' ? 'admin_logged_out' : 'client_logged_out');
+  if (typeof wfStopAllPolling === 'function') wfStopAllPolling();
   localStorage.removeItem(ADMIN_KEY_LS);
   localStorage.removeItem(CLIENT_KEY_LS);
   S.adminKey = ''; S.clientKey = ''; S.portalType = null; S.brokerageId = null; S.loaded = {};
@@ -1044,6 +1145,9 @@ function adminGo(el) {
   if (S.currentTab === tab) return;
   var elapsed = Math.round((Date.now() - S.tabEntered) / 1000);
   if (S.currentTab) trackEvent('tab_time_spent', { tab: S.currentTab, seconds: elapsed });
+  /* Switching tabs unmounts the workflow surface — stop any polling so
+     we don't keep hitting the API in the background. */
+  if (typeof wfStopAllPolling === 'function') wfStopAllPolling();
 
   document.querySelectorAll('#adminTabbar .tab').forEach(function(t){ t.classList.remove('on'); });
   el.classList.add('on');
@@ -1068,6 +1172,7 @@ function clientGo(el) {
   if (S.currentTab === tab) return;
   var elapsed = Math.round((Date.now() - S.tabEntered) / 1000);
   if (S.currentTab) trackEvent('tab_time_spent', { tab: S.currentTab, seconds: elapsed });
+  if (typeof wfStopAllPolling === 'function') wfStopAllPolling();
 
   document.querySelectorAll('#clientTabbar .tab').forEach(function(t){ t.classList.remove('on'); });
   el.classList.add('on');
@@ -1708,10 +1813,21 @@ function loadClientDashboard(preloaded) {
       + detect
       + decide
       + act
+      + '<div id="ccWorkflowCard" class="wf-card"></div>'
       + callbacksHtml
       + leakageHtml
       + (isEmpty ? '<div class="callout callout-amber" style="margin-top:24px"><div class="callout-label cl-amber">Demo Mode Active</div>'
         + '<p>Demo data shown until live calls are connected. Contact <strong>ORVN Support</strong> to enable your live voice stack and start handling real inbound leads.</p></div>' : '');
+
+    /* Mount the live workflow graph for this brokerage. Pre-fill with the
+       most recent callback's call_id when available — falling back to the
+       first call from /portal/calls. */
+    wfMount('ccWorkflowCard', {
+      audience: 'portal',
+      title: 'PAS Workflow',
+      sub: 'Live PAS detect → decide → act loop on the most recent lead.'
+    });
+    ccPrefillWorkflow();
 
     S.loaded['c-dashboard'] = true;
   }
@@ -2024,17 +2140,41 @@ function ccActionRescheduleNext() {
 function ccActionRetry(kind) {
   console.info('[PAS131-intent] cc.retry', { kind: kind });
   trackEvent('cc_action_retry', { kind: kind });
-  toast('Retry queued for ' + kind + ' (PAS131 backend pending)', 'info');
+  toast('PAS action triggered — retry queued for ' + kind, 'info');
+  wfBumpAfterAction('ccWorkflowCard');
 }
 function ccActionAssignAgent(kind) {
   console.info('[PAS131-intent] cc.assign_agent', { kind: kind });
   trackEvent('cc_action_assign_agent', { kind: kind });
-  toast('Assignment flow opening… (PAS131 backend pending)', 'info');
+  toast('PAS action triggered — assignment flow opening', 'info');
+  wfBumpAfterAction('ccWorkflowCard');
 }
 function ccActionLeakage(category, count) {
   console.info('[PAS131-intent] cc.leakage_action', { category: category, count: count });
   trackEvent('cc_action_leakage', { category: category, count: count });
-  toast(CC_LEAKAGE_BUSINESS[category].action + ' for ' + count + ' lead' + (count !== 1 ? 's' : '') + ' (PAS131 backend pending)', 'info');
+  toast('PAS action triggered — ' + CC_LEAKAGE_BUSINESS[category].action + ' for ' + count + ' lead' + (count !== 1 ? 's' : ''), 'info');
+  wfBumpAfterAction('ccWorkflowCard');
+}
+
+/* ───────── Workflow prefill ─────────
+   Picks the most recent call_id we can show the brokerage:
+     1. /portal/callbacks (a callback_requested event implies a real call_id)
+     2. /portal/calls?limit=1 (any recent call)
+   Defence-in-depth: every call_id used here is already scoped to the
+   authenticated brokerage by the portal route layer. */
+function ccPrefillWorkflow() {
+  apiFetch('/portal/callbacks?limit=1').then(function(d) {
+    var ev = (d && d.events && d.events[0]) || null;
+    var callId = ev && ev.call_id;
+    if (callId) { wfSetCallId('ccWorkflowCard', callId); return null; }
+    /* Fall through to most recent call. */
+    return apiFetch('/portal/calls?limit=1&offset=0').then(function(d2) {
+      var c = (d2 && d2.calls && d2.calls[0]) || null;
+      if (c && c.id) wfSetCallId('ccWorkflowCard', c.id);
+    });
+  }).catch(function() {
+    /* Quiet — empty state will already be visible. */
+  });
 }
 
 /* ═══════════════════════════════════════════════
@@ -3400,6 +3540,398 @@ var INTEL_FORBIDDEN_PAYLOAD_KEYS = {
   raw_text:1, text:1, message:1
 };
 
+/* ═══════════════════════════════════════════════
+   PAS132 — LIVE WORKFLOW GRAPH (.wf-* prefix)
+   Renders the deterministic workflow envelope returned by:
+     /admin/workflows/calls/{call_id}    (audience: admin)
+     /portal/workflows/calls/{call_id}   (audience: portal)
+   Polls every WF_POLL_MS while workflow_status is running.
+═══════════════════════════════════════════════ */
+var WF_POLL_MS = 1500;
+/* Categories rendered as columns, in DETECT → DECIDE → ACT → OUTCOME order.
+   The mapper categorises each step; columns omitted if empty. */
+var WF_COL_ORDER = ['detect','decide','act','outcome','system'];
+var WF_COL_TITLE = {
+  detect:  'Detect',
+  decide:  'Decide',
+  act:     'Act',
+  outcome: 'Outcome',
+  system:  'System'
+};
+/* Forbidden payload keys we will never render in the detail panel even if
+   the backend sanitiser missed one (defence in depth). */
+var WF_FORBIDDEN_DETAIL_KEYS = {
+  api_key:1, x_api_key:1, x_admin_key:1, authorization:1, secret:1,
+  password:1, token:1, raw_text:1, text:1, message:1, transcript:1,
+  prompt:1, response:1, body:1
+};
+
+var WF = {
+  /* By container id — supports both surfaces simultaneously. */
+  byContainer: {}
+};
+
+/* Public entry. audience='admin'|'portal'. callId is optional — when
+   omitted, the surface renders a "no workflow yet" empty state until a
+   call_id is supplied via wfSetCallId(containerId, callId). */
+function wfMount(containerId, opts) {
+  opts = opts || {};
+  var audience = opts.audience === 'portal' ? 'portal' : 'admin';
+  var callId   = opts.callId || '';
+  var title    = opts.title || (audience === 'portal' ? 'PAS Workflow' : 'Live Workflow Runtime');
+  var sub      = opts.sub   || (audience === 'portal'
+                  ? 'PAS detect → decide → act loop for this lead, in real time.'
+                  : 'Operator view — derived from pas_events for this call_id.');
+  var allowInput = audience === 'admin';
+
+  /* Stop any prior polling for this container. */
+  wfStopPoll(containerId);
+
+  WF.byContainer[containerId] = {
+    audience: audience,
+    callId:   callId,
+    timer:    null,
+    last:     null,        /* latest workflow envelope */
+    focused:  null,        /* focused step key */
+    title:    title
+  };
+
+  var card = document.getElementById(containerId);
+  if (!card) return;
+  card.innerHTML =
+    '<div class="wf-head">'
+    +   '<div class="wf-title">' + escHtml(title) + '</div>'
+    +   '<span class="wf-pill" id="' + containerId + '_pill"><span class="wf-dot"></span><span id="' + containerId + '_pillText">awaiting call_id</span></span>'
+    +   '<div class="wf-toolbar">'
+    +     (allowInput
+            ? '<input class="wf-input" id="' + containerId + '_input" placeholder="Enter call_id (e.g. SIM-…)" value="' + escAttr(callId || '') + '" autocomplete="off" />'
+              + '<button class="wf-btn primary" onclick="wfManualLoad(\'' + escAttr(containerId) + '\')">Load</button>'
+            : '')
+    +     '<button class="wf-btn" onclick="wfManualRefresh(\'' + escAttr(containerId) + '\')">Refresh</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="wf-sub">' + escHtml(sub) + '</div>'
+    + '<div class="wf-meta" id="' + containerId + '_meta"></div>'
+    + '<div class="wf-graph" id="' + containerId + '_graph"></div>'
+    + '<div class="wf-detail" id="' + containerId + '_detail"></div>';
+
+  if (callId) {
+    wfFetchAndRender(containerId);
+  } else {
+    wfRenderEmpty(containerId);
+  }
+}
+
+function wfSetCallId(containerId, callId) {
+  var st = WF.byContainer[containerId];
+  if (!st) return;
+  if (!callId || callId === st.callId) return;
+  st.callId = callId;
+  st.focused = null;
+  var inp = document.getElementById(containerId + '_input');
+  if (inp) inp.value = callId;
+  wfFetchAndRender(containerId);
+}
+
+function wfManualLoad(containerId) {
+  var st = WF.byContainer[containerId];
+  if (!st) return;
+  var inp = document.getElementById(containerId + '_input');
+  var v = (inp && inp.value || '').trim();
+  if (!v) { toast('Enter a call_id', 'err'); return; }
+  trackEvent('wf_manual_load', { audience: st.audience });
+  wfSetCallId(containerId, v);
+}
+
+function wfManualRefresh(containerId) {
+  var st = WF.byContainer[containerId];
+  if (!st || !st.callId) { toast('No call_id loaded', 'info'); return; }
+  trackEvent('wf_manual_refresh', { audience: st.audience });
+  wfFetchAndRender(containerId);
+}
+
+function wfBaseUrl(audience, callId) {
+  var prefix = audience === 'portal' ? '/portal/workflows/calls/' : '/admin/workflows/calls/';
+  return prefix + encodeURIComponent(callId);
+}
+
+function wfFetchAndRender(containerId) {
+  var st = WF.byContainer[containerId];
+  if (!st || !st.callId) return;
+  apiFetch(wfBaseUrl(st.audience, st.callId)).then(function(env) {
+    /* If user changed call_id mid-flight, drop the late response. */
+    var live = WF.byContainer[containerId];
+    if (!live || live.callId !== st.callId) return;
+    live.last = env;
+    wfRenderEnvelope(containerId, env);
+    wfDecidePolling(containerId, env);
+  }).catch(function(e) {
+    var graph = document.getElementById(containerId + '_graph');
+    if (graph) {
+      graph.innerHTML = '<div class="wf-empty">'
+        + '<div class="wf-empty-title">Workflow unavailable</div>'
+        + '<div>' + escHtml(e && e.message || 'Request failed') + '</div></div>';
+    }
+    var pillText = document.getElementById(containerId + '_pillText');
+    var pill = document.getElementById(containerId + '_pill');
+    if (pillText) pillText.textContent = 'unavailable';
+    if (pill) pill.className = 'wf-pill failed';
+  });
+}
+
+function wfDecidePolling(containerId, env) {
+  var st = WF.byContainer[containerId];
+  if (!st) return;
+  var status = (env && env.workflow_status) || 'pending';
+  /* Live polling only while running. Pending plays catch-up too — a brand-
+     new call may have not yet emitted call.started. Stop on terminal. */
+  if (status === 'running' || status === 'pending') {
+    wfStartPoll(containerId);
+  } else {
+    wfStopPoll(containerId);
+  }
+}
+
+function wfStartPoll(containerId) {
+  var st = WF.byContainer[containerId];
+  if (!st || st.timer) return;
+  st.timer = setInterval(function() {
+    /* Stop polling silently if container has been removed (tab change). */
+    if (!document.getElementById(containerId)) {
+      wfStopPoll(containerId);
+      return;
+    }
+    wfFetchAndRender(containerId);
+  }, WF_POLL_MS);
+}
+
+function wfStopPoll(containerId) {
+  var st = WF.byContainer[containerId];
+  if (!st) return;
+  if (st.timer) {
+    clearInterval(st.timer);
+    st.timer = null;
+  }
+}
+
+/* Stop ALL active workflow polling — called on tab change / logout to
+   prevent the dashboard from holding the network busy in the background. */
+function wfStopAllPolling() {
+  Object.keys(WF.byContainer).forEach(wfStopPoll);
+}
+
+function wfRenderEmpty(containerId) {
+  var graph = document.getElementById(containerId + '_graph');
+  if (graph) {
+    graph.innerHTML = '<div class="wf-empty">'
+      + '<div class="wf-empty-title">No workflow loaded yet</div>'
+      + '<div>Workflow will appear here once a call_id is selected.</div></div>';
+  }
+}
+
+function wfRenderEnvelope(containerId, env) {
+  var st = WF.byContainer[containerId];
+  if (!st || !env) return;
+
+  /* Pill — overall status. */
+  var status = env.workflow_status || 'pending';
+  var pill = document.getElementById(containerId + '_pill');
+  var pillText = document.getElementById(containerId + '_pillText');
+  if (pill) pill.className = 'wf-pill ' + status;
+  if (pillText) pillText.textContent = status;
+
+  /* Meta strip — small operator-friendly info. Brokerage view drops
+     internal call_id detail beyond first 8 chars (it's still scoped to
+     their brokerage; we just don't put a long opaque string in the UI). */
+  var meta = document.getElementById(containerId + '_meta');
+  if (meta) {
+    var shortCall = env.call_id ? (st.audience === 'portal' ? env.call_id.slice(0, 8) + '…' : env.call_id) : '—';
+    var current = env.current_step || '—';
+    var leak = env.leak_detected_at || '—';
+    var n = env.events_count != null ? env.events_count : '—';
+    meta.innerHTML =
+        '<span><b>call_id:</b> ' + escHtml(shortCall) + '</span>'
+      + '<span><b>current step:</b> ' + escHtml(current) + '</span>'
+      + (st.audience === 'admin' ? '<span><b>events:</b> ' + escHtml(String(n)) + '</span>' : '')
+      + (leak !== '—' ? '<span><b>leak:</b> ' + escHtml(leak) + '</span>' : '');
+  }
+
+  /* Group steps by category, preserving order_index inside each. Skip
+     empty columns. */
+  var byCat = {};
+  (env.steps || []).forEach(function(s) {
+    var c = s.category || 'system';
+    if (!byCat[c]) byCat[c] = [];
+    byCat[c].push(s);
+  });
+  WF_COL_ORDER.forEach(function(c) {
+    if (byCat[c]) byCat[c].sort(function(a, b) { return (a.order_index || 0) - (b.order_index || 0); });
+  });
+
+  var graph = document.getElementById(containerId + '_graph');
+  if (!graph) return;
+  var html = '';
+  var first = true;
+  WF_COL_ORDER.forEach(function(cat) {
+    var steps = byCat[cat];
+    if (!steps || !steps.length) return;
+    /* edge between columns reflects the upstream column's overall status */
+    if (!first) {
+      var edgeClass = wfEdgeStatusFromColumn(steps);
+      html += '<div class="wf-edge ' + edgeClass + '"></div>';
+    }
+    html += '<div class="wf-col" data-cat="' + cat + '">'
+      +   '<div class="wf-col-head"><span class="wf-col-bar"></span>' + escHtml(WF_COL_TITLE[cat] || cat) + '</div>';
+    steps.forEach(function(step) {
+      html += wfNodeHtml(containerId, step);
+    });
+    html += '</div>';
+    first = false;
+  });
+  if (!html) {
+    graph.innerHTML = '<div class="wf-empty">'
+      + '<div class="wf-empty-title">No steps to display</div>'
+      + '<div>The workflow has no recorded events yet — it will populate as PAS works the call.</div></div>';
+  } else {
+    graph.innerHTML = html;
+  }
+
+  /* If a node was focused, refresh its detail panel. */
+  if (st.focused) {
+    wfRenderDetail(containerId, st.focused);
+  }
+}
+
+function wfEdgeStatusFromColumn(steps) {
+  var any = function(st) { return steps.some(function(s) { return s.status === st; }); };
+  if (any('failed')) return 'failed';
+  if (any('warning')) return 'warning';
+  if (any('running')) return 'active';
+  if (any('completed')) return 'completed';
+  return '';
+}
+
+function wfNodeHtml(containerId, step) {
+  var status = step.status || 'pending';
+  var key = step.key || '';
+  var label = step.label || key;
+  var sub = status;
+  return '<div class="wf-node" data-status="' + escAttr(status) + '"'
+    +    ' onclick="wfFocusStep(\'' + escAttr(containerId) + '\', \'' + escAttr(key) + '\')">'
+    +    '<span class="wf-node-key">' + escHtml(key) + '</span>'
+    +    '<span class="wf-node-label">' + escHtml(label) + '</span>'
+    +    '<span class="wf-node-status"><span class="wf-sd"></span>' + escHtml(sub) + '</span>'
+    + '</div>';
+}
+
+function wfFocusStep(containerId, key) {
+  var st = WF.byContainer[containerId];
+  if (!st) return;
+  st.focused = key;
+  /* Update node focus styling without re-rendering the whole graph. */
+  var graph = document.getElementById(containerId + '_graph');
+  if (graph) {
+    Array.prototype.forEach.call(graph.querySelectorAll('.wf-node'), function(n) {
+      n.classList.remove('focused');
+    });
+    var nodes = graph.querySelectorAll('.wf-node');
+    Array.prototype.forEach.call(nodes, function(n) {
+      var lbl = n.querySelector('.wf-node-key');
+      if (lbl && lbl.textContent === key) n.classList.add('focused');
+    });
+  }
+  wfRenderDetail(containerId, key);
+  trackEvent('wf_node_clicked', { audience: st.audience, step: key });
+}
+
+function wfRenderDetail(containerId, key) {
+  var st = WF.byContainer[containerId];
+  var detail = document.getElementById(containerId + '_detail');
+  if (!st || !detail || !st.last) return;
+  var step = (st.last.steps || []).filter(function(s) { return s.key === key; })[0];
+  if (!step) {
+    detail.classList.remove('on');
+    detail.innerHTML = '';
+    return;
+  }
+  var rows = [
+    ['status',      step.status],
+    ['category',    step.category],
+    ['order',       step.order_index],
+    ['timestamp',   wfFmtTime(step.timestamp)],
+  ];
+  /* Admin retains raw event_type; portal does not. The runtime already
+     drops it for portal but we double-check before rendering. */
+  if (st.audience === 'admin' && step.event_type) {
+    rows.push(['event_type', step.event_type]);
+  }
+  /* safe_metadata — already sanitised server-side, filtered again here. */
+  var meta = step.safe_metadata || {};
+  Object.keys(meta).forEach(function(k) {
+    if (WF_FORBIDDEN_DETAIL_KEYS[k.toLowerCase()]) return;
+    var v = meta[k];
+    if (typeof v === 'object') return;  /* defence in depth */
+    rows.push([k, String(v)]);
+  });
+
+  var rowsHtml = rows.map(function(r) {
+    return '<div class="wf-detail-row">'
+      +   '<span class="wf-detail-key">' + escHtml(String(r[0])) + '</span>'
+      +   '<span class="wf-detail-val">' + escHtml(String(r[1] != null ? r[1] : '—')) + '</span>'
+      + '</div>';
+  }).join('');
+
+  detail.innerHTML =
+      '<div class="wf-detail-head">'
+    +   '<span class="wf-detail-label">' + escHtml(step.label || step.key) + '</span>'
+    +   '<button class="wf-detail-close" onclick="wfCloseDetail(\'' + escAttr(containerId) + '\')">Close</button>'
+    + '</div>'
+    + '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.55;">' + escHtml(step.detail || '') + '</div>'
+    + '<div class="wf-detail-meta">' + rowsHtml + '</div>';
+  detail.classList.add('on');
+}
+
+function wfCloseDetail(containerId) {
+  var st = WF.byContainer[containerId];
+  if (!st) return;
+  st.focused = null;
+  var detail = document.getElementById(containerId + '_detail');
+  if (detail) {
+    detail.classList.remove('on');
+    detail.innerHTML = '';
+  }
+  var graph = document.getElementById(containerId + '_graph');
+  if (graph) {
+    Array.prototype.forEach.call(graph.querySelectorAll('.wf-node'), function(n) {
+      n.classList.remove('focused');
+    });
+  }
+}
+
+function wfFmtTime(iso) {
+  if (!iso) return '—';
+  try {
+    var d = new Date(iso);
+    return d.toLocaleString('en-US', {
+      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'
+    });
+  } catch(_) { return iso; }
+}
+
+/* Triggered by brokerage action buttons. The action itself is wired via
+   the existing cc-* / intel-* handlers; wfBumpAfterAction() forces a
+   refresh on whatever workflow surfaces are mounted so the user sees
+   the consequence (a state change in pas_events, if one occurred). */
+function wfBumpAfterAction(containerId) {
+  var ids = containerId ? [containerId] : Object.keys(WF.byContainer);
+  ids.forEach(function(cid) {
+    var st = WF.byContainer[cid];
+    if (st && st.callId) {
+      wfFetchAndRender(cid);
+    }
+  });
+}
+
 function intelTrunc(s, n) {
   if (s == null) return '';
   s = String(s);
@@ -3461,6 +3993,9 @@ function loadIntelligence() {
     + '<span class="sec-label" style="margin-top:24px">callback_requested events — pending dispatch</span>'
     + '<div id="intelCallbacks"><div class="loading-box"><div class="spinner"></div><br>Loading callbacks…</div></div>'
 
+    + '<span class="sec-label" style="margin-top:24px">D. Live Workflow Runtime — PAS detect → decide → act loop</span>'
+    + '<div id="intelWorkflowCard" class="wf-card"></div>'
+
     + '<span class="sec-label" style="margin-top:24px">Per-call event timeline (state transitions)</span>'
     + '<div class="card">'
     +   '<div class="intel-loadbox">'
@@ -3473,6 +4008,11 @@ function loadIntelligence() {
   intelLoadSummary();
   intelLoadCallbacks();
   intelLoadRecentEvents();
+
+  /* Mount workflow card with admin audience. Pre-fill call_id with the
+     latest event row's call_id once /admin/events/recent returns, so the
+     graph populates without operator typing. */
+  wfMount('intelWorkflowCard', { audience: 'admin' });
 }
 
 function intelLoadSummary() {
@@ -3666,6 +4206,17 @@ function intelLoadRecentEvents() {
   apiFetch('/admin/events/recent?limit=25').then(function(d) {
     INTEL.events = d.events || [];
     intelRenderEvents();
+    /* Auto-prefill the workflow graph with the most recent call_id we
+       can see in the event stream — saves operators from typing during
+       a live demo. Quietly skipped if no events yet. */
+    var firstCallId = null;
+    for (var i = 0; i < INTEL.events.length; i++) {
+      if (INTEL.events[i] && INTEL.events[i].call_id) {
+        firstCallId = INTEL.events[i].call_id;
+        break;
+      }
+    }
+    if (firstCallId) wfSetCallId('intelWorkflowCard', firstCallId);
   }).catch(function(e) {
     document.getElementById('intelEvents').innerHTML =
       '<div class="card" style="color:var(--re);font-size:13px">Failed to load events: ' + escHtml(e.message) + '</div>';

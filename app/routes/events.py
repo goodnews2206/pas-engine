@@ -12,6 +12,7 @@ Routes:
   GET /admin/events/callbacks           → callback queue (admin view)
   GET /admin/events/calls/{call_id}     → full event timeline for a call
   GET /admin/intelligence/summary       → aggregated KPIs + leakage breakdown
+  GET /admin/workflows/calls/{call_id}  → live workflow runtime view (PAS132)
 """
 
 import logging
@@ -30,6 +31,7 @@ from app.services.intelligence.queries import (
     recent_events,
 )
 from app.services.intelligence.scoring import SCORING_VERSION
+from app.services.workflows.runtime import get_or_build_workflow_for_call
 
 router = APIRouter()
 logger = logging.getLogger("pas.events")
@@ -105,6 +107,30 @@ async def admin_events_for_call(
         raise HTTPException(status_code=400, detail="call_id required")
     events = events_for_call(call_id, brokerage_id=brokerage_id, limit=limit)
     return {"call_id": call_id, "events": events, "count": len(events)}
+
+
+@router.get("/workflows/calls/{call_id}")
+async def admin_workflow_for_call(
+    call_id: str,
+    brokerage_id: Optional[str] = Query(default=None),
+    _=Depends(require_admin),
+):
+    """
+    Live workflow runtime for a single call, derived from pas_events.
+
+    Admin view — operator vocabulary, raw event_type values retained per
+    step, full system_signals counts. Brokerage scoping is optional here;
+    operators may inspect any call, but if `brokerage_id` is supplied it
+    is used as a defensive filter on both the events query and the call
+    summary lookup.
+    """
+    if not call_id:
+        raise HTTPException(status_code=400, detail="call_id required")
+    return get_or_build_workflow_for_call(
+        call_id,
+        brokerage_id=brokerage_id,
+        audience="admin",
+    )
 
 
 @router.get("/intelligence/summary")

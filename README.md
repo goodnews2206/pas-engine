@@ -1,7 +1,44 @@
 # PAS — Performative AI SuperStaff
-## ORVN Labs | Voice Qualification Engine MVP
+*An ORVN Labs project*
 
-A deterministic orchestration engine that handles real estate lead qualification calls end-to-end: answers the phone, asks 5 qualification questions, handles objections via Claude, books via Cal.com, and logs everything to Supabase.
+When someone calls a real estate brokerage, PAS answers the phone. It talks to the lead like a person, asks what they want to do, what they can spend, and when they want to move. If the lead wants to book a viewing, PAS schedules it on the brokerage's calendar. If they want a callback instead, PAS confirms the time and the best number. Every call is saved as a clean, structured record. PAS works twenty-four hours a day. No call goes unanswered.
+
+---
+
+## What PAS does
+
+- Answers inbound calls on the first ring.
+- Asks the lead for intent (buy / sell / rent), budget, and timeline — and records their exact words.
+- Handles pushback in real time ("I'm just looking", "just email me", price concerns) instead of dropping the call.
+- Books a viewing on Cal.com when the lead says yes.
+- Schedules a callback when they say not yet — confirming the time and the best number before hanging up.
+- Logs every step of every call to a single append-only event stream (`pas_events`).
+- Surfaces it in two dashboards built directly on that stream:
+  - an **Admin Operations Console** — full payloads, operator vocabulary, for the ORVN team.
+  - a **Brokerage Command Centre** — same data scoped to one brokerage, with sanitised payloads and plain-English step labels.
+
+---
+
+## Why this matters
+
+The first brokerage to call back usually wins the lead. Most never get there. Calls drop to voicemail. Forms get ignored. The lead moves on. PAS answers every call the same way, every time, and hands the team a clean record by morning — so their time goes to the buyers who are ready, not to the ones who just wanted a phone number.
+
+---
+
+## Demo
+
+One demo call is already seeded in the live system. Open it on either dashboard to see exactly what PAS produces — no phone call required.
+
+- **call_id:** `SIM-YC-W26-CALLBACK-001`
+- **brokerage:** `orvn-realty`
+- **scenario:** a buyer with a $500k budget on a one-month timeline declines to book on the call and asks PAS to ring them back the next morning. PAS captures intent, budget, and timeline, registers the callback request, confirms the preferred time and best number, and ends the call cleanly.
+
+The same `call_id` resolves on both surfaces:
+
+- **Admin Operations Console:** `GET /admin/workflows/calls/SIM-YC-W26-CALLBACK-001` — returns the workflow envelope with operator-level step labels and the underlying event types. The full timeline is at `GET /admin/events/calls/SIM-YC-W26-CALLBACK-001`.
+- **Brokerage Command Centre:** `GET /portal/workflows/calls/SIM-YC-W26-CALLBACK-001` (with the `orvn-realty` API key) — returns the same workflow translated into business-readable labels with sanitised payloads, scoped to the authenticated brokerage. The timeline is at `GET /portal/calls/SIM-YC-W26-CALLBACK-001/timeline`.
+
+The expected workflow shape is `workflow_status=completed`, with `lead_received → pas_calling → intent_captured → budget_captured → timeline_captured` all completed, the booking branch correctly **skipped** (the lead pivoted to a callback before booking was offered), and `callback_requested → followup_scheduled → completed` all completed.
 
 ---
 
@@ -59,6 +96,21 @@ Twilio plays audio to caller
 15. **Objection detected** (any state) → Claude generates rebuttal → resumes state
 16. **WebSocket closes** → outcome + transcript written to Supabase
 17. **Twilio status callback** → POST `/twilio/status` → duration finalized
+
+---
+
+## State Machine Reference
+
+```
+GREETING  → Did they pick up and respond? Yes → INTENT
+INTENT    → buy/sell/rent extracted? Yes → BUDGET | retry (max 2) → BUDGET
+BUDGET    → dollar amount detected? Yes → TIMELINE | retry (max 2) → TIMELINE
+TIMELINE  → timeframe detected? Yes → BOOKING | forced → BOOKING
+BOOKING   → lead says yes → Cal.com → CLOSING
+            lead says no → CLOSING (not_booked)
+CLOSING   → any response → DONE
+OBJECTION → (any state) objection detected → Claude rebuttal → resume state
+```
 
 ---
 
@@ -172,21 +224,6 @@ SELECT
   ROUND(COUNT(*) FILTER (WHERE outcome = 'booked') * 100.0 /
   NULLIF(COUNT(*) FILTER (WHERE call_status = 'completed'), 0), 2) AS conversion_pct
 FROM calls;
-```
-
----
-
-## State Machine Reference
-
-```
-GREETING  → Did they pick up and respond? Yes → INTENT
-INTENT    → buy/sell/rent extracted? Yes → BUDGET | retry (max 2) → BUDGET
-BUDGET    → dollar amount detected? Yes → TIMELINE | retry (max 2) → TIMELINE
-TIMELINE  → timeframe detected? Yes → BOOKING | forced → BOOKING
-BOOKING   → lead says yes → Cal.com → CLOSING
-            lead says no → CLOSING (not_booked)
-CLOSING   → any response → DONE
-OBJECTION → (any state) objection detected → Claude rebuttal → resume state
 ```
 
 ---

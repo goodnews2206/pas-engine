@@ -47,6 +47,7 @@ from app.services.intelligence.queries import (
 )
 from app.services.intelligence.sanitize import sanitize_event_for_portal
 from app.services.intelligence.scoring import SCORING_VERSION
+from app.services.workflows.runtime import get_or_build_workflow_for_call
 
 router = APIRouter()
 logger = logging.getLogger("pas.portal")
@@ -741,6 +742,46 @@ async def portal_callbacks(
         "limit": limit,
         "offset": offset,
     }
+
+
+@router.get("/workflows/calls/{call_id}")
+async def portal_workflow_for_call(call_id: str, brokerage=Depends(require_brokerage)):
+    """
+    Live PAS workflow runtime for a single call, scoped to this brokerage.
+
+    SECURITY: must verify the call belongs to the authenticated brokerage
+    BEFORE returning workflow content. Mirrors the portal_call_timeline
+    pattern. The runtime layer also re-applies the brokerage filter at the
+    Supabase query level as defence-in-depth.
+
+    Brokerage view — business vocabulary, no raw event_type, no provider
+    names, no transcript. Step labels and details are translated.
+    """
+    if not call_id:
+        raise HTTPException(status_code=400, detail="call_id required")
+    try:
+        db = get_supabase()
+        result = (
+            db.table("calls")
+            .select("id")
+            .eq("id", call_id)
+            .eq("brokerage_id", brokerage["id"])
+            .limit(1)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Call not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"portal_workflow_for_call ownership check failed for {call_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to verify call ownership")
+
+    return get_or_build_workflow_for_call(
+        call_id,
+        brokerage_id=brokerage["id"],
+        audience="portal",
+    )
 
 
 @router.get("/calls/{call_id}/timeline")
