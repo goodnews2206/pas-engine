@@ -40,6 +40,19 @@ The same `call_id` resolves on both surfaces:
 
 The expected workflow shape is `workflow_status=completed`, with `lead_received → pas_calling → intent_captured → budget_captured → timeline_captured` all completed, the booking branch correctly **skipped** (the lead pivoted to a callback before booking was offered), and `callback_requested → followup_scheduled → completed` all completed.
 
+### Live Workflow Runtime
+
+This is a real call processed end-to-end by PAS.
+The system derives a structured workflow from raw events in real time.
+
+![PAS Workflow](docs/workflow.png)
+
+### Event-Level Visibility
+
+Every decision PAS makes is logged and reconstructable.
+
+![Event Timeline](docs/event-timeline.png)
+
 ---
 
 ## Architecture
