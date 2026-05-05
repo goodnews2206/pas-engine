@@ -55,6 +55,19 @@ class Settings(BaseSettings):
     BASE_URL: str = "http://localhost:8000"
     ENVIRONMENT: str = "development"
 
+    # Auth — Supabase Auth + legacy key transition flags (PAS133).
+    # SUPABASE_JWT_SECRET is the HS256 secret used by Supabase Auth to sign
+    # access tokens. The PAS backend will use it to verify Bearer tokens
+    # statelessly. Empty string means JWT verification is unavailable —
+    # legacy key auth still works while these flags are on.
+    SUPABASE_JWT_SECRET: str = ""
+
+    # Legacy auth flags. Default True so PAS133A is a no-op for behaviour;
+    # PAS133B reads them from resolve_principal(); PAS133D flips them off
+    # in production after the dashboard has fully migrated.
+    ENABLE_LEGACY_ADMIN_KEY_AUTH: bool = True
+    ENABLE_LEGACY_BROKERAGE_KEY_AUTH: bool = True
+
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -29,6 +29,10 @@ from app.config import get_settings
 from app.services.summary.call_summary import generate_call_summary
 from app.services.notifications.slack_client import send_call_summary, send_agent_reminder
 from app.services.notifications.sms_client import send_booking_confirmation_sms
+from app.services.notifications.lead_alerts import dispatch_lead_notification
+
+# PAS134 — outcomes that trigger a sales-critical lead alert (email + Slack).
+_NOTIFY_OUTCOMES = {"callback_requested", "booked"}
 from app.utils.call_store import active_calls
 from app.utils.slot_formatter import format_slot_for_speech
 
@@ -360,5 +364,19 @@ async def _post_call_tasks(
                 await send_booking_confirmation_sms(
                     fallback_phone, brokerage.get("agent_name", "Team"), slot_text
                 )
+
+    # PAS134 — sales-critical lead alert (email + Slack). Runs alongside
+    # the existing rich Slack call summary above; this one is intentionally
+    # short and email-friendly so brokerages get value outside the portal.
+    if outcome in _NOTIFY_OUTCOMES:
+        try:
+            await dispatch_lead_notification(
+                call_sid=call_sid,
+                brokerage=brokerage,
+                outcome=outcome,
+                lead=lead.__dict__,
+            )
+        except Exception as e:
+            logger.warning(f"[{call_sid}] Lead notification skipped: {e}")
 
     logger.info(f"[{call_sid}] Post-call tasks complete | outcome={outcome}")

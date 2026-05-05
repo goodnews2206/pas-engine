@@ -54,8 +54,14 @@ from app.db.call_logger import create_call_record, update_call_outcome
 from app.db.event_logger import log_event_bg
 from app.db.lead_memory import upsert_lead, mark_booked
 from app.engine.state_machine import PASEngine
+from app.services.notifications.lead_alerts import dispatch_lead_notification
 from app.services.summary.call_summary import generate_call_summary
 from app.utils.rate_limiter import client_ip, rate_limit
+
+# PAS134 — outcomes that trigger a lead notification to the brokerage.
+# Sales-critical only; do not expand to {not_booked, transferred} without
+# product approval — those are noise for daily reporting.
+_NOTIFY_OUTCOMES = {"callback_requested", "booked"}
 
 router = APIRouter()
 logger = logging.getLogger("pas.simulate")
@@ -281,3 +287,18 @@ async def _finalize_session(call_sid: str, engine: PASEngine):
                 mark_booked(brokerage_id, phone)
     except Exception as e:
         logger.warning(f"[{call_sid}] Lead memory upsert skipped: {e}")
+
+    # PAS134 — sales-critical outbound reporting (email + Slack).
+    # Wrapped in try/except so a notification failure can never affect
+    # the rest of the finalize path or surface to the simulate caller.
+    if outcome in _NOTIFY_OUTCOMES:
+        try:
+            brokerage = get_brokerage_by_id(getattr(engine, "brokerage_id", None) or "demo")
+            await dispatch_lead_notification(
+                call_sid=call_sid,
+                brokerage=brokerage,
+                outcome=outcome,
+                lead=(metadata or {}).get("lead") or {},
+            )
+        except Exception as e:
+            logger.warning(f"[{call_sid}] Lead notification skipped: {e}")
