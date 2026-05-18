@@ -421,6 +421,155 @@ def test_doctrine_doc_no_forbidden_scope_tokens():
 
 
 # ──────────────────────────────────────────────────────────────────
+# PAS191-C — Today-filter helpers use Python-computed ISO cutoffs
+# ──────────────────────────────────────────────────────────────────
+
+# PostgREST does NOT evaluate SQL expressions like "now() - interval"
+# in filter values — they get compared as literal strings and return
+# zero rows. Every PAS191 helper that filters on a date column must
+# compute its cutoff Python-side and pass an ISO-formatted timestamp.
+
+_PAS191_HELPER_FUNCTIONS = (
+    "_pas191_calls",
+    "_pas191_bookings_today",
+    "_pas191_callbacks_due",
+    "_pas191_leads_today",
+)
+
+
+def _extract_function_body(src: str, fn_name: str) -> str:
+    """
+    Return the source-text body of a top-level `def fn_name(...)` block.
+    Stops at the next top-level def/class line.
+    """
+    marker = f"def {fn_name}("
+    start = src.find(marker)
+    assert start >= 0, f"function {fn_name} missing from slack_command.py"
+    line_start = src.rfind("\n", 0, start) + 1
+    end = len(src)
+    # Walk lines after the def looking for the next top-level def/class.
+    cursor = src.find("\n", start) + 1
+    while cursor < len(src):
+        nl = src.find("\n", cursor)
+        nl = len(src) if nl < 0 else nl
+        line = src[cursor:nl]
+        # A top-level def/class is column-0 — body lines are indented.
+        if line and not line[0].isspace() and (
+            line.startswith(("def ", "async def ", "class "))
+        ):
+            end = cursor
+            break
+        cursor = nl + 1
+    return src[line_start:end]
+
+
+def test_pas191_helpers_have_no_sql_expression_filter_literals():
+    """No PAS191 helper may pass a SQL-expression string to gte/lt."""
+    src = _read("app/routes/slack_command.py")
+    for fn in _PAS191_HELPER_FUNCTIONS:
+        body = _extract_function_body(src, fn)
+        assert "now() - interval" not in body, (
+            f"{fn} still passes 'now() - interval ...' as a filter literal — "
+            "PostgREST will not evaluate it"
+        )
+        # Bare "now()" string literals are similarly inert; the helper
+        # must use _pas191_now_iso() if it needs the current timestamp.
+        assert '"now()"' not in body and "'now()'" not in body, (
+            f"{fn} still passes bare 'now()' as a filter literal"
+        )
+
+
+def test_pas191_cutoff_helpers_defined_and_used():
+    """The Python-side cutoff helpers must exist and be referenced."""
+    src = _read("app/routes/slack_command.py")
+    assert "def _pas191_cutoff_iso(" in src
+    assert "def _pas191_now_iso(" in src
+    # The cutoff helpers must use timezone-aware UTC time so the ISO
+    # string round-trips through PostgREST cleanly.
+    assert "datetime.now(timezone.utc)" in src
+    assert ".isoformat()" in src
+    # And every date-filtered helper must actually call one of them.
+    for fn in _PAS191_HELPER_FUNCTIONS:
+        body = _extract_function_body(src, fn)
+        if fn == "_pas191_callbacks_due":
+            # The callbacks helper compares against "now" for the
+            # overdue branch, not against "today".
+            assert "_pas191_now_iso(" in body, (
+                f"{fn} must call _pas191_now_iso()"
+            )
+        else:
+            assert "_pas191_cutoff_iso(" in body, (
+                f"{fn} must call _pas191_cutoff_iso()"
+            )
+
+
+def test_pas191_cutoff_helpers_return_iso_timestamps():
+    """Helpers must return parseable ISO 8601 timestamps in UTC."""
+    from datetime import datetime as _dt, timezone as _tz
+    from app.routes.slack_command import (
+        _pas191_cutoff_iso,
+        _pas191_now_iso,
+    )
+    for value in (_pas191_cutoff_iso(1), _pas191_cutoff_iso(7), _pas191_now_iso()):
+        # fromisoformat accepts the format datetime.isoformat() emits,
+        # including the +00:00 offset for timezone-aware datetimes.
+        parsed = _dt.fromisoformat(value)
+        assert parsed.tzinfo is not None, f"{value!r} is not timezone-aware"
+        # UTC offset is zero for tzinfo=timezone.utc
+        assert parsed.utcoffset().total_seconds() == 0, (
+            f"{value!r} must be in UTC"
+        )
+
+
+def test_pas191_leads_today_passes_iso_to_gte():
+    """
+    Runtime: the leads_today helper must pass an ISO-formatted UTC
+    timestamp to PostgREST's `gte`, not a SQL-expression string.
+    """
+    from datetime import datetime as _dt
+    from app.routes import slack_command as sc
+
+    captured: list = []
+
+    class _FakeChain:
+        def select(self, *a, **kw): return self
+        def eq(self, *a, **kw): return self
+        def gte(self, col, val):
+            captured.append(("gte", col, val))
+            return self
+        def lt(self, col, val):
+            captured.append(("lt", col, val))
+            return self
+        def execute(self):
+            class _R: data = []
+            return _R()
+
+    class _FakeDB:
+        def table(self, name):
+            captured.append(("table", name))
+            return _FakeChain()
+
+    original = sc.get_supabase
+    sc.get_supabase = lambda: _FakeDB()  # type: ignore[assignment]
+    try:
+        result = sc._pas191_leads_today("orvn-demo-01")
+    finally:
+        sc.get_supabase = original  # type: ignore[assignment]
+
+    # Helper still returns the contract-shaped dict.
+    assert set(result.keys()) == {"new_leads", "call_eligible", "pending_queue"}
+    # Every `gte` value must parse as an ISO timestamp.
+    gte_calls = [c for c in captured if c[0] == "gte"]
+    assert gte_calls, "no gte filter was recorded"
+    for _, col, val in gte_calls:
+        assert "now()" not in val, (
+            f"{col}={val!r} still passes a SQL expression to PostgREST"
+        )
+        parsed = _dt.fromisoformat(val)
+        assert parsed.tzinfo is not None, f"{val!r} is not timezone-aware"
+
+
+# ──────────────────────────────────────────────────────────────────
 # Event contract
 # ──────────────────────────────────────────────────────────────────
 
