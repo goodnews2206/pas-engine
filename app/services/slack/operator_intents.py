@@ -68,6 +68,7 @@ INTENT_POLICY          = "policy"
 INTENT_HEALTH          = "health"
 INTENT_PAUSED_STATUS   = "paused_status"
 INTENT_HELP            = "help"
+INTENT_LEADS_TODAY     = "leads_today"
 
 INTENT_UNKNOWN         = "unknown"
 
@@ -85,6 +86,7 @@ INTENT_CODES: Tuple[str, ...] = (
     INTENT_HEALTH,
     INTENT_PAUSED_STATUS,
     INTENT_HELP,
+    INTENT_LEADS_TODAY,
 )
 
 
@@ -226,6 +228,25 @@ _ALIAS_TABLE: Dict[str, str] = {
     "paused status":                           INTENT_PAUSED_STATUS,
     "calling status":                          INTENT_PAUSED_STATUS,
     "active status":                           INTENT_PAUSED_STATUS,
+
+    # ── leads today ───────────────────────────────────────────
+    "leads today":                             INTENT_LEADS_TODAY,
+    "new leads today":                         INTENT_LEADS_TODAY,
+    "todays leads":                            INTENT_LEADS_TODAY,
+    "today's leads":                           INTENT_LEADS_TODAY,
+    "how many leads today":                    INTENT_LEADS_TODAY,
+    "how many leads did we get today":         INTENT_LEADS_TODAY,
+    "how many new leads today":                INTENT_LEADS_TODAY,
+    "how many new leads did we get today":     INTENT_LEADS_TODAY,
+    "how many new leads came in today":        INTENT_LEADS_TODAY,
+    "how many leads came in today":            INTENT_LEADS_TODAY,
+    "did we get any leads today":              INTENT_LEADS_TODAY,
+    "did we get any new leads today":          INTENT_LEADS_TODAY,
+    "any leads today":                         INTENT_LEADS_TODAY,
+    "any new leads today":                     INTENT_LEADS_TODAY,
+    "leads in today":                          INTENT_LEADS_TODAY,
+    "new leads":                               INTENT_LEADS_TODAY,
+    "lead count today":                        INTENT_LEADS_TODAY,
 
     # ── help ──────────────────────────────────────────────────
     "help":                                    INTENT_HELP,
