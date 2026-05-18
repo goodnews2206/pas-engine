@@ -32,6 +32,26 @@ from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
 from app.services.llm.factory import get_provider
 from app.services.notifications.slack_client import send_slack_message
+# PAS191 — Bounded Slack natural-language operator commands.
+# Deterministic fast-path: closed alias table → closed intent code →
+# safe formatter. NO LLM for these 12 read-only intents.
+from app.services.slack.operator_intents import (
+    INTENT_BOOKINGS_TODAY,
+    INTENT_CALLBACKS_DUE,
+    INTENT_CALLS_TODAY,
+    INTENT_CALLS_WEEK,
+    INTENT_HEALTH,
+    INTENT_HELP,
+    INTENT_INCIDENTS,
+    INTENT_PAUSED_STATUS,
+    INTENT_POLICY,
+    INTENT_QUEUE,
+    INTENT_RESPONSE_RATE,
+    INTENT_STATS,
+    INTENT_UNKNOWN,
+    match_intent,
+)
+from app.services.slack import operator_responses as pas191_responses
 
 router = APIRouter()
 logger = logging.getLogger("pas.slack_cmd")
@@ -89,6 +109,25 @@ async def slack_command(request: Request):
         logger.warning(f"Slack signature mismatch for brokerage {brokerage['id']}")
         return Response(status_code=403)
 
+    # PAS-SECURITY-02 — per-brokerage rate limit. Conservative
+    # default (30/min/brokerage). Failure isolation: limiter
+    # outage never blocks production traffic.
+    try:
+        from app.services.security.rate_limit import (
+            check_rate_limit,
+        )
+        _rl_verdict = check_rate_limit(
+            surface="slack_command",
+            brokerage_id=brokerage.get("id") if isinstance(brokerage, dict) else None,
+            actor_type="TENANT",
+        )
+        if not _rl_verdict.get("allowed"):
+            return JSONResponse({
+                "text": "⚠️ Slack command rate limit reached. Please wait a moment and retry.",
+            })
+    except Exception:
+        pass
+
     if not text:
         return JSONResponse({
             "text": (
@@ -99,6 +138,29 @@ async def slack_command(request: Request):
         })
 
     logger.info(f"Slack command | brokerage={brokerage['id']} | text={text!r}")
+
+    # PAS191 — Deterministic natural-language fast-path. Closed
+    # alias table → closed intent code → safe formatter. NO LLM,
+    # NO autonomous decisioning, NO mutation. Mutation commands
+    # (pause / resume / push / remove) are explicitly NOT bound
+    # by match_intent(); they continue to flow through the
+    # exact-command branch via the LLM intent parser below.
+    pas191 = match_intent(text)
+    pas191_intent = pas191.get("intent") or INTENT_UNKNOWN
+    if pas191_intent != INTENT_UNKNOWN:
+        log_event_bg(
+            "slack.intent.matched",
+            event_category="ops",
+            event_source="slack_command",
+            severity="info",
+            payload={
+                "brokerage_id": brokerage["id"],
+                "intent":       pas191_intent,
+                "surface":      "slack_command_pas191",
+            },
+        )
+        result_text = await _pas191_dispatch(pas191_intent, brokerage)
+        return JSONResponse({"text": result_text, "response_type": "in_channel"})
 
     intent = await _parse_intent(text)
     action = intent.get("action", "unknown")
@@ -235,6 +297,261 @@ async def _query_leads(brokerage_id: str, filter_type: str) -> str:
     except Exception as e:
         return f"❌ Couldn't fetch leads: {e}"
 
+
+# ───────────── PAS191 — BOUNDED NATURAL-LANGUAGE DISPATCH ─────────────
+
+async def _pas191_dispatch(intent: str, brokerage: dict) -> str:
+    """
+    Closed dispatcher for the 12 read-only PAS191 intents.
+
+    No LLM. No mutation. No SQL constructed from user text.
+    Every branch routes to a helper that returns a small dict of
+    counts which the safe formatter turns into a Slack-safe string.
+    On any exception, the formatter emits a generic error message
+    (class name only, no internal message echo).
+    """
+    brokerage_id = brokerage["id"]
+    try:
+        if intent == INTENT_STATS:
+            data = _pas191_stats(brokerage_id)
+            return pas191_responses.format_stats(data)
+        if intent == INTENT_CALLS_TODAY:
+            data = _pas191_calls(brokerage_id, "today")
+            return pas191_responses.format_calls_today(data)
+        if intent == INTENT_CALLS_WEEK:
+            data = _pas191_calls(brokerage_id, "week")
+            return pas191_responses.format_calls_week(data)
+        if intent == INTENT_RESPONSE_RATE:
+            data = _pas191_response_rate(brokerage_id)
+            return pas191_responses.format_response_rate(data)
+        if intent == INTENT_BOOKINGS_TODAY:
+            data = _pas191_bookings_today(brokerage_id)
+            return pas191_responses.format_bookings_today(data)
+        if intent == INTENT_CALLBACKS_DUE:
+            data = _pas191_callbacks_due(brokerage_id)
+            return pas191_responses.format_callbacks_due(data)
+        if intent == INTENT_QUEUE:
+            data = _pas191_queue(brokerage_id)
+            return pas191_responses.format_queue(data)
+        if intent == INTENT_INCIDENTS:
+            data = _pas191_incidents(brokerage_id)
+            return pas191_responses.format_incidents(data)
+        if intent == INTENT_POLICY:
+            data = _pas191_policy(brokerage_id)
+            return pas191_responses.format_policy(data)
+        if intent == INTENT_HEALTH:
+            data = _pas191_health()
+            return pas191_responses.format_health(data)
+        if intent == INTENT_PAUSED_STATUS:
+            return pas191_responses.format_paused_status(
+                {"active": brokerage.get("is_active")}
+            )
+        if intent == INTENT_HELP:
+            return pas191_responses.format_help()
+    except Exception as e:
+        return pas191_responses.format_error(intent, type(e).__name__)
+    return pas191_responses.format_unknown()
+
+
+def _pas191_stats(brokerage_id: str) -> dict:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("calls")
+            .select("outcome, call_status")
+            .eq("brokerage_id", brokerage_id)
+            .execute()
+        )
+        rows = result.data or []
+        total = len(rows)
+        booked = sum(1 for r in rows if r.get("outcome") == "booked")
+        completed = sum(1 for r in rows if r.get("call_status") == "completed")
+        return {"total": total, "completed": completed, "booked": booked}
+    except Exception:
+        return {"total": 0, "completed": 0, "booked": 0}
+
+
+def _pas191_calls(brokerage_id: str, period: str) -> dict:
+    try:
+        db = get_supabase()
+        interval = "1 day" if period == "today" else "7 days"
+        result = (
+            db.table("calls")
+            .select("outcome, call_status")
+            .eq("brokerage_id", brokerage_id)
+            .gte("start_time", f"now() - interval '{interval}'")
+            .execute()
+        )
+        rows = result.data or []
+        total = len(rows)
+        booked = sum(1 for r in rows if r.get("outcome") == "booked")
+        return {
+            "total":      total,
+            "booked":     booked,
+            "not_booked": total - booked,
+        }
+    except Exception:
+        return {"total": 0, "booked": 0, "not_booked": 0}
+
+
+def _pas191_response_rate(brokerage_id: str) -> dict:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("calls")
+            .select("call_status")
+            .eq("brokerage_id", brokerage_id)
+            .execute()
+        )
+        rows = result.data or []
+        total = len(rows)
+        completed = sum(1 for r in rows if r.get("call_status") == "completed")
+        return {"total": total, "completed": completed}
+    except Exception:
+        return {"total": 0, "completed": 0}
+
+
+def _pas191_bookings_today(brokerage_id: str) -> dict:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("calls")
+            .select("outcome")
+            .eq("brokerage_id", brokerage_id)
+            .eq("outcome", "booked")
+            .gte("start_time", "now() - interval '1 day'")
+            .execute()
+        )
+        rows = result.data or []
+        return {"booked_count": len(rows)}
+    except Exception:
+        return {"booked_count": 0}
+
+
+def _pas191_callbacks_due(brokerage_id: str) -> dict:
+    try:
+        db = get_supabase()
+        pending = (
+            db.table("callbacks")
+            .select("id")
+            .eq("brokerage_id", brokerage_id)
+            .eq("status", "pending")
+            .execute()
+        )
+        pending_count = len(pending.data or [])
+        overdue = (
+            db.table("callbacks")
+            .select("id")
+            .eq("brokerage_id", brokerage_id)
+            .eq("status", "pending")
+            .lt("due_at", "now()")
+            .execute()
+        )
+        overdue_count = len(overdue.data or [])
+        return {"pending_count": pending_count, "overdue_count": overdue_count}
+    except Exception:
+        return {"pending_count": 0, "overdue_count": 0}
+
+
+def _pas191_queue(brokerage_id: str) -> dict:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("pending_calls")
+            .select("id")
+            .eq("brokerage_id", brokerage_id)
+            .eq("status", "pending")
+            .execute()
+        )
+        size = len(result.data or [])
+    except Exception:
+        size = 0
+    worker_state = "off"
+    try:
+        import os
+        if os.environ.get("PENDING_CALLS_WORKER_ENABLED") == "true":
+            worker_state = "on"
+    except Exception:
+        worker_state = "off"
+    return {"queue_size": size, "worker_state": worker_state}
+
+
+def _pas191_incidents(brokerage_id: str) -> dict:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("pas_incidents")
+            .select("severity, status")
+            .eq("brokerage_id", brokerage_id)
+            .eq("status", "open")
+            .execute()
+        )
+        rows = result.data or []
+        sev: dict = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+        for r in rows:
+            s = (r.get("severity") or "").lower()
+            if s in sev:
+                sev[s] += 1
+        return {"open_count": len(rows), "severity_counts": sev}
+    except Exception:
+        return {"open_count": 0, "severity_counts": {}}
+
+
+def _pas191_policy(brokerage_id: str) -> dict:
+    breaker_state = "unknown"
+    cutover_state = "unknown"
+    security_gate = "unknown"
+    try:
+        from app.services.operator.circuit_breaker_policy import (
+            should_block_new_outbound_for_brokerage,
+        )
+        blocked = should_block_new_outbound_for_brokerage(brokerage_id)
+        breaker_state = "tripped" if blocked else "ok"
+    except Exception:
+        breaker_state = "unknown"
+    try:
+        db = get_supabase()
+        result = (
+            db.table("pas_cutover_approvals")
+            .select("status")
+            .eq("brokerage_id", brokerage_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = result.data or []
+        cutover_state = (rows[0].get("status") if rows else "none") or "none"
+    except Exception:
+        cutover_state = "unknown"
+    try:
+        import os
+        security_gate = "enforced" if os.environ.get("PAS_SECURITY_GATE") == "on" else "default"
+    except Exception:
+        security_gate = "unknown"
+    return {
+        "breaker_state": breaker_state,
+        "cutover_state": cutover_state,
+        "security_gate": security_gate,
+    }
+
+
+def _pas191_health() -> dict:
+    db_state = "unknown"
+    try:
+        db = get_supabase()
+        if db is None:
+            db_state = "down"
+        else:
+            db_state = "up"
+    except Exception:
+        db_state = "down"
+    import os
+    worker = "on" if os.environ.get("PENDING_CALLS_WORKER_ENABLED") == "true" else "off"
+    twilio = "configured" if os.environ.get("TWILIO_AUTH_TOKEN") else "missing"
+    return {"db": db_state, "worker": worker, "twilio": twilio}
+
+
+# ───────────── DB QUERIES (existing LLM-path helpers) ─────────────
 
 async def _query_stats(brokerage_id: str) -> str:
     try:
