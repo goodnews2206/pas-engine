@@ -43,6 +43,7 @@ from app.services.slack.operator_intents import (
     INTENT_HEALTH,
     INTENT_HELP,
     INTENT_INCIDENTS,
+    INTENT_LEADS_TODAY,
     INTENT_PAUSED_STATUS,
     INTENT_POLICY,
     INTENT_QUEUE,
@@ -348,6 +349,9 @@ async def _pas191_dispatch(intent: str, brokerage: dict) -> str:
             )
         if intent == INTENT_HELP:
             return pas191_responses.format_help()
+        if intent == INTENT_LEADS_TODAY:
+            data = _pas191_leads_today(brokerage_id)
+            return pas191_responses.format_leads_today(data)
     except Exception as e:
         return pas191_responses.format_error(intent, type(e).__name__)
     return pas191_responses.format_unknown()
@@ -532,6 +536,56 @@ def _pas191_policy(brokerage_id: str) -> dict:
         "breaker_state": breaker_state,
         "cutover_state": cutover_state,
         "security_gate": security_gate,
+    }
+
+
+def _pas191_leads_today(brokerage_id: str) -> dict:
+    """
+    Closed read-only query for the leads_today intent.
+
+    Counts, scoped to the brokerage and to "today":
+      new_leads      — rows in `leads` with created_at >= today
+      call_eligible  — subset of new_leads with last_call_at IS NULL
+      pending_queue  — rows in the pending-call queue created today
+
+    No PII columns are selected (we never touch phone_number / name /
+    email). Every query is wrapped: on any exception, the helper
+    returns zeros so the Slack response stays stable.
+    """
+    new_leads = 0
+    call_eligible = 0
+    pending_queue = 0
+    try:
+        db = get_supabase()
+        result = (
+            db.table("leads")
+            .select("id, last_call_at")
+            .eq("brokerage_id", brokerage_id)
+            .gte("created_at", "now() - interval '1 day'")
+            .execute()
+        )
+        rows = result.data or []
+        new_leads = len(rows)
+        call_eligible = sum(1 for r in rows if not r.get("last_call_at"))
+    except Exception:
+        new_leads = 0
+        call_eligible = 0
+    try:
+        db = get_supabase()
+        q = (
+            db.table("pending_calls")
+            .select("id")
+            .eq("brokerage_id", brokerage_id)
+            .gte("created_at", "now() - interval '1 day'")
+            .execute()
+        )
+        pending_queue = len(q.data or [])
+    except Exception:
+        pending_queue = 0
+    return {
+        "new_leads":     new_leads,
+        "call_eligible": call_eligible,
+        "pending_queue": pending_queue,
     }
 
 

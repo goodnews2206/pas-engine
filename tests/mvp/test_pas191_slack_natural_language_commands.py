@@ -104,6 +104,7 @@ CANONICAL_PHRASES = (
     ("health",                            "health"),
     ("are we paused",                     "paused_status"),
     ("help",                              "help"),
+    ("leads today",                       "leads_today"),
 )
 
 
@@ -203,13 +204,56 @@ def test_alias_table_is_meaningfully_populated():
     assert n >= 50, f"alias table only has {n} entries — expected >=50"
 
 
-def test_intent_codes_has_exactly_twelve_entries():
+def test_intent_codes_has_exactly_thirteen_entries():
     from app.services.slack.operator_intents import (
         INTENT_CODES,
         INTENT_UNKNOWN,
     )
-    assert len(INTENT_CODES) == 12
+    assert len(INTENT_CODES) == 13
     assert INTENT_UNKNOWN not in INTENT_CODES
+
+
+def test_leads_today_phrases_map_to_intent():
+    """PAS191-B — natural questions about today's lead intake."""
+    from app.services.slack.operator_intents import match_intent
+    cases = (
+        "how many leads did we get today",
+        "leads today",
+        "new leads today",
+        "how many new leads came in today",
+        "did we get any leads today",
+        # punctuation / case / whitespace variants are normalised:
+        "How Many Leads Did We Get Today?",
+        "  leads   today  ",
+        "did we get any leads today?!",
+    )
+    for phrase in cases:
+        result = match_intent(phrase)
+        assert result["intent"] == "leads_today", (
+            f"{phrase!r} → {result['intent']!r}, expected 'leads_today'"
+        )
+
+
+def test_leads_today_formatter_renders_safe_message():
+    """The leads_today formatter renders the three required counts and is PII-safe."""
+    from app.services.slack import operator_responses as r
+    # Full payload renders all three labels with the given counts.
+    s = r.format_leads_today({"new_leads": 5, "call_eligible": 3, "pending_queue": 2})
+    assert "leads today" in s.lower()
+    assert "new leads: 5" in s.lower()
+    assert "call eligible: 3" in s.lower()
+    assert "pending queue: 2" in s.lower()
+    # Empty payload → all zeros, never raises.
+    s0 = r.format_leads_today({})
+    assert "new leads: 0" in s0.lower()
+    assert "call eligible: 0" in s0.lower()
+    assert "pending queue: 0" in s0.lower()
+    # The formatter must NEVER include PII labels regardless of input,
+    # because it only accepts the three numeric counts and never
+    # touches lead names / phone numbers / emails.
+    for tok in ("phone", "email", "name=", "transcript"):
+        assert tok not in s.lower()
+        assert tok not in s0.lower()
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -228,6 +272,7 @@ def test_formatters_handle_empty_inputs():
     assert "incidents" in r.format_incidents({}).lower()
     assert "policy" in r.format_policy({}).lower()
     assert "health" in r.format_health({}).lower()
+    assert "leads today" in r.format_leads_today({}).lower()
     s = r.format_paused_status({"active": False})
     assert "paused" in s.lower()
     assert "active" in r.format_paused_status({"active": True}).lower()

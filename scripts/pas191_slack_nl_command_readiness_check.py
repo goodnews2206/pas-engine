@@ -231,6 +231,7 @@ INTENTS_REQUIRED_TOKENS = (
     "INTENT_HEALTH",
     "INTENT_PAUSED_STATUS",
     "INTENT_HELP",
+    "INTENT_LEADS_TODAY",
     "INTENT_UNKNOWN",
     "def match_intent",
     "def list_supported_intents",
@@ -269,6 +270,7 @@ RESPONSES_REQUIRED_TOKENS = (
     "def format_help",
     "def format_unknown",
     "def format_error",
+    "def format_leads_today",
     "_PII_FORBIDDEN_TOKENS",
     "def _safe",
 )

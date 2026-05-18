@@ -207,6 +207,25 @@ def format_health(data: Dict[str, object]) -> str:
     )
 
 
+def format_leads_today(data: Dict[str, object]) -> str:
+    """
+    Today's new-lead intake. Inputs:
+      new_leads      — count of leads created today
+      call_eligible  — count of new leads not yet called
+      pending_queue  — count of pending-call queue entries today
+    All inputs default to 0 if missing / unavailable.
+    """
+    new_leads     = int(data.get("new_leads")     or 0)
+    call_eligible = int(data.get("call_eligible") or 0)
+    pending_queue = int(data.get("pending_queue") or 0)
+    return _safe(
+        "🧲 *Leads today*\n"
+        f"New leads: {new_leads}\n"
+        f"Call eligible: {call_eligible}\n"
+        f"Pending queue: {pending_queue}"
+    )
+
+
 def format_paused_status(data: Dict[str, object]) -> str:
     """Active / paused status. Inputs: active (bool)."""
     raw = data.get("active")
@@ -226,6 +245,7 @@ def format_help() -> str:
         "• `calls today` / `calls this week` — call volume\n"
         "• `response rate` — pickup rate\n"
         "• `bookings today` / `did we book any clients`\n"
+        "• `leads today` — new-lead intake (new / call-eligible / queued)\n"
         "• `callbacks due` — pending callbacks\n"
         "• `queue` — pending-call queue depth\n"
         "• `incidents` — open operational incidents\n"
@@ -253,7 +273,7 @@ def format_error(intent: str, error_class: str = "Exception") -> str:
     if safe_intent not in {
         "stats", "calls_today", "calls_week", "response_rate",
         "bookings_today", "callbacks_due", "queue", "incidents",
-        "policy", "health", "paused_status",
+        "policy", "health", "paused_status", "leads_today",
     }:
         safe_intent = "request"
     cls_raw = (error_class or "Exception").strip()
