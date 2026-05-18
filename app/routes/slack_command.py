@@ -19,6 +19,7 @@ import hmac
 import json
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
@@ -301,6 +302,22 @@ async def _query_leads(brokerage_id: str, filter_type: str) -> str:
 
 # ───────────── PAS191 — BOUNDED NATURAL-LANGUAGE DISPATCH ─────────────
 
+# PostgREST treats `.gte()` / `.lt()` filter values as literals — SQL
+# expressions like `now() - interval '1 day'` are NOT evaluated. The two
+# helpers below compute the cutoff Python-side so today / week filters
+# behave as advertised. Always UTC and timezone-aware so the ISO string
+# round-trips cleanly through PostgREST.
+
+def _pas191_cutoff_iso(days_back: int) -> str:
+    """ISO-formatted UTC cutoff `now - days_back days`. Deterministic."""
+    return (datetime.now(timezone.utc) - timedelta(days=days_back)).isoformat()
+
+
+def _pas191_now_iso() -> str:
+    """ISO-formatted UTC `now()` for lt/gt filters (e.g. overdue)."""
+    return datetime.now(timezone.utc).isoformat()
+
+
 async def _pas191_dispatch(intent: str, brokerage: dict) -> str:
     """
     Closed dispatcher for the 12 read-only PAS191 intents.
@@ -378,12 +395,12 @@ def _pas191_stats(brokerage_id: str) -> dict:
 def _pas191_calls(brokerage_id: str, period: str) -> dict:
     try:
         db = get_supabase()
-        interval = "1 day" if period == "today" else "7 days"
+        days_back = 1 if period == "today" else 7
         result = (
             db.table("calls")
             .select("outcome, call_status")
             .eq("brokerage_id", brokerage_id)
-            .gte("start_time", f"now() - interval '{interval}'")
+            .gte("start_time", _pas191_cutoff_iso(days_back))
             .execute()
         )
         rows = result.data or []
@@ -423,7 +440,7 @@ def _pas191_bookings_today(brokerage_id: str) -> dict:
             .select("outcome")
             .eq("brokerage_id", brokerage_id)
             .eq("outcome", "booked")
-            .gte("start_time", "now() - interval '1 day'")
+            .gte("start_time", _pas191_cutoff_iso(1))
             .execute()
         )
         rows = result.data or []
@@ -448,7 +465,7 @@ def _pas191_callbacks_due(brokerage_id: str) -> dict:
             .select("id")
             .eq("brokerage_id", brokerage_id)
             .eq("status", "pending")
-            .lt("due_at", "now()")
+            .lt("due_at", _pas191_now_iso())
             .execute()
         )
         overdue_count = len(overdue.data or [])
@@ -557,11 +574,12 @@ def _pas191_leads_today(brokerage_id: str) -> dict:
     pending_queue = 0
     try:
         db = get_supabase()
+        cutoff = _pas191_cutoff_iso(1)
         result = (
             db.table("leads")
             .select("id, last_call_at")
             .eq("brokerage_id", brokerage_id)
-            .gte("created_at", "now() - interval '1 day'")
+            .gte("created_at", cutoff)
             .execute()
         )
         rows = result.data or []
@@ -576,7 +594,7 @@ def _pas191_leads_today(brokerage_id: str) -> dict:
             db.table("pending_calls")
             .select("id")
             .eq("brokerage_id", brokerage_id)
-            .gte("created_at", "now() - interval '1 day'")
+            .gte("created_at", _pas191_cutoff_iso(1))
             .execute()
         )
         pending_queue = len(q.data or [])
