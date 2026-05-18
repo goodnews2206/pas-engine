@@ -69,6 +69,9 @@ INTENT_HEALTH          = "health"
 INTENT_PAUSED_STATUS   = "paused_status"
 INTENT_HELP            = "help"
 INTENT_LEADS_TODAY     = "leads_today"
+# PAS192 — operator experience layer
+INTENT_TODAY_SUMMARY   = "today_summary"
+INTENT_NEXT_ACTION     = "next_action"
 
 INTENT_UNKNOWN         = "unknown"
 
@@ -87,6 +90,8 @@ INTENT_CODES: Tuple[str, ...] = (
     INTENT_PAUSED_STATUS,
     INTENT_HELP,
     INTENT_LEADS_TODAY,
+    INTENT_TODAY_SUMMARY,
+    INTENT_NEXT_ACTION,
 )
 
 
@@ -126,10 +131,51 @@ _ALIAS_TABLE: Dict[str, str] = {
     "all time stats":                          INTENT_STATS,
     "all-time stats":                          INTENT_STATS,
     "overall stats":                           INTENT_STATS,
-    "summary":                                 INTENT_STATS,
-    "give me a summary":                       INTENT_STATS,
-    "how are we doing":                        INTENT_STATS,
     "how are we doing overall":                INTENT_STATS,
+    "lifetime stats":                          INTENT_STATS,
+
+    # ── today_summary (PAS192) ────────────────────────────────
+    # Operational daily wrap. Combines today's leads + calls +
+    # bookings + response rate + warnings into a single Slack
+    # response. Read-only — same closed-formatter discipline as
+    # every other PAS191 intent.
+    "summary":                                 INTENT_TODAY_SUMMARY,
+    "give me a summary":                       INTENT_TODAY_SUMMARY,
+    "today":                                   INTENT_TODAY_SUMMARY,
+    "today summary":                           INTENT_TODAY_SUMMARY,
+    "todays summary":                          INTENT_TODAY_SUMMARY,
+    "today's summary":                         INTENT_TODAY_SUMMARY,
+    "daily summary":                           INTENT_TODAY_SUMMARY,
+    "what happened today":                     INTENT_TODAY_SUMMARY,
+    "show today":                              INTENT_TODAY_SUMMARY,
+    "show me today":                           INTENT_TODAY_SUMMARY,
+    "show today's summary":                    INTENT_TODAY_SUMMARY,
+    "show todays summary":                     INTENT_TODAY_SUMMARY,
+    "operator summary":                        INTENT_TODAY_SUMMARY,
+    "ops summary":                             INTENT_TODAY_SUMMARY,
+    "how are we doing today":                  INTENT_TODAY_SUMMARY,
+    "how are we doing":                        INTENT_TODAY_SUMMARY,
+
+    # ── next_action (PAS192) ──────────────────────────────────
+    # Ranks up to three operational priorities. Read-only: PAS
+    # never executes the suggested action, only describes it.
+    "what should i do now":                    INTENT_NEXT_ACTION,
+    "what should i do":                        INTENT_NEXT_ACTION,
+    "what do i do now":                        INTENT_NEXT_ACTION,
+    "next action":                             INTENT_NEXT_ACTION,
+    "next actions":                            INTENT_NEXT_ACTION,
+    "next steps":                              INTENT_NEXT_ACTION,
+    "priorities":                              INTENT_NEXT_ACTION,
+    "top priorities":                          INTENT_NEXT_ACTION,
+    "what needs attention":                    INTENT_NEXT_ACTION,
+    "what needs my attention":                 INTENT_NEXT_ACTION,
+    "what should i focus on":                  INTENT_NEXT_ACTION,
+    "what's important":                        INTENT_NEXT_ACTION,
+    "whats important":                         INTENT_NEXT_ACTION,
+    "show priorities":                         INTENT_NEXT_ACTION,
+    "what's the priority":                     INTENT_NEXT_ACTION,
+    "whats the priority":                      INTENT_NEXT_ACTION,
+    "what is the priority":                    INTENT_NEXT_ACTION,
 
     # ── calls today ───────────────────────────────────────────
     "calls today":                             INTENT_CALLS_TODAY,
@@ -252,10 +298,14 @@ _ALIAS_TABLE: Dict[str, str] = {
     "help":                                    INTENT_HELP,
     "what can you do":                         INTENT_HELP,
     "what can i ask":                          INTENT_HELP,
+    "what can i ask you":                      INTENT_HELP,
+    "what can pas do":                         INTENT_HELP,
     "what commands":                           INTENT_HELP,
     "list commands":                           INTENT_HELP,
     "show commands":                           INTENT_HELP,
     "commands":                                INTENT_HELP,
+    "examples":                                INTENT_HELP,
+    "show examples":                           INTENT_HELP,
 }
 
 
