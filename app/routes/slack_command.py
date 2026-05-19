@@ -45,11 +45,13 @@ from app.services.slack.operator_intents import (
     INTENT_HELP,
     INTENT_INCIDENTS,
     INTENT_LEADS_TODAY,
+    INTENT_NEXT_ACTION,
     INTENT_PAUSED_STATUS,
     INTENT_POLICY,
     INTENT_QUEUE,
     INTENT_RESPONSE_RATE,
     INTENT_STATS,
+    INTENT_TODAY_SUMMARY,
     INTENT_UNKNOWN,
     match_intent,
 )
@@ -369,6 +371,13 @@ async def _pas191_dispatch(intent: str, brokerage: dict) -> str:
         if intent == INTENT_LEADS_TODAY:
             data = _pas191_leads_today(brokerage_id)
             return pas191_responses.format_leads_today(data)
+        # PAS192 — operator-experience intents.
+        if intent == INTENT_TODAY_SUMMARY:
+            data = _pas192_today_summary(brokerage)
+            return pas191_responses.format_today_summary(data)
+        if intent == INTENT_NEXT_ACTION:
+            data = _pas192_next_action(brokerage)
+            return pas191_responses.format_next_action(data)
     except Exception as e:
         return pas191_responses.format_error(intent, type(e).__name__)
     return pas191_responses.format_unknown()
@@ -605,6 +614,202 @@ def _pas191_leads_today(brokerage_id: str) -> dict:
         "call_eligible": call_eligible,
         "pending_queue": pending_queue,
     }
+
+
+# ───────────── PAS192 — OPERATOR-EXPERIENCE DISPATCH ─────────────
+#
+# Both helpers below are READ-ONLY. They aggregate counts from the
+# same closed surfaces PAS191 already reads (`calls`, `leads`,
+# `agents`, `pending_calls`, `callbacks`, `pas_incidents`,
+# `PENDING_CALLS_WORKER_ENABLED` env). They never write, never
+# trigger autonomous remediation, and never echo PII. Every query
+# is wrapped — on any failure the aggregate falls back to zeros /
+# empty so the Slack surface stays stable.
+
+# Allow-list of warning codes the today_summary helper may emit.
+# Mirrors _TODAY_SUMMARY_WARNING_LABELS in operator_responses.py.
+_PAS192_TODAY_WARNING_CODES = (
+    "no_agents",
+    "queue_backed_up",
+    "worker_off",
+    "low_response_rate",
+    "no_bookings",
+    "no_calls",
+    "no_leads",
+    "incidents_open",
+    "paused",
+)
+
+_PAS192_LOW_RESPONSE_RATE_PCT = 30.0
+_PAS192_QUEUE_BACKLOG_THRESHOLD = 25
+
+
+def _pas192_count_agents(brokerage_id: str) -> int:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("agents")
+            .select("id")
+            .eq("brokerage_id", brokerage_id)
+            .execute()
+        )
+        return len(result.data or [])
+    except Exception:
+        return 0
+
+
+def _pas192_overdue_callbacks(brokerage_id: str) -> int:
+    try:
+        db = get_supabase()
+        result = (
+            db.table("callbacks")
+            .select("id")
+            .eq("brokerage_id", brokerage_id)
+            .eq("status", "pending")
+            .lt("due_at", _pas191_now_iso())
+            .execute()
+        )
+        return len(result.data or [])
+    except Exception:
+        return 0
+
+
+def _pas192_today_summary(brokerage: dict) -> dict:
+    """
+    Aggregate today's operator wrap. Returns a closed envelope
+    consumed by operator_responses.format_today_summary.
+    """
+    brokerage_id = brokerage["id"]
+    calls = _pas191_calls(brokerage_id, "today")
+    leads = _pas191_leads_today(brokerage_id)
+    rr    = _pas191_response_rate(brokerage_id)
+    bookings_today = _pas191_bookings_today(brokerage_id).get("booked_count", 0)
+    queue_state    = _pas191_queue(brokerage_id)
+    agents_count   = _pas192_count_agents(brokerage_id)
+    incidents      = _pas191_incidents(brokerage_id)
+
+    total = int(rr.get("total") or 0)
+    completed = int(rr.get("completed") or 0)
+    response_rate_pct = (completed * 100.0 / total) if total else 0.0
+
+    warnings: list = []
+    if agents_count == 0:
+        warnings.append("no_agents")
+    queue_size = int(queue_state.get("queue_size") or 0)
+    worker_state = str(queue_state.get("worker_state") or "off")
+    if queue_size >= _PAS192_QUEUE_BACKLOG_THRESHOLD:
+        warnings.append("queue_backed_up")
+    if worker_state != "on" and queue_size > 0:
+        warnings.append("worker_off")
+    calls_total = int(calls.get("total") or 0)
+    if calls_total == 0:
+        warnings.append("no_calls")
+    else:
+        if response_rate_pct < _PAS192_LOW_RESPONSE_RATE_PCT:
+            warnings.append("low_response_rate")
+    if int(leads.get("new_leads") or 0) == 0:
+        warnings.append("no_leads")
+    if bookings_today == 0:
+        warnings.append("no_bookings")
+    if int(incidents.get("open_count") or 0) > 0:
+        warnings.append("incidents_open")
+    if brokerage.get("is_active") is False:
+        warnings.append("paused")
+
+    # Defence-in-depth: only allow-listed codes pass through.
+    warnings = [w for w in warnings if w in _PAS192_TODAY_WARNING_CODES]
+
+    return {
+        "new_leads":       int(leads.get("new_leads") or 0),
+        "calls_total":     calls_total,
+        "calls_connected": completed,
+        "bookings":        int(bookings_today),
+        "response_rate":   response_rate_pct,
+        "pending_queue":   queue_size,
+        "warnings":        warnings,
+    }
+
+
+def _pas192_next_action(brokerage: dict) -> dict:
+    """
+    Rank up to three operational priorities the operator can act
+    on next. Order is fixed (see below); the dispatcher returns
+    the closed priority codes in priority order and the formatter
+    renders the matching labels.
+    """
+    brokerage_id = brokerage["id"]
+    priorities: list = []
+
+    agents_count = _pas192_count_agents(brokerage_id)
+    if agents_count == 0:
+        priorities.append({
+            "code":   "assign_agents",
+            "detail": "0 configured",
+        })
+
+    overdue = _pas192_overdue_callbacks(brokerage_id)
+    if overdue > 0:
+        priorities.append({
+            "code":   "review_callbacks",
+            "detail": f"{overdue} overdue",
+        })
+
+    if brokerage.get("is_active") is False:
+        priorities.append({
+            "code":   "resume_pas",
+            "detail": "paused",
+        })
+
+    incidents = _pas191_incidents(brokerage_id)
+    open_count = int(incidents.get("open_count") or 0)
+    if open_count > 0:
+        priorities.append({
+            "code":   "resolve_incidents",
+            "detail": f"{open_count} open",
+        })
+
+    leads = _pas191_leads_today(brokerage_id)
+    call_eligible = int(leads.get("call_eligible") or 0)
+    if call_eligible > 0:
+        priorities.append({
+            "code":   "follow_up_leads",
+            "detail": f"{call_eligible} call eligible",
+        })
+
+    queue_state = _pas191_queue(brokerage_id)
+    queue_size = int(queue_state.get("queue_size") or 0)
+    worker_state = str(queue_state.get("worker_state") or "off")
+    if queue_size > 0 and worker_state != "on":
+        priorities.append({
+            "code":   "start_worker",
+            "detail": f"{queue_size} queued",
+        })
+    elif queue_size >= _PAS192_QUEUE_BACKLOG_THRESHOLD:
+        priorities.append({
+            "code":   "review_queue",
+            "detail": f"{queue_size} pending",
+        })
+
+    rr = _pas191_response_rate(brokerage_id)
+    rr_total = int(rr.get("total") or 0)
+    rr_completed = int(rr.get("completed") or 0)
+    if rr_total > 0:
+        pct = rr_completed * 100.0 / rr_total
+        if pct < _PAS192_LOW_RESPONSE_RATE_PCT:
+            priorities.append({
+                "code":   "review_response_rate",
+                "detail": f"{round(pct, 1)}% pickup",
+            })
+
+    calls = _pas191_calls(brokerage_id, "today")
+    not_booked = int(calls.get("not_booked") or 0)
+    if not_booked > 0 and int(calls.get("booked") or 0) == 0:
+        priorities.append({
+            "code":   "review_failed_bookings",
+            "detail": f"{not_booked} calls without booking",
+        })
+
+    return {"priorities": priorities[:3]}
 
 
 def _pas191_health() -> dict:

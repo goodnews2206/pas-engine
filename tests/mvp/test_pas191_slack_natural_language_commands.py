@@ -205,11 +205,17 @@ def test_alias_table_is_meaningfully_populated():
 
 
 def test_intent_codes_has_exactly_thirteen_entries():
+    """
+    PAS191 closed-intent count guard. PAS191-B bumped this from 12
+    to 13; PAS192 added `today_summary` and `next_action` to bring
+    the total to 15. Every bump must be a deliberate code change
+    with a new alias-table entry, formatter, and dispatcher branch.
+    """
     from app.services.slack.operator_intents import (
         INTENT_CODES,
         INTENT_UNKNOWN,
     )
-    assert len(INTENT_CODES) == 13
+    assert len(INTENT_CODES) == 15
     assert INTENT_UNKNOWN not in INTENT_CODES
 
 
