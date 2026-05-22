@@ -203,7 +203,11 @@ def test_text_renderer_includes_evidence_strength():
 def test_text_renderer_includes_recommended_next_action():
     digest = _build_digest()
     txt = format_digest_as_text(digest)
-    assert digest["operator_summary"]["recommended_next_action"] in txt
+    # PAS204-B humanises the recommended-next-action token into a
+    # plain-English sentence. The raw token no longer appears
+    # verbatim, but the humanised phrase always does.
+    assert "Recommended next:" in txt
+    assert "Review the rehearsal evidence" in txt or "pilot" in txt
 
 
 def test_text_renderer_is_deterministic():
@@ -225,7 +229,11 @@ def test_slack_renderer_includes_evidence_strength():
 def test_slack_renderer_includes_recommended_next_action():
     digest = _build_digest()
     out = format_digest_for_slack(digest)
-    assert digest["operator_summary"]["recommended_next_action"] in out
+    # PAS204-B humanises the recommended-next-action token. The
+    # raw token no longer appears verbatim, but the humanised
+    # phrase always does.
+    assert "*Recommended next:*" in out
+    assert "Review the rehearsal evidence" in out or "pilot" in out
 
 
 def test_slack_renderer_is_deterministic():
@@ -341,33 +349,85 @@ def test_output_contains_no_live_routing_assertions():
             assert phrase not in lower
 
 
-def test_text_output_does_not_carry_freeform_prose():
-    # The formatter labels are fixed; the only variable content is
-    # the digest's own closed-vocabulary tokens. We assert that
-    # every non-label line is a structured "label = value", a
-    # closed-vocab list entry, or the fixed header line.
+def test_text_output_carries_no_raw_internal_tokens():
+    # PAS204-B humanises the text rendering. The assertion shifts
+    # from "every line is a structured label" to "no underscore-
+    # snake-case PAS internal closed-vocab tokens leak verbatim
+    # into the output". The fixed labels SIMULATION_ONLY and the
+    # individual artifact IDs (pas195-rec-..., pas200-beval-...)
+    # are still allowed because they are not internal jargon —
+    # they're stable audit identifiers.
     digest = _build_digest()
     txt = format_digest_as_text(digest)
-    for line in txt.splitlines():
-        if not line.strip():
-            continue
-        if line.startswith("PAS201 evidence digest "):
-            continue
-        if (
-            ":" in line
-            or line.strip().startswith("- ")
-            or line.strip().startswith("recommendation_id")
-            or line.strip().startswith("review_id")
-            or line.strip().startswith("package_id")
-            or line.strip().startswith("runtime_id")
-            or line.strip().startswith("inspection_id")
-            or line.strip().startswith("behavioral_evaluation_id")
-            or line.strip().startswith("Operator highlights")
-            or line.strip().startswith("Still not claimable")
-            or line.strip().startswith("Claimable now")
-        ):
-            continue
-        raise AssertionError(f"unexpected free-form line: {line!r}")
+    raw_internal_tokens = (
+        "runtime_pass_rate_100_percent",
+        "runtime_pass_rate_at_or_above_95_percent",
+        "runtime_pass_rate_at_or_above_75_percent",
+        "runtime_pass_rate_below_75_percent",
+        "safety_outcome_clean",
+        "safety_outcome_auto_fail",
+        "lineage_intact",
+        "lineage_broken",
+        "artifact_integrity_complete",
+        "artifact_integrity_incomplete",
+        "behavioral_low_friction_observed",
+        "behavioral_high_friction_observed",
+        "behavioral_good_pacing_observed",
+        "behavioral_high_pressure_observed",
+        "behavioral_low_trust_observed",
+        "behavioral_trust_preservation_observed",
+        "behavioral_callback_continuity_observed",
+        "behavioral_early_escalation_observed",
+        "no_live_behavior_change_anywhere_in_lineage",
+        "behavioral_evaluation_emitted_deterministically",
+        "lineage_inspectable_end_to_end",
+        "manual_test_executed_in_simulation_only",
+        "operator_approved_strategy_for_manual_test",
+        "safety_auto_fails_remain_absolute",
+        "synthetic_rehearsal_passed_for_strategy",
+        "no_pii_in_simulation_artifacts",
+        "live_call_routing_remains_out_of_scope",
+        "calibration_against_live_call_outcomes_pending",
+        "automated_promotion_to_runtime_strategy_pending",
+        "real_lead_exposure_remains_out_of_scope",
+        "slack_operator_surface_for_runtime_runs_pending",
+        "review_digest_then_decide_pilot_step",
+        "expand_synthetic_catalogue_before_pilot",
+        "rerun_manual_test_with_alternative_strategy",
+        "block_until_safety_issue_resolved",
+    )
+    for tok in raw_internal_tokens:
+        assert tok not in txt, (
+            f"PAS202 text output leaked raw internal token {tok!r}"
+        )
+
+
+def test_slack_output_carries_no_raw_internal_tokens():
+    digest = _build_digest()
+    out = format_digest_for_slack(digest)
+    raw_internal_tokens = (
+        "runtime_pass_rate_100_percent",
+        "safety_outcome_clean",
+        "lineage_intact",
+        "artifact_integrity_complete",
+        "behavioral_low_friction_observed",
+        "behavioral_low_trust_observed",
+        "behavioral_callback_continuity_observed",
+        "no_live_behavior_change_anywhere_in_lineage",
+        "lineage_inspectable_end_to_end",
+        "manual_test_executed_in_simulation_only",
+        "operator_approved_strategy_for_manual_test",
+        "no_pii_in_simulation_artifacts",
+        "live_call_routing_remains_out_of_scope",
+        "calibration_against_live_call_outcomes_pending",
+        "automated_promotion_to_runtime_strategy_pending",
+        "real_lead_exposure_remains_out_of_scope",
+        "review_digest_then_decide_pilot_step",
+    )
+    for tok in raw_internal_tokens:
+        assert tok not in out, (
+            f"PAS202 Slack output leaked raw internal token {tok!r}"
+        )
 
 
 def test_summary_does_not_mutate_input_digest():
@@ -542,8 +602,12 @@ def test_runner_default_prints_text_summary():
         fp = _write_digest_file(tp)
         proc = _run_cli("--digest", str(fp))
         assert proc.returncode == 0, proc.stdout + proc.stderr
+        # PAS204-B humanised header keeps the audit identifier
+        # and the SIMULATION_ONLY marker but rewrites the
+        # narrative labels.
         assert "PAS201 evidence digest" in proc.stdout
-        assert "Evidence strength:" in proc.stdout
+        assert "SIMULATION_ONLY" in proc.stdout
+        assert "Evidence:" in proc.stdout or "Recommended next:" in proc.stdout
 
 
 def test_runner_json_prints_structured_summary():
@@ -565,9 +629,12 @@ def test_runner_slack_prints_markdown():
         fp = _write_digest_file(tp)
         proc = _run_cli("--digest", str(fp), "--slack")
         assert proc.returncode == 0, proc.stdout + proc.stderr
-        assert "*PAS201 digest*" in proc.stdout
-        assert "*Evidence:*" in proc.stdout
+        # PAS204-B renames the Slack header. Audit markers
+        # (SIMULATION_ONLY, the digest id) are still present.
+        assert "*PAS rehearsal evidence*" in proc.stdout
         assert "SIMULATION_ONLY" in proc.stdout
+        assert "*Recommended next:*" in proc.stdout
+        assert "*Summary:*" in proc.stdout
 
 
 def test_runner_write_summary_writes_file():
