@@ -589,6 +589,141 @@ def check_pas191_intent_codes_unchanged(repo_root: str) -> List[dict]:
         )]
 
 
+def check_dispatcher_wiring(repo_root: str) -> List[dict]:
+    """
+    PAS204-A — verify slack_command.py imports and invokes the
+    PAS204 broker conversation helper, that the dispatch block
+    sits AFTER PAS203's fast-path and BEFORE PAS191's dispatch,
+    is gated on `pas191_intent == INTENT_UNKNOWN` (so PAS191
+    commands take precedence), and contains no filesystem writes
+    or simulation-execution calls.
+    """
+    rel = "app/routes/slack_command.py"
+    src = _read_text(Path(repo_root) / rel)
+    out: List[dict] = []
+    if src is None:
+        out.append(_check(
+            "dispatcher:source_readable",
+            "FAIL",
+            f"{rel} is readable",
+            detail="file missing or unreadable",
+        ))
+        return out
+
+    out.append(_check(
+        "dispatcher:imports_pas204_helper",
+        "PASS" if (
+            "from app.services.slack.broker_conversation_surface" in src
+            and "build_broker_response" in src
+        ) else "FAIL",
+        f"{rel} imports build_broker_response from PAS204",
+    ))
+
+    pas203_pos = src.find("try_route_simulation_digest(text")
+    pas204_pos = src.find("build_broker_response(text")
+    pas191_dispatch_pos = src.find("_pas191_dispatch(pas191_intent")
+
+    out.append(_check(
+        "dispatcher:calls_build_broker_response",
+        "PASS" if pas204_pos >= 0 else "FAIL",
+        f"{rel} calls build_broker_response(text, ...)",
+    ))
+    out.append(_check(
+        "dispatcher:pas203_still_present",
+        "PASS" if pas203_pos >= 0 else "FAIL",
+        f"{rel} still calls try_route_simulation_digest (PAS203 carry-forward)",
+    ))
+    out.append(_check(
+        "dispatcher:pas191_dispatch_still_present",
+        "PASS" if pas191_dispatch_pos >= 0 else "FAIL",
+        f"{rel} still calls _pas191_dispatch (PAS191 carry-forward)",
+    ))
+    out.append(_check(
+        "dispatcher:pas204_block_after_pas203",
+        "PASS" if (
+            pas203_pos >= 0 and pas204_pos >= 0 and pas203_pos < pas204_pos
+        ) else "FAIL",
+        f"{rel} PAS204 dispatch fires AFTER PAS203 fast-path",
+        detail=f"pas203_pos={pas203_pos}, pas204_pos={pas204_pos}",
+    ))
+    out.append(_check(
+        "dispatcher:pas204_block_before_pas191_dispatch",
+        "PASS" if (
+            pas204_pos >= 0 and pas191_dispatch_pos >= 0
+            and pas204_pos < pas191_dispatch_pos
+        ) else "FAIL",
+        f"{rel} PAS204 dispatch fires BEFORE PAS191 _pas191_dispatch",
+        detail=f"pas204_pos={pas204_pos}, pas191_dispatch_pos={pas191_dispatch_pos}",
+    ))
+
+    # PAS204 block must be gated on `pas191_intent == INTENT_UNKNOWN`.
+    if pas204_pos > 0:
+        window = src[max(0, pas204_pos - 800): pas204_pos]
+        gated = "pas191_intent == INTENT_UNKNOWN" in window
+    else:
+        gated = False
+    out.append(_check(
+        "dispatcher:pas204_gated_on_pas191_unknown",
+        "PASS" if gated else "FAIL",
+        f"{rel} PAS204 dispatch is gated on pas191_intent == INTENT_UNKNOWN",
+    ))
+
+    out.append(_check(
+        "dispatcher:logs_pas204_surface_event",
+        "PASS" if "slack_command_pas204" in src else "FAIL",
+        f"{rel} logs slack.intent.matched with PAS204 surface",
+    ))
+
+    # Slice the PAS204 block and verify no writes / no execution.
+    start = src.find("PAS204-A — Broker conversation intelligence")
+    end = src.find("if pas191_intent != INTENT_UNKNOWN:")
+    block_ok = start >= 0 and end > start
+    out.append(_check(
+        "dispatcher:pas204_block_present",
+        "PASS" if block_ok else "FAIL",
+        f"{rel} carries a marked PAS204-A dispatch block",
+        detail="" if block_ok else f"start={start}, end={end}",
+    ))
+    block = src[start:end] if block_ok else ""
+
+    write_tokens = (
+        ".write_text(", ".write_bytes(", ".mkdir(", ".touch(",
+        ".rename(", ".unlink(", ".rmdir(",
+        "os.makedirs(", "shutil.copy(", "shutil.move(",
+    )
+    bad_writes = [t for t in write_tokens if t in block]
+    out.append(_check(
+        "dispatcher:pas204_block_no_writes",
+        "PASS" if not bad_writes else "FAIL",
+        f"{rel} PAS204 dispatch block carries no filesystem write calls",
+        detail=", ".join(bad_writes) if bad_writes else "",
+    ))
+
+    exec_tokens = (
+        "execute_manual_test_runtime(", "build_evidence_digest(",
+        "build_inspection(", "build_behavioral_evaluation(",
+        "build_manual_test_package(", "run_scenario_under_strategy(",
+        "compare_strategies(", "run_simulations(",
+    )
+    bad_execs = [t for t in exec_tokens if t in block]
+    out.append(_check(
+        "dispatcher:pas204_block_no_simulation_execution",
+        "PASS" if not bad_execs else "FAIL",
+        f"{rel} PAS204 dispatch block carries no simulation-execution calls",
+        detail=", ".join(bad_execs) if bad_execs else "",
+    ))
+
+    out.append(_check(
+        "dispatcher:pas204_block_returns_in_channel_response",
+        "PASS" if (
+            "JSONResponse" in block and "in_channel" in block
+        ) else "FAIL",
+        f"{rel} PAS204 dispatch returns JSONResponse with response_type=in_channel",
+    ))
+
+    return out
+
+
 def check_self_no_env_or_network(repo_root: str) -> List[dict]:
     src = _read_text(Path(__file__)) or ""
     imports, calls = _collect_imports_and_calls(src)
@@ -630,6 +765,7 @@ def evaluate(repo_root: str) -> dict:
     checks.extend(check_runner_writes_only_reports(repo_root))
     checks.extend(check_intent_smoke(repo_root))
     checks.extend(check_pas191_intent_codes_unchanged(repo_root))
+    checks.extend(check_dispatcher_wiring(repo_root))
     checks.extend(check_self_no_env_or_network(repo_root))
 
     blockers = [

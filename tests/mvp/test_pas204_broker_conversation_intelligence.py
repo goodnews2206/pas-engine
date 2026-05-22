@@ -556,6 +556,233 @@ def test_readiness_gate_json_envelope_valid():
 # Doc invariants
 # ──────────────────────────────────────────────────────────────────
 
+# ──────────────────────────────────────────────────────────────────
+# Dispatcher integration (PAS204-A)
+# ──────────────────────────────────────────────────────────────────
+#
+# These tests inspect app/routes/slack_command.py source — the
+# established PAS191 / PAS192 / PAS203 pattern — to assert that
+# PAS204 is wired into the real dispatcher correctly and that
+# the wiring is additive, non-mutating, and preserves the
+# decision order PAS203 -> PAS204 (defer-to-PAS191) -> PAS191
+# -> LLM.
+
+_SLACK_CMD_REL = "app/routes/slack_command.py"
+
+
+def _slack_cmd_src() -> str:
+    return _read(_SLACK_CMD_REL)
+
+
+def test_dispatcher_imports_pas204_helper():
+    src = _slack_cmd_src()
+    assert "from app.services.slack.broker_conversation_surface" in src
+    assert "build_broker_response" in src
+
+
+def test_dispatcher_calls_build_broker_response():
+    src = _slack_cmd_src()
+    assert "build_broker_response(text" in src
+
+
+def test_dispatcher_pas204_block_after_pas203_fast_path():
+    src = _slack_cmd_src()
+    pas203_pos = src.find("try_route_simulation_digest(text")
+    pas204_pos = src.find("build_broker_response(text")
+    assert pas203_pos >= 0, "PAS203 dispatch missing"
+    assert pas204_pos >= 0, "PAS204 dispatch missing"
+    assert pas203_pos < pas204_pos, (
+        "PAS204 dispatch must come AFTER PAS203 fast-path"
+    )
+
+
+def test_dispatcher_pas204_block_before_pas191_dispatch():
+    src = _slack_cmd_src()
+    pas204_pos = src.find("build_broker_response(text")
+    pas191_dispatch_pos = src.find("_pas191_dispatch(pas191_intent")
+    assert pas204_pos >= 0
+    assert pas191_dispatch_pos >= 0
+    assert pas204_pos < pas191_dispatch_pos, (
+        "PAS204 dispatch must come BEFORE PAS191's _pas191_dispatch"
+    )
+
+
+def test_dispatcher_pas204_block_defers_to_pas191_match():
+    # PAS204 must not race ahead of PAS191's matcher. The block
+    # must be gated on `pas191_intent == INTENT_UNKNOWN`.
+    src = _slack_cmd_src()
+    pas204_pos = src.find("build_broker_response(text")
+    # Walk back ~600 chars and look for the guard.
+    window = src[max(0, pas204_pos - 800):pas204_pos]
+    assert "pas191_intent == INTENT_UNKNOWN" in window, (
+        "PAS204 dispatch must be gated on pas191_intent == INTENT_UNKNOWN"
+    )
+
+
+def test_dispatcher_pas204_block_logs_intent_event():
+    src = _slack_cmd_src()
+    assert "slack_command_pas204" in src
+
+
+def _pas204_block(src: str) -> str:
+    start = src.find("PAS204-A — Broker conversation intelligence")
+    end = src.find("if pas191_intent != INTENT_UNKNOWN:")
+    assert start >= 0, "PAS204-A block marker missing"
+    assert end > start, "PAS191 dispatch marker missing or out of order"
+    return src[start:end]
+
+
+_DISPATCHER_WRITE_TOKENS = (
+    ".write_text(",
+    ".write_bytes(",
+    ".mkdir(",
+    ".touch(",
+    ".rename(",
+    ".unlink(",
+    ".rmdir(",
+    "os.makedirs(",
+    "shutil.copy(",
+    "shutil.move(",
+)
+
+
+def test_dispatcher_pas204_block_carries_no_write_calls():
+    block = _pas204_block(_slack_cmd_src())
+    for tok in _DISPATCHER_WRITE_TOKENS:
+        assert tok not in block, (
+            f"PAS204 dispatch block contains write call {tok!r}"
+        )
+
+
+_DISPATCHER_EXECUTION_TOKENS = (
+    "execute_manual_test_runtime(",
+    "build_evidence_digest(",
+    "build_inspection(",
+    "build_behavioral_evaluation(",
+    "build_manual_test_package(",
+    "run_scenario_under_strategy(",
+    "compare_strategies(",
+    "run_simulations(",
+)
+
+
+def test_dispatcher_pas204_block_does_not_execute_simulations():
+    block = _pas204_block(_slack_cmd_src())
+    for tok in _DISPATCHER_EXECUTION_TOKENS:
+        assert tok not in block, (
+            f"PAS204 dispatch block contains execution call {tok!r}"
+        )
+
+
+def test_dispatcher_pas204_block_returns_in_channel_response():
+    block = _pas204_block(_slack_cmd_src())
+    assert "JSONResponse" in block
+    assert "in_channel" in block
+
+
+def test_pas191_intents_take_precedence_over_pas204():
+    # The dispatcher logic is "PAS204 fires only when
+    # pas191_intent == INTENT_UNKNOWN". Verify that every
+    # PAS191 command listed in the spec's guardrail returns a
+    # non-UNKNOWN intent from PAS191's matcher (so the
+    # dispatcher will route to PAS191, not PAS204).
+    from app.services.slack.operator_intents import (
+        INTENT_UNKNOWN as PAS191_UNKNOWN,
+    )
+    from app.services.slack.operator_intents import (
+        match_intent as pas191_match,
+    )
+    for cmd in (
+        "stats", "calls today", "leads today", "response rate",
+        "summary", "next action", "priorities", "help",
+        "callbacks", "bookings today", "queue", "incidents",
+        "policy", "health", "are we paused",
+    ):
+        result = pas191_match(cmd)
+        assert result["intent"] != PAS191_UNKNOWN, (
+            f"PAS191 command {cmd!r} unexpectedly returned UNKNOWN "
+            f"-- PAS204 would intercept it"
+        )
+
+
+def test_pas204_responds_to_broker_question_hot_leads():
+    out = build_broker_response("hot leads")
+    assert out["intent"] == "hot_leads_summary"
+    assert out["response_text"]
+    assert out["suggested_next"]
+
+
+def test_pas204_responds_to_typo_leeds_today():
+    out = build_broker_response("leeds today")
+    assert out["intent"] == "leads_today_count"
+
+
+def test_pas204_responds_to_beginner_question_with_clarifier_or_intent():
+    out = build_broker_response("how do i use this thing")
+    # Either classified to an intent, or fell back with a
+    # clarifying question — both are valid PAS204 responses.
+    if out["intent"] == "fallback_clarify":
+        assert out["clarifying_question"] is not None
+    else:
+        assert out["intent"] in INTENT_CODES
+    assert out["response_text"]
+
+
+def test_pas203_phrases_resolve_to_simulation_digest_intent():
+    # The dispatcher's PAS203 fast-path fires before PAS204, so
+    # PAS203 phrases never reach PAS204. We assert this here at
+    # the helper level by re-using PAS203's own router.
+    from pathlib import Path
+    from app.services.slack.simulation_digest_intent import (
+        try_route_simulation_digest,
+    )
+    with __import__("tempfile").TemporaryDirectory() as tmp:
+        tp = Path(tmp)
+        out = try_route_simulation_digest("simulation digest", tp)
+        assert out is not None  # PAS203 owns this phrase
+
+
+def test_pas204_does_not_match_mutation_commands():
+    # Mutation commands never resolve to a PAS204 intent.
+    for mut in ("pause", "resume", "push 123 Main St $500k",
+                "remove 123 Main St"):
+        out = build_broker_response(mut)
+        assert out["intent"] == "fallback_clarify"
+
+
+def test_pas204_response_carries_no_internal_jargon():
+    for q in BROKER_QUESTION_CATALOGUE[:30]:
+        out = build_broker_response(q["text"])
+        body = out["response_text"]
+        for tok in FORBIDDEN_OUTPUT_TOKENS:
+            assert tok not in body.lower()
+        # PAS internal closed-vocab tokens should never appear
+        # in broker-facing output verbatim.
+        for raw in ("behavioral_low_friction_observed",
+                    "behavioral_low_trust_observed",
+                    "runtime_pass_rate_100_percent",
+                    "safety_outcome_clean",
+                    "lineage_intact",
+                    "artifact_integrity_complete"):
+            assert raw not in body, (q["text"], raw)
+
+
+def test_pas204_response_carries_suggested_next_step():
+    for q in BROKER_QUESTION_CATALOGUE[:30]:
+        out = build_broker_response(q["text"])
+        assert out["suggested_next"]
+        assert all(isinstance(s, str) and s.strip()
+                   for s in out["suggested_next"])
+
+
+def test_dispatcher_still_invokes_pas191_after_pas204():
+    src = _slack_cmd_src()
+    # Carry-forward — PAS191's match_intent and dispatch must
+    # both still appear and still wire to _pas191_dispatch.
+    assert "match_intent(text)" in src
+    assert "_pas191_dispatch" in src
+
+
 def test_doc_present_and_carries_required_clauses():
     doc = _read("docs/pas204_broker_conversation_intelligence.md").lower()
     for clause in (
