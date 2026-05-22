@@ -498,16 +498,21 @@ def check_intent_smoke(repo_root: str) -> List[dict]:
         detail=str(question_count()),
     ))
     out.append(_check(
-        "catalogue:has_22_intents",
-        "PASS" if len(INTENT_CODES) == 22 else "FAIL",
-        "catalogue declares 22 closed intents",
+        "catalogue:has_at_least_22_intents",
+        "PASS" if len(INTENT_CODES) >= 22 else "FAIL",
+        "catalogue declares >= 22 closed intents",
         detail=str(len(INTENT_CODES)),
     ))
     out.append(_check(
-        "catalogue:has_22_categories",
-        "PASS" if len(CATEGORIES) == 22 else "FAIL",
-        "catalogue declares 22 closed categories",
+        "catalogue:has_at_least_22_categories",
+        "PASS" if len(CATEGORIES) >= 22 else "FAIL",
+        "catalogue declares >= 22 closed categories",
         detail=str(len(CATEGORIES)),
+    ))
+    out.append(_check(
+        "catalogue:onboarding_intent_present",
+        "PASS" if "onboarding_help" in INTENT_CODES else "FAIL",
+        "catalogue declares onboarding_help intent (PAS204-B)",
     ))
 
     # Classifier matches every canonical entry.

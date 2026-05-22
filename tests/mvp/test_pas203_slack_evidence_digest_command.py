@@ -448,8 +448,11 @@ def test_route_matches_alias_with_present_digest():
         _write_digest_file(tp)
         out = try_route_simulation_digest("simulation digest", tp)
         assert out is not None
-        assert "*PAS201 digest*" in out
+        # PAS204-B humanises the PAS202 Slack header. Audit
+        # markers (SIMULATION_ONLY, digest id prefix) remain.
+        assert "*PAS rehearsal evidence*" in out
         assert "SIMULATION_ONLY" in out
+        assert "pas201-dgst-" in out
 
 
 def test_route_matches_alias_with_missing_digest_returns_fallback():

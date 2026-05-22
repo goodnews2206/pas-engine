@@ -783,6 +783,200 @@ def test_dispatcher_still_invokes_pas191_after_pas204():
     assert "_pas191_dispatch" in src
 
 
+# ──────────────────────────────────────────────────────────────────
+# PAS204-B onboarding + fallback polish
+# ──────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("phrase", [
+    "how do i use this thing",
+    "how do i even use this thing",
+    "how do i use pas",
+    "what can pas do",
+    "what can you do",
+    "help me use pas",
+    "where do i start",
+    "how should i start",
+    "how do i even fuckin use this thing",
+    "i don't know what to ask",
+    "what should i ask you",
+    "how does this thing work",
+    "getting started",
+    "how do i begin",
+])
+def test_onboarding_phrases_map_to_onboarding_intent(phrase):
+    result = match_broker_intent(phrase)
+    assert result["intent"] == "onboarding_help", (
+        f"{phrase!r} resolved to {result['intent']!r}"
+    )
+
+
+def test_onboarding_response_starts_with_start_here_phrasing():
+    out = build_broker_response("how do i use this thing")
+    assert out["intent"] == "onboarding_help"
+    body = out["response_text"]
+    # The onboarding response leads with an instructional tone.
+    lower = body.lower()
+    assert "start here" in lower or "start" in lower
+    # It mentions the kinds of things PAS can answer.
+    assert (
+        "leads" in lower and "callbacks" in lower
+        and ("recommend" in lower or "respond" in lower)
+    )
+
+
+def test_onboarding_response_acknowledges_crm_data_dependency():
+    out = build_broker_response("how do i use pas")
+    body = out["response_text"].lower()
+    # Acknowledges "if CRM is connected" / "if not connected".
+    assert "crm" in body
+    assert "connected" in body or "not connected" in body
+
+
+def test_onboarding_intent_carries_suggested_next_steps():
+    out = build_broker_response("what can pas do")
+    assert out["intent"] == "onboarding_help"
+    assert out["suggested_next"]
+    assert len(out["suggested_next"]) >= 1
+
+
+def test_fallback_response_no_longer_says_didnt_catch_that():
+    # PAS204-B replaces the old "I didn't catch that one..."
+    # wording with a friendlier "I can help, but I need a
+    # little more direction." opener.
+    out = build_broker_response("hmm idk maybe")
+    assert out["intent"] == "fallback_clarify"
+    body = out["response_text"]
+    assert "didn't catch that" not in body.lower()
+    assert "I can help" in body or "i can help" in body.lower()
+
+
+def test_fallback_response_lists_useful_examples():
+    out = build_broker_response("hmm idk maybe")
+    body = out["response_text"]
+    # The new fallback lists 4-6 concrete example prompts.
+    examples_count = body.count('"')
+    # Each example is quoted ("what happened today" → 2 quote marks).
+    # We expect at least 4 examples = 8 quote marks.
+    assert examples_count >= 8, body
+
+
+def test_pas204_b_humanized_digest_translation_table_available():
+    # The PAS204-B polish adds humanised translations for the
+    # PAS200/PAS201 closed-vocab tokens. They must be present
+    # in the PAS204 response-voice translation table OR in
+    # PAS202's translation table. We assert the PAS204 voice
+    # table covers the user-spec tokens.
+    expected = {
+        "runtime_pass_rate_100_percent",
+        "safety_outcome_clean",
+        "lineage_intact",
+        "artifact_integrity_complete",
+        "behavioral_low_friction_observed",
+        "behavioral_good_pacing_observed",
+        "behavioral_low_trust_observed",
+        "behavioral_callback_continuity_observed",
+        "no_live_behavior_change_anywhere_in_lineage",
+    }
+    missing = [t for t in expected if t not in TOKEN_TRANSLATIONS]
+    assert not missing, f"missing humanised translations: {missing}"
+
+
+def test_digest_slack_output_carries_no_raw_internal_tokens():
+    # Smoke test that exercises the PAS202 humanised Slack
+    # output through the digest the test-pas204 build helper
+    # already provides via PAS199 (build_inspection) etc. We
+    # build a fake evidence dict and pass it through
+    # build_broker_response with the evidence digest intent.
+    from app.services.simulation.behavioral_evaluation import (
+        build_behavioral_evaluation,
+    )
+    from app.services.simulation.evidence_digest import (
+        build_evidence_digest,
+    )
+    from app.services.simulation.evidence_digest_surface import (
+        format_digest_for_slack,
+    )
+    from app.services.simulation.manual_test_runtime import (
+        execute_manual_test_runtime,
+    )
+    from app.services.simulation.runtime_inspection import (
+        build_inspection,
+    )
+    rec = {
+        "recommendation_id": "pas195-rec-pas204b",
+        "status": "CANDIDATE",
+        "operator_required": True,
+        "recommended_strategy": "callback_first",
+        "rejected_strategy": "assertive",
+        "recommendation_type": "promote_strategy",
+        "confidence_level": "high",
+        "pass_rate_threshold": 0.95,
+        "phase": "PAS195",
+    }
+    rev = {
+        "review_id": "pas196-rev-pas204b",
+        "recommendation_id": "pas195-rec-pas204b",
+        "previous_status": "CANDIDATE",
+        "new_status": "APPROVED_FOR_MANUAL_TEST",
+        "live_behavior_changed": False,
+        "actor_type": "operator",
+        "actor_id_token": "op_pas204b1234",
+        "reason_token": "operator_approved_for_manual_test",
+        "reviewed_at": "2026-05-22T00:00:00Z",
+        "operator_required": True,
+        "phase": "PAS196",
+    }
+    pkg = {
+        "package_id": "pas197-pkg-pas204b",
+        "phase": "PAS197",
+        "recommendation_id": "pas195-rec-pas204b",
+        "review_id": "pas196-rev-pas204b",
+        "strategy_id": "callback_first",
+        "status": "READY_FOR_MANUAL_TEST",
+        "live_behavior_changed": False,
+        "allowed_environment": "SIMULATION_ONLY",
+        "test_plan": [],
+        "success_metrics": [],
+        "rollback_notes": [],
+        "safety_notes": [],
+        "created_at": "2026-05-22T00:00:00Z",
+    }
+    rt = execute_manual_test_runtime(pkg, created_at="2026-05-22T00:00:00Z")
+    insp = build_inspection(rec, rev, pkg, rt, generated_at="2026-05-22T00:00:00Z")
+    beh = build_behavioral_evaluation(
+        rt, generated_at="2026-05-22T00:00:00Z", inspection=insp,
+    )
+    digest = build_evidence_digest(
+        rec, rev, pkg, rt, insp, beh, generated_at="2026-05-22T00:00:00Z",
+    )
+    slack_out = format_digest_for_slack(digest)
+    # PAS204-B requires zero raw internal underscore-tokens in
+    # the Slack output.
+    raw_tokens = (
+        "runtime_pass_rate_100_percent",
+        "safety_outcome_clean",
+        "lineage_intact",
+        "artifact_integrity_complete",
+        "behavioral_low_friction_observed",
+        "behavioral_low_trust_observed",
+        "behavioral_callback_continuity_observed",
+        "no_live_behavior_change_anywhere_in_lineage",
+        "lineage_inspectable_end_to_end",
+        "automated_promotion_to_runtime_strategy_pending",
+        "review_digest_then_decide_pilot_step",
+    )
+    for tok in raw_tokens:
+        assert tok not in slack_out, (
+            f"PAS202 Slack output leaked raw token {tok!r} — "
+            f"PAS204-B requires humanisation"
+        )
+    # And the humanised translations are present.
+    assert (
+        "rehearsal" in slack_out.lower()
+        or "evidence trail" in slack_out.lower()
+    )
+
+
 def test_doc_present_and_carries_required_clauses():
     doc = _read("docs/pas204_broker_conversation_intelligence.md").lower()
     for clause in (

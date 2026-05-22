@@ -38,6 +38,7 @@ from app.services.slack.broker_question_catalogue import (
     INTENT_LEAD_SOURCE_QUALITY,
     INTENT_LEADS_TODAY_COUNT,
     INTENT_MISSED_LEADS,
+    INTENT_ONBOARDING_HELP,
     INTENT_REALTOR_LEAD_HANDLING,
     INTENT_RESPONSE_SPEED,
     INTENT_SAFETY_TRUST,
@@ -513,6 +514,78 @@ def _score_safety(tokens: Tuple[str, ...]) -> int:
     return 4
 
 
+_KW_ONBOARDING_VERBS = frozenset((
+    "use", "start", "begin", "begun", "started", "starting",
+    "use-pas", "started",
+))
+
+
+def _score_onboarding_help(tokens: Tuple[str, ...]) -> int:
+    # Strict onboarding patterns only — avoid hijacking phrases
+    # like "is pas safe to use" (safety_trust), "does pas do
+    # what an isa does" (isa_comparison), or "which agents are
+    # getting leads" (agent_routing_status).
+    if not tokens:
+        return 0
+    # Disambiguator: if the phrase carries strong specific
+    # signal for another intent, bail out.
+    if _tokens_match_any(tokens, _KW_SAFETY):
+        return 0
+    if _tokens_match_any(tokens, _KW_ISA):
+        return 0
+    if _tokens_match_any(tokens, _KW_AGENT):
+        return 0
+    if _tokens_match_any(tokens, _KW_LEAD):
+        return 0
+    # "how do i use this thing" / "how do i even use this thing"
+    # / "how do i even fuckin use this thing" / "how does this
+    # thing work".
+    if "thing" in tokens and (
+        "use" in tokens or "work" in tokens
+        or "fuckin" in tokens or "fucking" in tokens
+    ):
+        return 5
+    # "what can pas do" / "what can you do"
+    if (
+        ("what" in tokens or "whats" in tokens or "what's" in tokens)
+        and ("can" in tokens or "do" in tokens or "does" in tokens)
+        and (_tokens_match_any(tokens, _KW_PAS) or "you" in tokens)
+    ):
+        return 5
+    # "how do i use pas"
+    if (
+        "use" in tokens
+        and _tokens_match_any(tokens, _KW_PAS)
+        and ("how" in tokens or "i" in tokens)
+    ):
+        return 5
+    # "help me use pas" / "help me get started"
+    if (
+        "help" in tokens and "me" in tokens
+        and (
+            _tokens_match_any(tokens, _KW_PAS) or "use" in tokens
+            or "start" in tokens or "begin" in tokens
+            or "started" in tokens
+        )
+    ):
+        return 5
+    # "where do i start" / "how should i start" / "getting
+    # started" / "how do i begin"
+    if ("start" in tokens or "begin" in tokens or "started" in tokens) and (
+        "where" in tokens or "should" in tokens
+        or "getting" in tokens or "begun" in tokens
+        or ("how" in tokens and ("i" in tokens or "do" in tokens))
+    ):
+        return 5
+    # "i don't know what to ask" / "what should i ask you"
+    if "ask" in tokens and (
+        "dont" in tokens or "don't" in tokens or "idk" in tokens
+        or ("should" in tokens and "i" in tokens)
+    ):
+        return 5
+    return 0
+
+
 def _score_what_next(tokens: Tuple[str, ...]) -> int:
     # "what should i do now / next" — needs at least 2 of {what, do, next/priority/focus/important/matters}.
     score = 0
@@ -568,6 +641,11 @@ _INTENT_SCORERS: Tuple[Tuple[str, callable], ...] = (
     (INTENT_STALE_LEADS,            _score_stale_leads),
     (INTENT_HOT_LEADS_SUMMARY,      _score_hot_leads),
     (INTENT_LEADS_TODAY_COUNT,      _score_leads_today_count),
+    # Onboarding-help is a generic catch — placed near the end so
+    # specific intents take precedence; but BEFORE what_should_i_do
+    # so "what can pas do" doesn't get swallowed by the priorities
+    # scorer.
+    (INTENT_ONBOARDING_HELP,        _score_onboarding_help),
     # What-should-i-do is the most generic; goes last.
     (INTENT_WHAT_SHOULD_I_DO,       _score_what_next),
 )

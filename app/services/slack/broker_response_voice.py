@@ -51,6 +51,7 @@ from app.services.slack.broker_question_catalogue import (
     INTENT_LEAD_SOURCE_QUALITY,
     INTENT_LEADS_TODAY_COUNT,
     INTENT_MISSED_LEADS,
+    INTENT_ONBOARDING_HELP,
     INTENT_REALTOR_LEAD_HANDLING,
     INTENT_RESPONSE_SPEED,
     INTENT_SAFETY_TRUST,
@@ -84,13 +85,13 @@ TOKEN_TRANSLATIONS: Dict[str, str] = {
     ),
     # PAS200 behavioural flags
     "behavioral_low_friction_observed": (
-        "The conversations stayed smooth and didn't push the lead too hard."
+        "The conversations stayed smooth and avoided unnecessary pressure."
     ),
     "behavioral_high_friction_observed": (
         "Some scenarios got bumpy — the lead pushed back more than expected."
     ),
     "behavioral_good_pacing_observed": (
-        "The pacing felt natural — discovery before any commitment ask."
+        "PAS paced the conversation well."
     ),
     "behavioral_high_pressure_observed": (
         "The strategy leans pushy — too many appointment asks too early."
@@ -99,20 +100,20 @@ TOKEN_TRANSLATIONS: Dict[str, str] = {
         "The strategy is safe, but some replies still feel a little too transactional."
     ),
     "behavioral_low_trust_observed": (
-        "Replies skewed a bit transactional. A warmer tone would help."
+        "Some replies still feel too transactional and need a warmer tone."
     ),
     "behavioral_trust_preservation_observed": (
         "PAS acknowledged the lead before any qualification ask."
     ),
     "behavioral_callback_continuity_observed": (
-        "PAS offered a callback as a natural next step, not a hard sell."
+        "PAS preserved the lead by moving to callback instead of forcing a booking."
     ),
     "behavioral_early_escalation_observed": (
         "PAS jumped to booking too early in some scenarios."
     ),
     # PAS201 evidence / lineage / safety
     "runtime_pass_rate_100_percent": (
-        "Every rehearsal scenario passed."
+        "PAS completed the rehearsal successfully across the test set."
     ),
     "runtime_pass_rate_at_or_above_95_percent": (
         "Almost every rehearsal scenario passed (>= 95%)."
@@ -124,44 +125,44 @@ TOKEN_TRANSLATIONS: Dict[str, str] = {
         "Pass rate is below the 75% bar — more rehearsal is needed."
     ),
     "safety_outcome_clean": (
-        "Safety checks passed cleanly across the whole rehearsal."
+        "No safety issues were triggered."
     ),
     "safety_outcome_auto_fail": (
         "At least one rehearsal scenario triggered a safety auto-fail."
     ),
     "lineage_intact": (
-        "All the test artifacts connect end-to-end as expected."
+        "The evidence trail is complete and traceable."
     ),
     "lineage_broken": (
         "The rehearsal artifacts don't line up — something is missing in the chain."
     ),
     "artifact_integrity_complete": (
-        "Every integrity check on the rehearsal artifacts passed."
+        "All evidence checks passed."
     ),
     "artifact_integrity_incomplete": (
         "One or more integrity checks on the rehearsal artifacts failed."
     ),
     "no_live_behavior_change_anywhere_in_lineage": (
-        "Nothing in the chain touched any real lead."
+        "No real lead or live call behavior was changed."
     ),
     # PAS201 claimable_now / not_claimable_yet vocab
     "no_live_behavior_changed": (
-        "No live behavior was changed during this rehearsal."
+        "No live customer behavior was changed."
     ),
     "no_pii_in_simulation_artifacts": (
-        "Nothing in the rehearsal carries any personal info."
+        "No private lead data appears in the simulation artifacts."
     ),
     "safety_auto_fails_remain_absolute": (
-        "Safety failures stop the rehearsal — they are never silently ignored."
+        "Safety failures are never silently ignored — they always stop the rehearsal."
     ),
     "operator_approved_strategy_for_manual_test": (
-        "An operator already approved this strategy for manual review."
+        "The tested strategy required operator approval before manual testing."
     ),
     "manual_test_executed_in_simulation_only": (
-        "The manual test ran in rehearsal, not against real leads."
+        "PAS completed a simulation-only rehearsal."
     ),
     "lineage_inspectable_end_to_end": (
-        "Every step of the rehearsal can be reviewed from start to finish."
+        "The evidence trail is inspectable end-to-end."
     ),
     "behavioral_evaluation_emitted_deterministically": (
         "Behavioural scoring is repeatable — same rehearsal, same scores."
@@ -170,16 +171,16 @@ TOKEN_TRANSLATIONS: Dict[str, str] = {
         "The full rehearsal passed for this strategy."
     ),
     "live_call_routing_remains_out_of_scope": (
-        "Live call routing isn't on yet — rehearsal only."
+        "This has not been proven on live calls yet."
     ),
     "calibration_against_live_call_outcomes_pending": (
-        "We haven't yet compared rehearsal results to live-call outcomes."
+        "Live-call outcome calibration is still pending."
     ),
     "automated_promotion_to_runtime_strategy_pending": (
-        "Strategies don't auto-promote into production — humans still decide."
+        "PAS is not automatically changing real-call strategy."
     ),
     "real_lead_exposure_remains_out_of_scope": (
-        "No real lead has been routed through this strategy."
+        "Real lead exposure is still out of scope for this evidence."
     ),
     "slack_operator_surface_for_runtime_runs_pending": (
         "Triggering rehearsal runs from Slack isn't built yet."
@@ -304,8 +305,14 @@ NEXT_STEP_SUGGESTIONS_BY_INTENT: Dict[str, Tuple[str, ...]] = {
         "Ask: \"hot leads\" to start the day with warm threads.",
         "Ask: \"any callbacks owed\" to clear time-sensitive promises first.",
     ),
+    INTENT_ONBOARDING_HELP: (
+        "Ask: \"what should I do next\" for a prioritised place to start.",
+        "Ask: \"any callbacks owed\" for time-sensitive promises.",
+        "Ask: \"any leads we missed\" to spot dropped follow-ups.",
+    ),
     INTENT_FALLBACK_CLARIFY: (
-        "Try: \"how many leads today\" or \"hot leads\" or \"what should I do\".",
+        "Try: \"what happened today\", \"hot leads\", \"any callbacks owed\".",
+        "Try: \"what should I do next\" or \"simulation digest\".",
     ),
 }
 
@@ -565,13 +572,27 @@ def _response_what_should_i_do(evidence) -> str:
     )
 
 
+def _response_onboarding_help(evidence) -> str:
+    return (
+        "Start here. Ask me what happened today, which leads need "
+        "attention, what callbacks are owed, how fast we responded, "
+        "or what PAS recommends next. If your CRM is connected, I "
+        "can answer with real operational data. If something isn't "
+        "connected yet, I'll say so instead of guessing."
+    )
+
+
 def _response_fallback_clarify(evidence) -> str:
     return (
-        "I didn't catch that one. I can answer questions about leads "
-        "(today / hot / missed / stale), callbacks, appointments, "
-        "response speed, source quality, CRM sync, integrations, the "
-        "dashboard, the simulation digest, safety, and \"what should I "
-        "do next\". Try one of those, or rephrase what you wanted."
+        "I can help, but I need a little more direction. Try one of:\n"
+        "- \"what happened today\"\n"
+        "- \"hot leads\"\n"
+        "- \"any callbacks owed\"\n"
+        "- \"how fast did we respond\"\n"
+        "- \"what should I do next\"\n"
+        "- \"simulation digest\"\n"
+        "If you're brand new, ask \"how do I use this thing\" for a "
+        "quick start."
     )
 
 
@@ -597,6 +618,7 @@ _INTENT_RESPONSE_BUILDERS = {
     INTENT_EVIDENCE_DIGEST:        _response_evidence_digest,
     INTENT_SAFETY_TRUST:           _response_safety,
     INTENT_WHAT_SHOULD_I_DO:       _response_what_should_i_do,
+    INTENT_ONBOARDING_HELP:        _response_onboarding_help,
     INTENT_FALLBACK_CLARIFY:       _response_fallback_clarify,
 }
 

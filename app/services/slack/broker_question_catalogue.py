@@ -56,6 +56,7 @@ CATEGORY_DASHBOARD:             str = "dashboard"
 CATEGORY_EVIDENCE_DIGEST:       str = "evidence_digest"
 CATEGORY_SAFETY_TRUST:          str = "safety_trust"
 CATEGORY_WHAT_NEXT:             str = "what_next"
+CATEGORY_ONBOARDING:            str = "onboarding"
 CATEGORY_FALLBACK_FRAGMENT:     str = "fallback_fragment"
 
 
@@ -81,6 +82,7 @@ CATEGORIES: Tuple[str, ...] = (
     CATEGORY_EVIDENCE_DIGEST,
     CATEGORY_SAFETY_TRUST,
     CATEGORY_WHAT_NEXT,
+    CATEGORY_ONBOARDING,
     CATEGORY_FALLBACK_FRAGMENT,
 )
 
@@ -111,6 +113,7 @@ INTENT_DASHBOARD_EXPLANATION:  str = "dashboard_explanation"
 INTENT_EVIDENCE_DIGEST:        str = "evidence_digest_summary"
 INTENT_SAFETY_TRUST:           str = "safety_trust"
 INTENT_WHAT_SHOULD_I_DO:       str = "what_should_i_do"
+INTENT_ONBOARDING_HELP:        str = "onboarding_help"
 INTENT_FALLBACK_CLARIFY:       str = "fallback_clarify"
 
 
@@ -136,6 +139,7 @@ INTENT_CODES: Tuple[str, ...] = (
     INTENT_EVIDENCE_DIGEST,
     INTENT_SAFETY_TRUST,
     INTENT_WHAT_SHOULD_I_DO,
+    INTENT_ONBOARDING_HELP,
     INTENT_FALLBACK_CLARIFY,
 )
 
@@ -171,6 +175,7 @@ _DB,  _C_DB  = INTENT_DASHBOARD_EXPLANATION,  CATEGORY_DASHBOARD
 _ED,  _C_ED  = INTENT_EVIDENCE_DIGEST,        CATEGORY_EVIDENCE_DIGEST
 _ST,  _C_ST  = INTENT_SAFETY_TRUST,           CATEGORY_SAFETY_TRUST
 _WN,  _C_WN  = INTENT_WHAT_SHOULD_I_DO,       CATEGORY_WHAT_NEXT
+_OB,  _C_OB  = INTENT_ONBOARDING_HELP,        CATEGORY_ONBOARDING
 _FC,  _C_FC  = INTENT_FALLBACK_CLARIFY,       CATEGORY_FALLBACK_FRAGMENT
 
 
@@ -519,6 +524,26 @@ BROKER_QUESTION_CATALOGUE: Tuple[Dict[str, str], ...] = (
     _q("what should i tackle first",                      _WN,  _C_WN),
     _q("what matters right now",                          _WN,  _C_WN),
     _q("whats next",                                      _WN,  _C_WN),
+
+    # ── onboarding_help (14) ─────────────────────────────────────
+    # Broker-style "how do I use this thing" questions. These are
+    # the first thing a new operator asks. They must never fall
+    # through to the bare-fallback clarifier — instead they get
+    # the friendly "start here" response.
+    _q("how do i use this thing",                         _OB,  _C_OB),
+    _q("how do i even use this thing",                    _OB,  _C_OB),
+    _q("how do i use pas",                                _OB,  _C_OB),
+    _q("what can pas do",                                 _OB,  _C_OB),
+    _q("what can you do",                                 _OB,  _C_OB),
+    _q("help me use pas",                                 _OB,  _C_OB),
+    _q("where do i start",                                _OB,  _C_OB),
+    _q("how should i start",                              _OB,  _C_OB),
+    _q("how do i even fuckin use this thing",             _OB,  _C_OB),
+    _q("i don't know what to ask",                        _OB,  _C_OB),
+    _q("what should i ask you",                           _OB,  _C_OB),
+    _q("how does this thing work",                        _OB,  _C_OB),
+    _q("getting started",                                 _OB,  _C_OB),
+    _q("how do i begin",                                  _OB,  _C_OB),
 
     # ── fallback_fragment (14) ───────────────────────────────────
     # These should map to the safe fallback intent. Fragmented,
