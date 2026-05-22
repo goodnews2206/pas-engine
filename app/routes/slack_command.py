@@ -71,6 +71,17 @@ from app.services.slack.simulation_digest_intent import (
 from app.services.slack.broker_conversation_surface import (
     build_broker_response,
 )
+# PAS204-C — deterministic typo / shorthand normalization +
+# demo / rehearsal data labeling. Both are pure, read-only,
+# bounded-vocabulary helpers. Mutation tokens (pause/resume/
+# push/remove) flow through the normalizer unchanged.
+from app.services.slack.fuzzy_command_normalizer import (
+    normalize_fuzzy_command,
+)
+from app.services.slack.demo_data_detector import (
+    VERDICT_DEMO_DETECTED,
+    detect_demo_signals,
+)
 
 router = APIRouter()
 logger = logging.getLogger("pas.slack_cmd")
@@ -112,6 +123,11 @@ async def slack_command(request: Request):
 
     team_id = params.get("team_id", "")
     text = params.get("text", "").strip()
+    # PAS204-C — deterministic typo / shorthand normalization
+    # BEFORE PAS203 / PAS191 / PAS204 matchers see the text.
+    # Pure function, bounded alias table. Mutation tokens
+    # (pause/resume/push/remove) are explicitly excluded.
+    text = normalize_fuzzy_command(text)
     response_url = params.get("response_url", "")
 
     # Look up brokerage by Slack workspace
@@ -421,7 +437,20 @@ async def _pas191_dispatch(intent: str, brokerage: dict) -> str:
     try:
         if intent == INTENT_STATS:
             data = _pas191_stats(brokerage_id)
-            return pas191_responses.format_stats(data)
+            # PAS204-C — label rehearsal/demo data clearly when
+            # the brokerage record carries a demo marker. The
+            # detector returns "no_demo_signal" for real
+            # production brokerages, in which case we preserve
+            # the legacy stats header by passing None.
+            demo = detect_demo_signals(brokerage=brokerage)
+            demo_verdict_arg = (
+                demo["verdict"]
+                if demo["verdict"] == VERDICT_DEMO_DETECTED
+                else None
+            )
+            return pas191_responses.format_stats(
+                data, demo_verdict=demo_verdict_arg,
+            )
         if intent == INTENT_CALLS_TODAY:
             data = _pas191_calls(brokerage_id, "today")
             return pas191_responses.format_calls_today(data)

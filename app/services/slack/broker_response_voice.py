@@ -583,16 +583,13 @@ def _response_onboarding_help(evidence) -> str:
 
 
 def _response_fallback_clarify(evidence) -> str:
+    # PAS204-C: short fallback. Three concrete next-question
+    # examples, no list dump. Onboarding pointer kept as a
+    # single trailing sentence.
     return (
-        "I can help, but I need a little more direction. Try one of:\n"
-        "- \"what happened today\"\n"
-        "- \"hot leads\"\n"
-        "- \"any callbacks owed\"\n"
-        "- \"how fast did we respond\"\n"
-        "- \"what should I do next\"\n"
-        "- \"simulation digest\"\n"
-        "If you're brand new, ask \"how do I use this thing\" for a "
-        "quick start."
+        "I can help, but I need a little more direction. "
+        "Try: \"hot leads\", \"leads today\", or "
+        "\"what should I do next\"."
     )
 
 

@@ -56,6 +56,13 @@ from app.services.slack.broker_question_catalogue import (  # noqa: E402
 from app.services.slack.broker_response_voice import (  # noqa: E402
     FORBIDDEN_OUTPUT_TOKENS,
 )
+# PAS204-C — apply the same fuzzy normalization the dispatcher
+# applies in production. This makes the runner numbers reflect
+# real broker experience: typos the normalizer can fix should
+# pass.
+from app.services.slack.fuzzy_command_normalizer import (  # noqa: E402
+    normalize_fuzzy_command,
+)
 
 
 for _stream in (sys.stdout, sys.stderr):
@@ -408,9 +415,13 @@ def run_simulations(
                 # A variant transform should never raise; defence
                 # in depth — treat as a non-pass.
                 variant_text = base_text
-            classification = match_broker_intent(variant_text)
+            # PAS204-C — apply the dispatcher's fuzzy
+            # normalization before classification, matching the
+            # real production code path.
+            normalized_text = normalize_fuzzy_command(variant_text)
+            classification = match_broker_intent(normalized_text)
             classified_intent = classification["intent"]
-            envelope = build_broker_response(variant_text)
+            envelope = build_broker_response(normalized_text)
             body = str(envelope.get("response_text") or "")
             suggestions = envelope.get("suggested_next") or ()
 
