@@ -63,6 +63,14 @@ from app.services.slack import operator_responses as pas191_responses
 from app.services.slack.simulation_digest_intent import (
     try_route_simulation_digest,
 )
+# PAS204-A — broker conversation intelligence. Pure string output:
+# no Slack API call, no simulation execution, no filesystem writes.
+# Fires only when PAS191 returns INTENT_UNKNOWN, so PAS191 commands
+# (stats, calls today, leads today, response rate, summary,
+# priorities, help) take precedence.
+from app.services.slack.broker_conversation_surface import (
+    build_broker_response,
+)
 
 router = APIRouter()
 logger = logging.getLogger("pas.slack_cmd")
@@ -183,6 +191,53 @@ async def slack_command(request: Request):
     # exact-command branch via the LLM intent parser below.
     pas191 = match_intent(text)
     pas191_intent = pas191.get("intent") or INTENT_UNKNOWN
+
+    # PAS204-A — Broker conversation intelligence. Pure string
+    # output: no Slack API call, no simulation execution, no
+    # filesystem writes. Fires ONLY when PAS191 returned
+    # INTENT_UNKNOWN, so PAS191 commands (stats / calls today /
+    # leads today / response rate / summary / priorities / help)
+    # take precedence. Mutation commands (pause/resume/push/remove)
+    # never match a PAS204 alias and continue to flow through the
+    # LLM exact-command path below.
+    if pas191_intent == INTENT_UNKNOWN:
+        pas204_env = build_broker_response(text)
+        pas204_intent = pas204_env.get("intent")
+        # Fire when PAS204 has a real classification OR when it
+        # fell back but the text was rich enough that PAS204
+        # offered a clarifying question. Single-token noise
+        # ("yo", "uhhh") leaves clarifying_question=None and
+        # falls through to the LLM path below unchanged.
+        pas204_fires = (
+            pas204_intent != "fallback_clarify"
+            or pas204_env.get("clarifying_question") is not None
+        )
+        if pas204_fires:
+            log_event_bg(
+                "slack.intent.matched",
+                event_category="ops",
+                event_source="slack_command",
+                severity="info",
+                payload={
+                    "brokerage_id": brokerage["id"],
+                    "intent":       str(pas204_intent),
+                    "surface":      "slack_command_pas204",
+                },
+            )
+            body = pas204_env.get("response_text") or ""
+            cq = pas204_env.get("clarifying_question")
+            if cq:
+                body = body + "\n\n" + cq
+            suggestions = pas204_env.get("suggested_next") or ()
+            if suggestions:
+                body = body + "\n\n_Suggested next:_\n" + "\n".join(
+                    f"- {s}" for s in suggestions
+                )
+            return JSONResponse({
+                "text":          body,
+                "response_type": "in_channel",
+            })
+
     if pas191_intent != INTENT_UNKNOWN:
         log_event_bg(
             "slack.intent.matched",
