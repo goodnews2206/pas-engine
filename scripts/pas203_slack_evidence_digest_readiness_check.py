@@ -717,6 +717,132 @@ def check_intent_smoke(repo_root: str) -> List[dict]:
     return out
 
 
+def check_dispatcher_wiring(repo_root: str) -> List[dict]:
+    """
+    PAS203-A — verify slack_command.py imports and invokes the
+    PAS203 helper, that the dispatch block carries no filesystem
+    writes or simulation-execution calls, and that PAS191's
+    match_intent invocation is preserved (i.e., the wiring is
+    additive, not destructive).
+    """
+    rel = "app/routes/slack_command.py"
+    src = _read_text(Path(repo_root) / rel)
+    out: List[dict] = []
+    if src is None:
+        out.append(_check(
+            "dispatcher:source_readable",
+            "FAIL",
+            f"{rel} is readable",
+            detail="file missing or unreadable",
+        ))
+        return out
+
+    out.append(_check(
+        "dispatcher:imports_pas203_helper",
+        "PASS" if (
+            "from app.services.slack.simulation_digest_intent" in src
+            and "try_route_simulation_digest" in src
+        ) else "FAIL",
+        f"{rel} imports try_route_simulation_digest from PAS203",
+    ))
+
+    pas203_pos = src.find("try_route_simulation_digest(text")
+    pas191_pos = src.find("match_intent(text)")
+    out.append(_check(
+        "dispatcher:calls_try_route_simulation_digest",
+        "PASS" if pas203_pos >= 0 else "FAIL",
+        f"{rel} calls try_route_simulation_digest(text, ...)",
+    ))
+    out.append(_check(
+        "dispatcher:pas191_match_intent_still_called",
+        "PASS" if pas191_pos >= 0 else "FAIL",
+        f"{rel} still calls match_intent(text) (PAS191 carry-forward)",
+    ))
+    out.append(_check(
+        "dispatcher:pas203_branch_fires_before_pas191",
+        "PASS" if (
+            pas203_pos >= 0 and pas191_pos >= 0 and pas203_pos < pas191_pos
+        ) else "FAIL",
+        f"{rel} PAS203 dispatch fires BEFORE PAS191 fast-path",
+        detail="" if (pas203_pos < pas191_pos and pas203_pos >= 0) else (
+            f"pas203_pos={pas203_pos}, pas191_pos={pas191_pos}"
+        ),
+    ))
+
+    out.append(_check(
+        "dispatcher:logs_pas203_surface_event",
+        "PASS" if "slack_command_pas203" in src else "FAIL",
+        f"{rel} logs slack.intent.matched with PAS203 surface",
+    ))
+
+    out.append(_check(
+        "dispatcher:emits_simulation_digest_intent_token",
+        "PASS" if (
+            '"simulation_digest"' in src or "'simulation_digest'" in src
+        ) else "FAIL",
+        f"{rel} emits simulation_digest intent token in log payload",
+    ))
+
+    # Slice the PAS203 block and verify no writes / no execution.
+    start = src.find("PAS203-A — Read-only simulation evidence digest")
+    end = src.find("PAS191 — Deterministic natural-language fast-path")
+    block_ok = start >= 0 and end > start
+    out.append(_check(
+        "dispatcher:pas203_block_present",
+        "PASS" if block_ok else "FAIL",
+        f"{rel} carries a marked PAS203-A dispatch block",
+        detail="" if block_ok else f"start={start}, end={end}",
+    ))
+    block = src[start:end] if block_ok else ""
+
+    write_tokens = (
+        ".write_text(",
+        ".write_bytes(",
+        ".mkdir(",
+        ".touch(",
+        ".rename(",
+        ".unlink(",
+        ".rmdir(",
+        "os.makedirs(",
+        "shutil.copy(",
+        "shutil.move(",
+    )
+    bad_writes = [t for t in write_tokens if t in block]
+    out.append(_check(
+        "dispatcher:pas203_block_no_writes",
+        "PASS" if not bad_writes else "FAIL",
+        f"{rel} PAS203 dispatch block carries no filesystem write calls",
+        detail=", ".join(bad_writes) if bad_writes else "",
+    ))
+
+    exec_tokens = (
+        "execute_manual_test_runtime(",
+        "build_evidence_digest(",
+        "build_inspection(",
+        "build_behavioral_evaluation(",
+        "build_manual_test_package(",
+        "run_scenario_under_strategy(",
+        "compare_strategies(",
+    )
+    bad_execs = [t for t in exec_tokens if t in block]
+    out.append(_check(
+        "dispatcher:pas203_block_no_simulation_execution",
+        "PASS" if not bad_execs else "FAIL",
+        f"{rel} PAS203 dispatch block carries no simulation-execution calls",
+        detail=", ".join(bad_execs) if bad_execs else "",
+    ))
+
+    out.append(_check(
+        "dispatcher:pas203_block_returns_in_channel_response",
+        "PASS" if (
+            "JSONResponse" in block and "in_channel" in block
+        ) else "FAIL",
+        f"{rel} PAS203 dispatch returns JSONResponse with response_type=in_channel",
+    ))
+
+    return out
+
+
 def check_self_no_env_or_network(repo_root: str) -> List[dict]:
     src = _read_text(Path(__file__)) or ""
     imports, calls = _collect_imports_and_calls(src)
@@ -782,6 +908,7 @@ def evaluate(repo_root: str) -> dict:
     checks.extend(check_no_combined_migration_committed(repo_root))
     checks.extend(check_doc_clauses(repo_root))
     checks.extend(check_intent_smoke(repo_root))
+    checks.extend(check_dispatcher_wiring(repo_root))
     checks.extend(check_self_no_env_or_network(repo_root))
 
     agg = _aggregate(checks)
