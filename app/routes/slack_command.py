@@ -20,6 +20,7 @@ import json
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path  # PAS203-A — locate reports/simulations/ digest dir.
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
@@ -56,6 +57,12 @@ from app.services.slack.operator_intents import (
     match_intent,
 )
 from app.services.slack import operator_responses as pas191_responses
+# PAS203-A — read-only simulation evidence digest intent. Pure
+# string output: no Slack API call, no digest generation, no
+# simulation execution, no filesystem writes.
+from app.services.slack.simulation_digest_intent import (
+    try_route_simulation_digest,
+)
 
 router = APIRouter()
 logger = logging.getLogger("pas.slack_cmd")
@@ -142,6 +149,31 @@ async def slack_command(request: Request):
         })
 
     logger.info(f"Slack command | brokerage={brokerage['id']} | text={text!r}")
+
+    # PAS203-A — Read-only simulation evidence digest fast-path.
+    # Closed alias table → PAS202 Slack rendering of the latest
+    # PAS201 digest on disk (or a bounded fallback if none exists).
+    # NEVER writes to disk, NEVER generates a digest, NEVER executes
+    # a simulation. Returns None for non-matching text — the
+    # PAS191 / LLM paths below run unchanged in that case. Mutation
+    # commands (pause/resume/push/remove) do not match any alias.
+    _pas203_reports_dir = (
+        Path(__file__).resolve().parents[2] / "reports" / "simulations"
+    )
+    pas203_resp = try_route_simulation_digest(text, _pas203_reports_dir)
+    if pas203_resp is not None:
+        log_event_bg(
+            "slack.intent.matched",
+            event_category="ops",
+            event_source="slack_command",
+            severity="info",
+            payload={
+                "brokerage_id": brokerage["id"],
+                "intent":       "simulation_digest",
+                "surface":      "slack_command_pas203",
+            },
+        )
+        return JSONResponse({"text": pas203_resp, "response_type": "in_channel"})
 
     # PAS191 — Deterministic natural-language fast-path. Closed
     # alias table → closed intent code → safe formatter. NO LLM,

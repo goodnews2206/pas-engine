@@ -748,3 +748,153 @@ def test_doc_present_and_carries_required_clauses():
         "read-only",
     ):
         assert clause in doc, f"doc missing clause {clause!r}"
+
+
+# ──────────────────────────────────────────────────────────────────
+# Dispatcher integration (PAS203-A)
+# ──────────────────────────────────────────────────────────────────
+#
+# These tests inspect app/routes/slack_command.py source — the
+# established PAS191 / PAS192 pattern — to assert that PAS203 is
+# wired into the real dispatcher correctly and that the wiring
+# itself carries no writes, no simulation execution, and does not
+# disturb PAS191's match_intent invocation.
+
+_SLACK_CMD_REL = "app/routes/slack_command.py"
+
+
+def _slack_cmd_src() -> str:
+    return _read(_SLACK_CMD_REL)
+
+
+def test_dispatcher_imports_pas203_helper():
+    src = _slack_cmd_src()
+    assert "from app.services.slack.simulation_digest_intent" in src
+    assert "try_route_simulation_digest" in src
+
+
+def test_dispatcher_calls_try_route_simulation_digest():
+    src = _slack_cmd_src()
+    assert "try_route_simulation_digest(" in src
+
+
+def test_dispatcher_pas203_branch_fires_before_pas191():
+    src = _slack_cmd_src()
+    pas203_pos = src.find("try_route_simulation_digest(text")
+    pas191_pos = src.find("match_intent(text)")
+    assert pas203_pos >= 0, "PAS203 dispatch call missing"
+    assert pas191_pos >= 0, "PAS191 match_intent(text) call missing"
+    assert pas203_pos < pas191_pos, (
+        "PAS203 dispatch must fire BEFORE PAS191's match_intent"
+    )
+
+
+def test_dispatcher_pas203_branch_logs_intent_event():
+    src = _slack_cmd_src()
+    # The integration logs the intent through log_event_bg with
+    # the PAS203 surface token.
+    assert "slack_command_pas203" in src
+    # The intent name is the closed-vocab string this surface emits.
+    assert '"simulation_digest"' in src or "'simulation_digest'" in src
+
+
+def test_dispatcher_uses_repo_root_reports_dir():
+    src = _slack_cmd_src()
+    # slack_command.py lives at app/routes/ so the repo root is
+    # two parents up.
+    assert "parents[2]" in src
+    assert '"reports"' in src or "'reports'" in src
+    assert '"simulations"' in src or "'simulations'" in src
+
+
+def _pas203_block(src: str) -> str:
+    """Slice the PAS203 dispatch block out of the dispatcher."""
+    start = src.find("PAS203-A — Read-only simulation evidence digest")
+    end = src.find("PAS191 — Deterministic natural-language fast-path")
+    assert start >= 0, "PAS203 block marker missing"
+    assert end > start, "PAS191 block marker missing or out of order"
+    return src[start:end]
+
+
+_DISPATCHER_WRITE_TOKENS = (
+    ".write_text(",
+    ".write_bytes(",
+    ".mkdir(",
+    ".touch(",
+    ".rename(",
+    ".unlink(",
+    ".rmdir(",
+    "os.makedirs(",
+    "shutil.copy(",
+    "shutil.move(",
+)
+
+
+def test_dispatcher_pas203_block_carries_no_write_calls():
+    block = _pas203_block(_slack_cmd_src())
+    for tok in _DISPATCHER_WRITE_TOKENS:
+        assert tok not in block, (
+            f"PAS203 dispatch block contains write call {tok!r}"
+        )
+
+
+_DISPATCHER_EXECUTION_TOKENS = (
+    "execute_manual_test_runtime(",
+    "build_evidence_digest(",
+    "build_inspection(",
+    "build_behavioral_evaluation(",
+    "build_manual_test_package(",
+    "run_scenario_under_strategy(",
+    "compare_strategies(",
+)
+
+
+def test_dispatcher_pas203_block_does_not_execute_runtime():
+    block = _pas203_block(_slack_cmd_src())
+    for tok in _DISPATCHER_EXECUTION_TOKENS:
+        assert tok not in block, (
+            f"PAS203 dispatch block contains execution call {tok!r}"
+        )
+
+
+def test_dispatcher_pas203_block_returns_in_channel_response():
+    # The PAS203 block must wrap the helper string in a JSONResponse
+    # with response_type='in_channel' so it surfaces to the channel
+    # the same way PAS191 / PAS192 responses do.
+    block = _pas203_block(_slack_cmd_src())
+    assert "JSONResponse" in block
+    assert "in_channel" in block
+
+
+def test_route_helper_does_not_match_mutation_commands_on_dispatcher_path():
+    # Direct functional assertion: even with a present digest on
+    # disk, mutation tokens never resolve to the PAS203 branch.
+    with tempfile.TemporaryDirectory() as tmp:
+        tp = pathlib.Path(tmp)
+        _write_digest_file(tp)
+        for mut in ("pause", "resume", "push 123 Main St $500k 3bed",
+                    "remove 123 Main St"):
+            assert try_route_simulation_digest(mut, tp) is None
+
+
+def test_pas191_match_intent_still_returns_unknown_for_digest_phrases():
+    # Carry-forward — even after PAS203 wiring, PAS191's matcher
+    # must not start binding the new phrases. The dispatcher
+    # decision order is PAS203 fast-path -> PAS191 fast-path.
+    from app.services.slack.operator_intents import (
+        INTENT_UNKNOWN,
+        match_intent,
+    )
+    for phrase in _SPEC_REQUIRED_PHRASES:
+        result = match_intent(phrase)
+        assert result["intent"] == INTENT_UNKNOWN, (
+            f"PAS191 should not bind {phrase!r}; got {result['intent']!r}"
+        )
+
+
+def test_dispatcher_still_invokes_pas191_match_intent_after_pas203():
+    # Carry-forward — PAS191 fast-path must still exist and still
+    # be the second dispatch.
+    src = _slack_cmd_src()
+    assert "match_intent(text)" in src
+    assert "_pas191_dispatch" in src
