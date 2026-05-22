@@ -729,6 +729,242 @@ def check_dispatcher_wiring(repo_root: str) -> List[dict]:
     return out
 
 
+def check_pas204c_files_present(repo_root: str) -> List[dict]:
+    """PAS204-C ships two new bounded helper modules and adds an
+    optional `demo_verdict` parameter to operator_responses.format_stats."""
+    out: List[dict] = []
+    for rel in (
+        "app/services/slack/fuzzy_command_normalizer.py",
+        "app/services/slack/demo_data_detector.py",
+    ):
+        ok = (Path(repo_root) / rel).is_file()
+        out.append(_check(
+            f"pas204c:files:exists:{rel}",
+            "PASS" if ok else "FAIL",
+            f"PAS204-C artefact present: {rel}",
+            detail="" if ok else "file missing",
+        ))
+    return out
+
+
+def check_pas204c_fuzzy_recovery(repo_root: str) -> List[dict]:
+    """Verify the fuzzy normalizer covers the spec-required typos
+    and that mutation tokens are protected from rewriting."""
+    sys.path.insert(0, repo_root)
+    out: List[dict] = []
+    try:
+        from app.services.slack.fuzzy_command_normalizer import (  # type: ignore
+            is_protected_token,
+            normalize_fuzzy_command,
+        )
+    except Exception as e:
+        out.append(_check(
+            "pas204c:fuzzy:imports",
+            "FAIL",
+            "fuzzy_command_normalizer module importable",
+            detail=type(e).__name__,
+        ))
+        return out
+    spec_typo_cases = (
+        ("leeds today", "leads today"),
+        ("leed today",  "leads today"),
+        ("lds today",   "leads today"),
+        ("hott leeds",  "hot leads"),
+        ("callbak today", "callback today"),
+        ("respnse speed", "response speed"),
+        ("digst",         "digest"),
+        ("zillw leads",   "zillow leads"),
+        ("uze this thng", "use this thing"),
+        ("stat",          "stats"),
+        ("response rat",  "response rate"),
+    )
+    bad: List[str] = []
+    for raw, expected in spec_typo_cases:
+        got = normalize_fuzzy_command(raw)
+        if got != expected:
+            bad.append(f"{raw!r} -> {got!r} (expected {expected!r})")
+    out.append(_check(
+        "pas204c:fuzzy:spec_typos_normalize_correctly",
+        "PASS" if not bad else "FAIL",
+        "all PAS204-C spec typo cases normalize to the expected canonical form",
+        detail=", ".join(bad) if bad else "",
+    ))
+    # Mutation protection.
+    mut_bad: List[str] = []
+    for mut in ("pause", "resume", "push", "remove",
+                "Pause", "RESUME", "pasue"):
+        if not is_protected_token(mut) and mut.lower() not in (
+            "pasue",
+        ):
+            # "pasue" is a typo we don't protect via the table
+            # but the alias table also doesn't rewrite it, so OK.
+            mut_bad.append(mut)
+        if mut not in ("pasue",) and normalize_fuzzy_command(mut) != mut:
+            mut_bad.append(f"normalizer rewrote {mut!r}")
+    out.append(_check(
+        "pas204c:fuzzy:mutation_tokens_protected",
+        "PASS" if not mut_bad else "FAIL",
+        "mutation tokens (pause/resume/push/remove) are protected from rewriting",
+        detail=", ".join(mut_bad) if mut_bad else "",
+    ))
+    return out
+
+
+def check_pas204c_fallback_shortness(repo_root: str) -> List[dict]:
+    """Verify the broker-voice fallback is short and lists the
+    three spec example prompts (not a 6-bullet list)."""
+    sys.path.insert(0, repo_root)
+    out: List[dict] = []
+    try:
+        from app.services.slack.broker_response_voice import (  # type: ignore
+            response_for_intent,
+        )
+    except Exception as e:
+        out.append(_check(
+            "pas204c:fallback:imports",
+            "FAIL",
+            "broker_response_voice importable",
+            detail=type(e).__name__,
+        ))
+        return out
+    body = response_for_intent("fallback_clarify")
+    out.append(_check(
+        "pas204c:fallback:short_length",
+        "PASS" if len(body) <= 200 else "FAIL",
+        "fallback response body <= 200 chars",
+        detail=str(len(body)),
+    ))
+    out.append(_check(
+        "pas204c:fallback:carries_i_can_help_opener",
+        "PASS" if "I can help" in body else "FAIL",
+        "fallback opens with 'I can help, but I need a little more direction.'",
+    ))
+    out.append(_check(
+        "pas204c:fallback:carries_three_example_prompts",
+        "PASS" if (
+            "hot leads" in body and "leads today" in body
+            and "what should I do next" in body
+        ) else "FAIL",
+        "fallback lists 'hot leads', 'leads today', 'what should I do next'",
+    ))
+    out.append(_check(
+        "pas204c:fallback:no_long_bullet_list",
+        "PASS" if (
+            body.count("\n- ") == 0 and body.count("\n• ") == 0
+        ) else "FAIL",
+        "fallback no longer carries a multi-bullet example list",
+    ))
+    return out
+
+
+def check_pas204c_demo_labeling(repo_root: str) -> List[dict]:
+    """Verify the demo detector + format_stats demo-aware branch."""
+    sys.path.insert(0, repo_root)
+    out: List[dict] = []
+    try:
+        from app.services.slack.demo_data_detector import (  # type: ignore
+            VERDICT_DEMO_DETECTED,
+            VERDICT_NO_DEMO_SIGNAL,
+            VERDICT_UNKNOWN,
+            detect_demo_signals,
+        )
+        from app.services.slack.operator_responses import (  # type: ignore
+            format_stats,
+        )
+    except Exception as e:
+        out.append(_check(
+            "pas204c:demo:imports",
+            "FAIL",
+            "demo_data_detector and operator_responses importable",
+            detail=type(e).__name__,
+        ))
+        return out
+    # Detector smoke
+    v1 = detect_demo_signals()
+    out.append(_check(
+        "pas204c:demo:no_input_returns_unknown",
+        "PASS" if v1["verdict"] == VERDICT_UNKNOWN else "FAIL",
+        "detect_demo_signals() with no inputs returns 'unknown'",
+        detail=str(v1["verdict"]),
+    ))
+    v2 = detect_demo_signals(brokerage={"id": "x"})
+    out.append(_check(
+        "pas204c:demo:real_brokerage_returns_no_demo_signal",
+        "PASS" if v2["verdict"] == VERDICT_NO_DEMO_SIGNAL else "FAIL",
+        "detect_demo_signals with real brokerage returns 'no_demo_signal'",
+    ))
+    v3 = detect_demo_signals(brokerage={"id": "x", "is_demo": True})
+    out.append(_check(
+        "pas204c:demo:demo_brokerage_returns_demo_detected",
+        "PASS" if v3["verdict"] == VERDICT_DEMO_DETECTED else "FAIL",
+        "detect_demo_signals with brokerage.is_demo=True returns 'demo_detected'",
+    ))
+    # format_stats demo-aware
+    stats_data = {"total": 35, "completed": 22, "booked": 5}
+    out.append(_check(
+        "pas204c:demo:format_stats_legacy_default_unchanged",
+        "PASS" if "Demo stats" not in format_stats(stats_data) else "FAIL",
+        "format_stats() with no demo_verdict produces legacy output (no demo label)",
+    ))
+    out.append(_check(
+        "pas204c:demo:format_stats_demo_detected_labels_clearly",
+        "PASS" if "Demo stats" in format_stats(
+            stats_data, demo_verdict=VERDICT_DEMO_DETECTED,
+        ) else "FAIL",
+        "format_stats(demo_verdict='demo_detected') labels rehearsal data clearly",
+    ))
+    out.append(_check(
+        "pas204c:demo:format_stats_unknown_adds_conservative_note",
+        "PASS" if "verify whether this environment" in format_stats(
+            stats_data, demo_verdict=VERDICT_UNKNOWN,
+        ) else "FAIL",
+        "format_stats(demo_verdict='unknown') adds the conservative note",
+    ))
+    return out
+
+
+def check_pas204c_dispatcher_wiring(repo_root: str) -> List[dict]:
+    """Verify slack_command.py wires the normalizer + demo detector
+    correctly (additive, in the right order, with no new writes
+    or simulation execution)."""
+    rel = "app/routes/slack_command.py"
+    src = _read_text(Path(repo_root) / rel) or ""
+    out: List[dict] = []
+    out.append(_check(
+        "pas204c:dispatcher:imports_fuzzy_normalizer",
+        "PASS" if "from app.services.slack.fuzzy_command_normalizer" in src else "FAIL",
+        "dispatcher imports fuzzy_command_normalizer",
+    ))
+    out.append(_check(
+        "pas204c:dispatcher:imports_demo_detector",
+        "PASS" if "from app.services.slack.demo_data_detector" in src else "FAIL",
+        "dispatcher imports demo_data_detector",
+    ))
+    norm_pos = src.find("normalize_fuzzy_command(text)")
+    pas203_pos = src.find("try_route_simulation_digest(text")
+    pas191_match_pos = src.find("match_intent(text)")
+    out.append(_check(
+        "pas204c:dispatcher:normalize_called_before_pas203_and_pas191",
+        "PASS" if (
+            norm_pos >= 0 and pas203_pos >= 0 and pas191_match_pos >= 0
+            and norm_pos < pas203_pos < pas191_match_pos
+        ) else "FAIL",
+        "normalize_fuzzy_command runs BEFORE PAS203 fast-path and PAS191 matcher",
+        detail=f"norm={norm_pos}, pas203={pas203_pos}, pas191={pas191_match_pos}",
+    ))
+    out.append(_check(
+        "pas204c:dispatcher:stats_branch_uses_detect_demo_signals",
+        "PASS" if "detect_demo_signals(" in src else "FAIL",
+        "INTENT_STATS branch calls detect_demo_signals",
+    ))
+    out.append(_check(
+        "pas204c:dispatcher:stats_branch_forwards_demo_verdict",
+        "PASS" if "demo_verdict=" in src else "FAIL",
+        "INTENT_STATS branch forwards demo_verdict to format_stats",
+    ))
+    return out
+
+
 def check_self_no_env_or_network(repo_root: str) -> List[dict]:
     src = _read_text(Path(__file__)) or ""
     imports, calls = _collect_imports_and_calls(src)
@@ -771,6 +1007,12 @@ def evaluate(repo_root: str) -> dict:
     checks.extend(check_intent_smoke(repo_root))
     checks.extend(check_pas191_intent_codes_unchanged(repo_root))
     checks.extend(check_dispatcher_wiring(repo_root))
+    # PAS204-C checks (fuzzy recovery + demo labeling).
+    checks.extend(check_pas204c_files_present(repo_root))
+    checks.extend(check_pas204c_fuzzy_recovery(repo_root))
+    checks.extend(check_pas204c_fallback_shortness(repo_root))
+    checks.extend(check_pas204c_demo_labeling(repo_root))
+    checks.extend(check_pas204c_dispatcher_wiring(repo_root))
     checks.extend(check_self_no_env_or_network(repo_root))
 
     blockers = [

@@ -35,6 +35,14 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
+# PAS204-C — verdict tokens for demo / rehearsal labelling.
+# Kept as string constants here to avoid an import dependency
+# on demo_data_detector when format_stats is called from old
+# code paths that don't supply the flag at all.
+_DEMO_VERDICT_DEMO_DETECTED:  str = "demo_detected"
+_DEMO_VERDICT_NO_DEMO_SIGNAL: str = "no_demo_signal"
+_DEMO_VERDICT_UNKNOWN:        str = "unknown"
+
 
 # Forbidden tokens — defence in depth. If any of these appear in
 # the formatted string we collapse to a safe fallback.
@@ -77,16 +85,50 @@ def _safe(text: str) -> str:
 # Per-intent formatters
 # ──────────────────────────────────────────────────────────────────
 
-def format_stats(data: Dict[str, object]) -> str:
-    """All-time stats. Inputs: total, completed, booked."""
+def format_stats(
+    data: Dict[str, object],
+    *,
+    demo_verdict: Optional[str] = None,
+) -> str:
+    """All-time stats. Inputs: total, completed, booked.
+
+    PAS204-C: optional `demo_verdict` token (closed vocab from
+    `demo_data_detector.VERDICT_VALUES`) lets the caller label
+    the rendered output:
+
+      * "demo_detected"     -> header replaced with
+                               "📊 Demo stats — rehearsal data",
+                               no trailing note.
+      * "no_demo_signal"    -> normal header, no note (real
+                               production data, detector found
+                               no markers).
+      * "unknown"           -> normal header + trailing
+                               conservative note prompting the
+                               operator to verify the env.
+      * None (legacy)       -> identical output to pre-PAS204-C.
+                               Backwards-compatible default.
+    """
     total     = int(data.get("total")     or 0)
     completed = int(data.get("completed") or 0)
     booked    = int(data.get("booked")    or 0)
     pct = round(booked * 100 / completed, 1) if completed else 0.0
+    if demo_verdict == _DEMO_VERDICT_DEMO_DETECTED:
+        header = "📊 *Demo stats — rehearsal data*"
+        note = ""
+    elif demo_verdict == _DEMO_VERDICT_UNKNOWN:
+        header = "📊 *All-time stats*"
+        note = (
+            "\n_Note: verify whether this environment is using "
+            "demo/rehearsal data before sharing publicly._"
+        )
+    else:  # None or "no_demo_signal" — preserve legacy output.
+        header = "📊 *All-time stats*"
+        note = ""
     return _safe(
-        "📊 *All-time stats*\n"
+        f"{header}\n"
         f"Total calls: {total} · Completed: {completed}\n"
         f"Booked: {booked} · Conversion: {pct}%"
+        f"{note}"
     )
 
 

@@ -853,11 +853,16 @@ def test_fallback_response_no_longer_says_didnt_catch_that():
 def test_fallback_response_lists_useful_examples():
     out = build_broker_response("hmm idk maybe")
     body = out["response_text"]
-    # The new fallback lists 4-6 concrete example prompts.
+    # PAS204-C: fallback is intentionally short with three
+    # concrete inline example prompts (not the long bullet
+    # list PAS204-B shipped). Three quoted examples = 6
+    # quote marks. Test bounds the floor.
     examples_count = body.count('"')
-    # Each example is quoted ("what happened today" → 2 quote marks).
-    # We expect at least 4 examples = 8 quote marks.
-    assert examples_count >= 8, body
+    assert examples_count >= 6, body
+    # Each spec example appears.
+    assert "hot leads" in body
+    assert "leads today" in body
+    assert "what should I do next" in body
 
 
 def test_pas204_b_humanized_digest_translation_table_available():
@@ -975,6 +980,307 @@ def test_digest_slack_output_carries_no_raw_internal_tokens():
         "rehearsal" in slack_out.lower()
         or "evidence trail" in slack_out.lower()
     )
+
+
+# ──────────────────────────────────────────────────────────────────
+# PAS204-C — Fuzzy command recovery + demo data labeling
+# ──────────────────────────────────────────────────────────────────
+
+from app.services.slack.fuzzy_command_normalizer import (  # noqa: E402
+    alias_count as fuzzy_alias_count,
+    is_protected_token,
+    list_aliases as fuzzy_list_aliases,
+    normalize_fuzzy_command,
+)
+from app.services.slack.demo_data_detector import (  # noqa: E402
+    SIGNAL_BROKERAGE_ENVIRONMENT_LABEL,
+    SIGNAL_BROKERAGE_MARKED_DEMO,
+    SIGNAL_ROW_CALL_TYPE_SIMULATED,
+    SIGNAL_ROW_METADATA_SEED_BATCH,
+    SIGNAL_ROW_PHONE_SEED_CONVENTION,
+    SIGNAL_ROW_SOURCE_SIMULATED,
+    VERDICT_DEMO_DETECTED,
+    VERDICT_NO_DEMO_SIGNAL,
+    VERDICT_UNKNOWN,
+    detect_demo_signals,
+)
+from app.services.slack.operator_responses import (  # noqa: E402
+    format_stats,
+)
+
+
+# ── fuzzy normalizer ─────────────────────────────────────────────
+
+@pytest.mark.parametrize("raw,expected_norm", [
+    ("leeds today",       "leads today"),
+    ("leed today",        "leads today"),
+    ("lds today",         "leads today"),
+    ("hott leeds",        "hot leads"),
+    ("callbak today",     "callback today"),
+    ("respnse speed",     "response speed"),
+    ("digst",             "digest"),
+    ("saafe to use",      "safe to use"),
+    ("uze this thng",     "use this thing"),
+    ("zillw leads",       "zillow leads"),
+    ("stat",              "stats"),
+    ("response rat",      "response rate"),
+])
+def test_fuzzy_normalizer_rewrites_known_typos(raw, expected_norm):
+    assert normalize_fuzzy_command(raw) == expected_norm
+
+
+@pytest.mark.parametrize("text", [
+    "pause",
+    "resume",
+    "push 123 Main St",
+    "remove 123 Main St",
+    "Pause",
+    "RESUME",
+    "pasue",  # typo of pause — still must NOT be rewritten
+])
+def test_fuzzy_normalizer_does_not_touch_mutation_tokens(text):
+    out = normalize_fuzzy_command(text)
+    # Mutation tokens (and their typos) flow through unchanged so
+    # the PAS191 exact-command branch keeps owning them.
+    assert text.split()[0] == out.split()[0]
+
+
+def test_fuzzy_normalizer_preserves_unknown_tokens():
+    out = normalize_fuzzy_command("how many widgets did we sell")
+    # No alias for "widgets" / "sell" — pass through unchanged.
+    assert out == "how many widgets did we sell"
+
+
+def test_fuzzy_normalizer_handles_empty_and_non_string():
+    assert normalize_fuzzy_command("") == ""
+    assert normalize_fuzzy_command("   ") == ""
+    assert normalize_fuzzy_command(None) == ""  # type: ignore
+    assert normalize_fuzzy_command(123) == ""   # type: ignore
+
+
+def test_fuzzy_normalizer_preserves_surrounding_punctuation():
+    # "leeds today?" -> "leads today?" (trailing ? preserved)
+    out = normalize_fuzzy_command("leeds today?")
+    assert out == "leads today?"
+
+
+def test_fuzzy_normalizer_alias_count_bounded():
+    n = fuzzy_alias_count()
+    assert 20 <= n <= 200
+
+
+def test_fuzzy_normalizer_alias_table_has_no_self_loops():
+    # No alias should map a canonical token to itself.
+    for key in fuzzy_list_aliases():
+        out = normalize_fuzzy_command(key)
+        assert out != key, f"self-loop alias: {key!r} -> {out!r}"
+
+
+def test_is_protected_token_covers_mutation_set():
+    for t in ("pause", "resume", "push", "remove",
+              "Pause", "RESUME"):
+        assert is_protected_token(t)
+    for t in ("hot", "leads", "callback"):
+        assert not is_protected_token(t)
+
+
+@pytest.mark.parametrize("raw,expected_intent", [
+    ("leeds today",     "leads_today_count"),
+    ("leed today",      "leads_today_count"),
+    ("lds today",       "leads_today_count"),
+    ("hott leeds",      "hot_leads_summary"),
+    ("callbak today",   "callback_requests"),
+    ("respnse speed",   "response_speed"),
+    ("digst",           "evidence_digest_summary"),
+    ("zillw leads",     "zillow_lead_handling"),
+])
+def test_full_pipeline_normalize_then_classify(raw, expected_intent):
+    # The dispatcher applies normalize_fuzzy_command BEFORE the
+    # classifier sees the text. We replicate that here.
+    normalized = normalize_fuzzy_command(raw)
+    out = build_broker_response(normalized)
+    assert out["intent"] == expected_intent, (
+        f"{raw!r} -> norm {normalized!r} -> got intent "
+        f"{out['intent']!r}, expected {expected_intent!r}"
+    )
+
+
+# ── shortened fallback ───────────────────────────────────────────
+
+def test_fallback_is_short():
+    out = build_broker_response("hmm idk maybe")
+    body = out["response_text"]
+    # PAS204-C reduces the long bullet-list fallback to a single
+    # sentence with three example prompts. Bound the length so
+    # any future regression bloats it back up.
+    assert len(body) <= 200, f"fallback got long again: {len(body)}"
+    assert "I can help" in body
+    assert "leads today" in body
+    assert "hot leads" in body
+    assert "what should I do next" in body
+
+
+def test_fallback_no_longer_lists_six_examples():
+    out = build_broker_response("hmm idk maybe")
+    body = out["response_text"]
+    # The old fallback listed 6 hyphen-bullet examples. PAS204-C
+    # collapses them to a single inline list.
+    assert body.count("\n- ") == 0
+    assert body.count("\n• ") == 0
+
+
+# ── demo data detector ───────────────────────────────────────────
+
+def test_detector_returns_unknown_when_no_inputs():
+    out = detect_demo_signals()
+    assert out["verdict"] == VERDICT_UNKNOWN
+    assert out["signals"] == ()
+
+
+def test_detector_returns_no_demo_signal_for_real_brokerage():
+    brokerage = {"id": "real-brokerage", "name": "Acme Realty"}
+    out = detect_demo_signals(brokerage=brokerage)
+    assert out["verdict"] == VERDICT_NO_DEMO_SIGNAL
+    assert out["signals"] == ()
+
+
+def test_detector_fires_on_brokerage_is_demo_flag():
+    out = detect_demo_signals(brokerage={"id": "x", "is_demo": True})
+    assert out["verdict"] == VERDICT_DEMO_DETECTED
+    assert SIGNAL_BROKERAGE_MARKED_DEMO in out["signals"]
+
+
+def test_detector_fires_on_brokerage_environment_label():
+    out = detect_demo_signals(
+        brokerage={"id": "x", "environment": "rehearsal"},
+    )
+    assert out["verdict"] == VERDICT_DEMO_DETECTED
+    assert SIGNAL_BROKERAGE_ENVIRONMENT_LABEL in out["signals"]
+
+
+def test_detector_fires_on_row_source_simulated():
+    rows = [{"id": 1, "source": "simulated"}]
+    out = detect_demo_signals(rows=rows)
+    assert out["verdict"] == VERDICT_DEMO_DETECTED
+    assert SIGNAL_ROW_SOURCE_SIMULATED in out["signals"]
+
+
+def test_detector_fires_on_row_call_type_simulated():
+    rows = [{"id": 1, "call_type": "simulated"}]
+    out = detect_demo_signals(rows=rows)
+    assert out["verdict"] == VERDICT_DEMO_DETECTED
+    assert SIGNAL_ROW_CALL_TYPE_SIMULATED in out["signals"]
+
+
+def test_detector_fires_on_row_metadata_seed_batch():
+    rows = [{"id": 1, "metadata": {"seed_batch": "demo-001"}}]
+    out = detect_demo_signals(rows=rows)
+    assert out["verdict"] == VERDICT_DEMO_DETECTED
+    assert SIGNAL_ROW_METADATA_SEED_BATCH in out["signals"]
+
+
+def test_detector_fires_on_row_phone_seed_convention():
+    rows = [{"id": 1, "phone_number": "+15555550199"}]
+    out = detect_demo_signals(rows=rows)
+    assert out["verdict"] == VERDICT_DEMO_DETECTED
+    assert SIGNAL_ROW_PHONE_SEED_CONVENTION in out["signals"]
+
+
+def test_detector_does_not_fire_on_normal_phone():
+    rows = [{"id": 1, "phone_number": "+15035551212"}]
+    out = detect_demo_signals(rows=rows)
+    assert out["verdict"] == VERDICT_NO_DEMO_SIGNAL
+
+
+def test_detector_does_not_falsely_label_production_data():
+    # Real brokerage + real-looking rows -> no_demo_signal.
+    brokerage = {"id": "real-id", "name": "Acme Realty"}
+    rows = [
+        {"id": 1, "source": "twilio_webhook", "call_type": "outbound",
+         "phone_number": "+15035551212", "metadata": {}},
+        {"id": 2, "source": "twilio_webhook", "call_type": "outbound",
+         "phone_number": "+15035551213"},
+    ]
+    out = detect_demo_signals(brokerage=brokerage, rows=rows)
+    assert out["verdict"] == VERDICT_NO_DEMO_SIGNAL
+    assert out["signals"] == ()
+
+
+# ── format_stats demo-aware rendering ────────────────────────────
+
+def test_format_stats_legacy_call_unchanged():
+    # Without demo_verdict, format_stats produces the exact
+    # pre-PAS204-C output.
+    out = format_stats({"total": 100, "completed": 80, "booked": 20})
+    assert "*All-time stats*" in out
+    assert "Total calls: 100" in out
+    assert "Demo stats" not in out
+    assert "Note:" not in out
+
+
+def test_format_stats_with_demo_detected_uses_demo_header():
+    out = format_stats(
+        {"total": 35, "completed": 22, "booked": 5},
+        demo_verdict=VERDICT_DEMO_DETECTED,
+    )
+    assert "Demo stats" in out
+    assert "rehearsal data" in out
+    assert "Total calls: 35" in out
+    assert "Completed: 22" in out
+    assert "Booked: 5" in out
+
+
+def test_format_stats_with_no_demo_signal_uses_real_header():
+    out = format_stats(
+        {"total": 35, "completed": 22, "booked": 5},
+        demo_verdict=VERDICT_NO_DEMO_SIGNAL,
+    )
+    # Real brokerage with real data: identical to legacy output,
+    # no demo label, no conservative note.
+    assert "*All-time stats*" in out
+    assert "Demo stats" not in out
+    assert "Note:" not in out
+
+
+def test_format_stats_with_unknown_adds_conservative_note():
+    out = format_stats(
+        {"total": 35, "completed": 22, "booked": 5},
+        demo_verdict=VERDICT_UNKNOWN,
+    )
+    assert "*All-time stats*" in out
+    assert "Demo stats" not in out
+    assert "verify whether this environment" in out
+
+
+# ── dispatcher wiring (PAS204-C) ─────────────────────────────────
+
+def test_dispatcher_imports_pas204c_helpers():
+    src = _read("app/routes/slack_command.py")
+    assert "from app.services.slack.fuzzy_command_normalizer" in src
+    assert "normalize_fuzzy_command" in src
+    assert "from app.services.slack.demo_data_detector" in src
+    assert "detect_demo_signals" in src
+
+
+def test_dispatcher_calls_normalize_before_matchers():
+    src = _read("app/routes/slack_command.py")
+    norm_pos = src.find("normalize_fuzzy_command(text)")
+    pas203_pos = src.find("try_route_simulation_digest(text")
+    pas191_match_pos = src.find("match_intent(text)")
+    assert norm_pos >= 0, "normalize_fuzzy_command call missing"
+    assert pas203_pos >= 0
+    assert pas191_match_pos >= 0
+    assert norm_pos < pas203_pos < pas191_match_pos, (
+        "normalize_fuzzy_command must fire BEFORE PAS203 and PAS191"
+    )
+
+
+def test_dispatcher_passes_demo_verdict_to_format_stats():
+    src = _read("app/routes/slack_command.py")
+    # The INTENT_STATS branch must call detect_demo_signals and
+    # forward demo_verdict to format_stats.
+    assert "detect_demo_signals(" in src
+    assert "demo_verdict" in src
 
 
 def test_doc_present_and_carries_required_clauses():
