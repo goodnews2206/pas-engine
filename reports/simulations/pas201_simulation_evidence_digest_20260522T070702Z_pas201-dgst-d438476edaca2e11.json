@@ -1,0 +1,131 @@
+{
+  "allowed_environment": "SIMULATION_ONLY",
+  "artifact_integrity": {
+    "behavioral_allowed_environment_simulation_only": true,
+    "behavioral_artifact_integrity_all_true": true,
+    "behavioral_inspection_id_consistent_with_inspection": true,
+    "behavioral_live_behavior_changed_false": true,
+    "behavioral_phase_pas200": true,
+    "behavioral_runtime_id_matches_runtime": true,
+    "inspection_allowed_environment_simulation_only": true,
+    "inspection_artifact_integrity_all_true": true,
+    "inspection_lineage_intact": true,
+    "inspection_lineage_summary_matches_upstream": true,
+    "inspection_live_behavior_changed_false": true,
+    "inspection_phase_pas199": true,
+    "no_live_behavior_change_anywhere_in_lineage": true,
+    "package_allowed_environment_simulation_only": true,
+    "package_live_behavior_changed_false": true,
+    "package_status_ready_for_manual_test": true,
+    "package_strategy_id_matches_recommendation": true,
+    "recommendation_status_candidate": true,
+    "review_live_behavior_changed_false": true,
+    "review_new_status_approved_for_manual_test": true,
+    "runtime_allowed_environment_simulation_only": true,
+    "runtime_executed_strategy_matches_package": true,
+    "runtime_live_behavior_changed_false": true,
+    "runtime_status_executed": true
+  },
+  "behavioral_summary": {
+    "aggregate_scores": {
+      "continuity_score": 0.675,
+      "friction_score": 0.0,
+      "pacing_score": 1.0,
+      "pressure_score": 0.0,
+      "trust_score": 0.3783
+    },
+    "annotation_count": 97,
+    "artifact_integrity_ok": true,
+    "behavioral_evaluation_id": "pas200-beval-d44b9c312c282cde",
+    "behavioral_flags": [
+      "low_trust_strategy",
+      "good_pacing_observed",
+      "natural_transitions_dominant",
+      "low_friction_observed",
+      "callback_continuity_observed",
+      "soft_discovery_observed",
+      "trust_preserving_language_observed",
+      "hesitation_after_push_observed",
+      "acknowledgment_present_observed"
+    ]
+  },
+  "claimable_now": [
+    "behavioral_evaluation_emitted_deterministically",
+    "lineage_inspectable_end_to_end",
+    "manual_test_executed_in_simulation_only",
+    "no_live_behavior_changed",
+    "no_pii_in_simulation_artifacts",
+    "operator_approved_strategy_for_manual_test",
+    "safety_auto_fails_remain_absolute",
+    "synthetic_rehearsal_passed_for_strategy"
+  ],
+  "digest_id": "pas201-dgst-d438476edaca2e11",
+  "evidence_strength": "strong",
+  "generated_at": "2026-05-22T07:07:02Z",
+  "inspection_summary": {
+    "artifact_integrity_ok": true,
+    "artifact_integrity_pass_ratio": "16/16",
+    "inspection_id": "pas199-insp-3181a400b2cc9d2f",
+    "lineage_intact": true
+  },
+  "live_behavior_changed": false,
+  "not_claimable_yet": [
+    "live_call_routing_remains_out_of_scope",
+    "calibration_against_live_call_outcomes_pending",
+    "automated_promotion_to_runtime_strategy_pending",
+    "real_lead_exposure_remains_out_of_scope",
+    "slack_operator_surface_for_runtime_runs_pending"
+  ],
+  "operator_summary": {
+    "evidence_strength": "strong",
+    "highlights": [
+      "runtime_pass_rate_100_percent",
+      "safety_outcome_clean",
+      "lineage_intact",
+      "artifact_integrity_complete",
+      "behavioral_low_friction_observed",
+      "behavioral_good_pacing_observed",
+      "behavioral_low_trust_observed",
+      "behavioral_callback_continuity_observed",
+      "no_live_behavior_change_anywhere_in_lineage"
+    ],
+    "recommended_next_action": "review_digest_then_decide_pilot_step"
+  },
+  "package_summary": {
+    "allowed_environment": "SIMULATION_ONLY",
+    "live_behavior_changed": false,
+    "package_id": "pas197-pkg-2b7c50e63bf5fb88",
+    "status": "READY_FOR_MANUAL_TEST",
+    "strategy_id": "callback_first"
+  },
+  "phase": "PAS201",
+  "recommendation_summary": {
+    "confidence_level": "high",
+    "operator_required": true,
+    "pass_rate_threshold": 0.95,
+    "recommendation_id": "pas195-rec-9a9566a11d621684",
+    "recommendation_type": "promote_strategy",
+    "recommended_strategy": "callback_first",
+    "rejected_strategy": "assertive"
+  },
+  "review_summary": {
+    "actor_type": "operator",
+    "live_behavior_changed": false,
+    "new_status": "APPROVED_FOR_MANUAL_TEST",
+    "previous_status": "CANDIDATE",
+    "reason_token": "operator_approved_for_manual_test",
+    "review_id": "pas196-rev-e1dbeb79b1f9c192"
+  },
+  "runtime_summary": {
+    "auto_fail_count": 0,
+    "average_score": 76.75,
+    "executed_strategy": "callback_first",
+    "execution_status": "completed",
+    "live_behavior_changed": false,
+    "pass_rate": 1.0,
+    "runtime_id": "pas198-rt-9417fa22e0f0138f",
+    "safety_outcome": "clean",
+    "scenarios_executed": 20
+  },
+  "strategy_id": "callback_first"
+}
