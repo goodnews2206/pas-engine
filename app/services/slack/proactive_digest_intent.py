@@ -42,7 +42,7 @@ Public surface:
 from __future__ import annotations
 
 import re
-from typing import Callable, Optional, Tuple
+from typing import Callable, Mapping, Optional, Tuple
 
 from app.services.proactive.observer import observe
 from app.services.proactive.observer_digest import to_broker_report
@@ -78,14 +78,26 @@ INTENT_NEEDS_ATTENTION = "needs_attention"
 # ──────────────────────────────────────────────────────────────────
 
 PROACTIVE_DIGEST_ALIASES: Tuple[str, ...] = (
+    # ── attention / human review ─────────────────────────────────
     "what needs attention",
-    "what should i look at",
-    "anything slipping",
-    "pipeline risks",
-    "show risks",
-    "what is at risk",
-    "what should i handle next",
+    "what need attention",          # verb-agreement typo
+    "what needs my attention",
     "what needs human review",
+    # ── slipping / falling-through / at-risk ─────────────────────
+    "anything slipping",
+    "anything falling through",
+    "anything at risk",
+    "what is at risk",
+    "what's at risk",
+    # ── risks (singular / plural canonical forms) ────────────────
+    "pipeline risks",
+    "pipeline risk",
+    "show pipeline risks",
+    "show risks",
+    # ── look-at / handle-next / what-should-i ────────────────────
+    "what should i look at",
+    "what should i look into",
+    "what should i handle next",
 )
 
 
@@ -96,20 +108,91 @@ _PUNCT_RE = re.compile(r"[!?.,;:]+$")
 _WHITESPACE_RE = re.compile(r"\s+")
 
 
+# ──────────────────────────────────────────────────────────────────
+# PAS207-B — Bounded fuzzy phrase recovery.
+#
+# The matcher applies a *token-level* typo map limited to the
+# closed set of stems below, then strips a small set of trailing
+# filler tokens, then matches against the alias set. This is
+# deliberately NOT broad fuzzy matching: only the listed tokens
+# are corrected, so unrelated PAS204 questions
+# (e.g., "is pas safe to use", "are you trustworthy") remain
+# outside PAS207's vocabulary.
+#
+# Stem rules:
+#
+#   * riska     → risks         ("pipeline riska" → "pipeline risks")
+#   * pipline   → pipeline      ("pipline risks" → "pipeline risks")
+#   * pipleine  → pipeline
+#   * sliping   → slipping
+#   * slippin   → slipping
+#   * attn      → attention
+#   * atention  → attention
+#   * revw      → review
+#   * humen     → human
+#
+# We deliberately do NOT map "risk" → "risks" because that would
+# break the canonical alias "what is at risk" (singular) and the
+# alias "pipeline risk" (singular) — both are valid and must
+# match without rewriting.
+#
+# Trailing fillers stripped: "rn", "today", "now", "please".
+# ──────────────────────────────────────────────────────────────────
+
+_TOKEN_TYPO_MAP: Mapping[str, str] = {
+    "riska":    "risks",
+    "pipline":  "pipeline",
+    "pipleine": "pipeline",
+    "sliping":  "slipping",
+    "slippin":  "slipping",
+    "attn":     "attention",
+    "atention": "attention",
+    "revw":     "review",
+    "humen":    "human",
+}
+
+_TRAILING_FILLER_TOKENS = frozenset((
+    "rn",
+    "today",
+    "now",
+    "please",
+))
+
+
 def _normalize(text: str) -> str:
-    """Lowercase + collapse whitespace + strip trailing punctuation."""
+    """Normalize an operator phrase for closed-alias lookup.
+
+    The pipeline is deliberately narrow: case-folding, trailing
+    punctuation strip, smart-quote folding, whitespace collapse,
+    per-token typo map (limited to the closed stem rules above),
+    and trailing-filler strip. No fuzzy matching, no edit-distance
+    search, no LLM.
+    """
     if not isinstance(text, str):
         return ""
     t = text.strip().lower()
+    # Smart-quote folding so "what's at risk" (curly) and
+    # "what's at risk" (straight) both match the same alias.
+    t = t.replace("’", "'").replace("‘", "'")
     t = _PUNCT_RE.sub("", t)
     t = _WHITESPACE_RE.sub(" ", t)
-    return t.strip()
+    tokens = t.split()
+    if not tokens:
+        return ""
+    # Per-token bounded typo correction.
+    tokens = [_TOKEN_TYPO_MAP.get(tok, tok) for tok in tokens]
+    # Strip trailing filler tokens that operators often append
+    # ("anything slipping rn", "pipeline risks today").
+    while tokens and tokens[-1] in _TRAILING_FILLER_TOKENS:
+        tokens.pop()
+    return " ".join(tokens).strip()
 
 
 def match_needs_attention_intent(text: str) -> bool:
     """Pure phrase matcher. Returns True iff the normalised operator
     text exactly matches a PROACTIVE_DIGEST_ALIASES entry. Closed
-    vocabulary — no fuzzy match, no LLM fallback.
+    vocabulary plus bounded per-token typo recovery — no broad
+    fuzzy match, no LLM fallback.
     """
     return _normalize(text) in _ALIAS_SET
 

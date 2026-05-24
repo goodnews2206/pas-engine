@@ -59,13 +59,46 @@ from app.services.slack.simulation_digest_intent import (  # noqa: E402
 
 SPEC_PHRASES = (
     "what needs attention",
+    "what need attention",          # PAS207-B — verb-agreement typo
+    "what needs my attention",
     "what should I look at",
+    "what should I look into",
     "anything slipping",
+    "anything falling through",
+    "anything at risk",
     "pipeline risks",
+    "pipeline risk",
+    "show pipeline risks",
     "show risks",
     "what is at risk",
+    "what's at risk",
     "what should I handle next",
     "what needs human review",
+)
+
+
+# Phrases that exercise the PAS207-B bounded fuzzy recovery
+# (per-token typo correction + trailing-filler strip + smart
+# quote folding). Every one of these must route to PAS207.
+PAS207B_FUZZY_PHRASES = (
+    "anything slipping?",
+    "anything slipping rn",
+    "anything slipping today",
+    "anything slipping now",
+    "anything sliping",            # typo: sliping -> slipping
+    "anything slippin",            # typo: slippin -> slipping
+    "pipeline riska",              # typo: riska -> risks
+    "pipeline riska?",
+    "pipline risks",               # typo: pipline -> pipeline
+    "pipleine risks",              # typo: pipleine -> pipeline
+    "pipline riska",               # both typos
+    "pipeline risks today",        # trailing filler
+    "what needs attn",             # typo: attn -> attention
+    "what needs atention",         # typo: atention -> attention
+    "what needs humen review",     # typo: humen -> human
+    "what needs human revw",       # typo: revw -> review
+    "what’s at risk",         # curly apostrophe
+    "WHAT'S AT RISK",              # case + straight apostrophe
 )
 
 
@@ -222,8 +255,9 @@ def test_intent_constant_matches_spec_value() -> None:
 
 
 def test_alias_table_size_matches_spec() -> None:
-    assert len(PROACTIVE_DIGEST_ALIASES) == 8
-    assert len(set(PROACTIVE_DIGEST_ALIASES)) == 8  # no duplicates
+    # PAS207-B expanded the canonical alias set to 16 entries.
+    assert len(PROACTIVE_DIGEST_ALIASES) == 16
+    assert len(set(PROACTIVE_DIGEST_ALIASES)) == 16  # no duplicates
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -296,22 +330,157 @@ def test_intent_source_does_not_touch_migration_artifact() -> None:
     assert "combined_supabase_migration" not in src
 
 
-def test_dispatcher_wires_pas207_after_pas204_and_before_pas191_dispatch() -> None:
+def test_dispatcher_wires_pas207_after_pas191_match_before_pas204_and_dispatch() -> None:
+    """PAS207-B — Dispatcher precedence:
+
+        PAS203 fast-path
+        PAS191 match
+        PAS207 fast-path        ← new position (was after PAS204)
+        PAS204 fast-path
+        PAS191 dispatch
+        LLM fallback
+
+    Moving PAS207 ahead of PAS204 fixes the production collision
+    where "pipeline riska" was captured by PAS204's safety/trust
+    scorer (keys on tokens like "risk" / "risky").
+    """
     src = _read(DISPATCHER_PATH)
     assert "try_route_needs_attention" in src, (
         "dispatcher must import the PAS207 router"
     )
-    # Locate anchors.
-    pas204_block_anchor = src.find('"response_type": "in_channel",')
-    pas207_call = src.find("try_route_needs_attention(text)")
+    pas203_call    = src.find("try_route_simulation_digest(text, _pas203_reports_dir)")
+    pas191_match   = src.find("pas191 = match_intent(text)")
+    pas207_call    = src.find("try_route_needs_attention(text)")
+    pas204_call    = src.find("build_broker_response(text)")
     pas191_dispatch = src.find("if pas191_intent != INTENT_UNKNOWN:")
-    assert pas204_block_anchor != -1
-    assert pas207_call != -1, "PAS207 fast-path call must be wired"
-    assert pas191_dispatch != -1
-    # PAS207 sits before the PAS191 dispatch branch.
-    assert pas207_call < pas191_dispatch, (
-        "PAS207 fast-path must run before PAS191 deterministic dispatch"
+    assert pas203_call    != -1, "PAS203 fast-path missing"
+    assert pas191_match   != -1, "PAS191 match call missing"
+    assert pas207_call    != -1, "PAS207 fast-path missing"
+    assert pas204_call    != -1, "PAS204 broker conversation missing"
+    assert pas191_dispatch != -1, "PAS191 dispatch branch missing"
+    assert pas203_call    < pas191_match,   "PAS203 must run before PAS191 match"
+    assert pas191_match   < pas207_call,    "PAS191 match must run before PAS207 fast-path"
+    assert pas207_call    < pas204_call,    "PAS207 must run before PAS204 to avoid safety/trust collision"
+    assert pas204_call    < pas191_dispatch, "PAS204 must run before PAS191 dispatch"
+    # Only one PAS207 fast-path remains in the file (no stale copy
+    # left behind from the move).
+    assert src.count("try_route_needs_attention(text)") == 1
+
+
+# ──────────────────────────────────────────────────────────────────
+# PAS207-B — Bounded fuzzy phrase recovery
+# ──────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("phrase", PAS207B_FUZZY_PHRASES)
+def test_pas207b_fuzzy_phrase_routes_to_pas207(phrase: str) -> None:
+    assert match_needs_attention_intent(phrase) is True, (
+        f"PAS207-B fuzzy phrase should match: {phrase!r}"
     )
+    out = try_route_needs_attention(phrase)
+    assert isinstance(out, str) and out.strip(), (
+        f"PAS207-B fuzzy phrase produced empty output: {phrase!r}"
+    )
+
+
+def test_pas207b_typo_recovery_does_not_capture_unrelated_safety_questions() -> None:
+    """The bounded typo map deliberately fixes only specific stems.
+    Unrelated PAS204 safety/trust questions ("is pas safe to use",
+    "are you trustworthy", ...) must still fall through PAS207.
+    """
+    pas204_safety_phrases = (
+        "is pas safe to use",
+        "is pas safe",
+        "are you safe",
+        "are you trustworthy",
+        "do you ever embarrass us",
+        "is this approved",
+        "is this risky",                 # token "risky" — PAS204 safety
+        "is pas risky",
+    )
+    for phrase in pas204_safety_phrases:
+        assert match_needs_attention_intent(phrase) is False, (
+            f"PAS207 absorbed a PAS204 safety/trust phrase: {phrase!r}"
+        )
+        assert try_route_needs_attention(phrase) is None, (
+            f"PAS207 routed a PAS204 safety/trust phrase: {phrase!r}"
+        )
+
+
+def test_pas207b_does_not_steal_pas191_or_pas203_known_phrases() -> None:
+    """PAS191 next_action / priorities / next_steps phrases and
+    PAS203's simulation_digest phrases must remain on their own
+    surfaces even with the expanded matcher.
+    """
+    for phrase in (
+        "next action",
+        "next actions",
+        "next steps",
+        "priorities",
+        "top priorities",
+        "what should i do now",
+        "what should i focus on",
+        "what's the priority",
+        "stats",
+        "calls today",
+        "leads today",
+        "summary",
+        "hot leads",
+        "simulation digest",
+        "show the digest",
+        "evidence digest",
+    ):
+        assert match_needs_attention_intent(phrase) is False, (
+            f"PAS207-B leaked on {phrase!r}"
+        )
+        assert try_route_needs_attention(phrase) is None
+
+
+def test_pas207b_does_not_capture_mutation_commands() -> None:
+    for phrase in (
+        "pause",
+        "resume",
+        "push 123 Main St $500k 3 bed",
+        "remove 123 Main St",
+    ):
+        assert match_needs_attention_intent(phrase) is False
+        assert try_route_needs_attention(phrase) is None
+
+
+def test_pas207b_token_typo_map_is_closed_and_bounded() -> None:
+    """Sanity check: import the typo map directly and confirm it
+    contains only the documented stems. A broader map would risk
+    absorbing unrelated phrases.
+    """
+    from app.services.slack.proactive_digest_intent import _TOKEN_TYPO_MAP
+    expected = {
+        "riska":    "risks",
+        "pipline":  "pipeline",
+        "pipleine": "pipeline",
+        "sliping":  "slipping",
+        "slippin":  "slipping",
+        "attn":     "attention",
+        "atention": "attention",
+        "revw":     "review",
+        "humen":    "human",
+    }
+    assert dict(_TOKEN_TYPO_MAP) == expected
+
+
+def test_pas207b_trailing_filler_strip_is_closed_and_bounded() -> None:
+    from app.services.slack.proactive_digest_intent import _TRAILING_FILLER_TOKENS
+    assert set(_TRAILING_FILLER_TOKENS) == {"rn", "today", "now", "please"}
+
+
+def test_pas207b_normaliser_does_not_force_risk_plural_globally() -> None:
+    """The token map must NOT rewrite the bare singular "risk" to
+    "risks" globally — that would break the canonical aliases
+    "what is at risk" and "pipeline risk".
+    """
+    from app.services.slack.proactive_digest_intent import _TOKEN_TYPO_MAP
+    assert "risk" not in _TOKEN_TYPO_MAP
+    assert match_needs_attention_intent("what is at risk") is True
+    assert match_needs_attention_intent("pipeline risk") is True
 
 
 def test_dispatcher_logs_pas207_intent_match() -> None:
