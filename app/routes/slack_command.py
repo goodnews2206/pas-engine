@@ -82,6 +82,14 @@ from app.services.slack.demo_data_detector import (
     VERDICT_DEMO_DETECTED,
     detect_demo_signals,
 )
+# PAS207 — read-only proactive needs-attention digest intent. Pure
+# string output: no Slack API call, no DB write, no simulation
+# execution, no filesystem writes. Owns a closed set of 8 phrases
+# that the PAS191 next-action carry-forward test deliberately
+# excludes.
+from app.services.slack.proactive_digest_intent import (
+    try_route_needs_attention,
+)
 
 router = APIRouter()
 logger = logging.getLogger("pas.slack_cmd")
@@ -253,6 +261,32 @@ async def slack_command(request: Request):
                 "text":          body,
                 "response_type": "in_channel",
             })
+
+    # PAS207 — Read-only proactive needs-attention digest. Closed
+    # alias set (8 phrases). Fires AFTER the PAS204 broker
+    # conversation block and BEFORE the PAS191 deterministic
+    # dispatch so the PAS207-owned phrase "what needs attention"
+    # routes to the proactive observer instead of PAS191's
+    # next_action. PAS207's alias table deliberately excludes
+    # "next action", "priorities", "next steps", "top priorities",
+    # "what should i do now", and "what should i focus on" — those
+    # continue to dispatch through PAS191 unchanged. PAS207 never
+    # writes to disk, never sends a Slack message, never calls
+    # Twilio, never mutates the DB.
+    pas207_resp = try_route_needs_attention(text)
+    if pas207_resp is not None:
+        log_event_bg(
+            "slack.intent.matched",
+            event_category="ops",
+            event_source="slack_command",
+            severity="info",
+            payload={
+                "brokerage_id": brokerage["id"],
+                "intent":       "needs_attention",
+                "surface":      "slack_command_pas207",
+            },
+        )
+        return JSONResponse({"text": pas207_resp, "response_type": "in_channel"})
 
     if pas191_intent != INTENT_UNKNOWN:
         log_event_bg(
