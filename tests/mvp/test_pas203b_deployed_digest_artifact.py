@@ -194,7 +194,10 @@ def test_slack_route_returns_real_digest_against_committed_reports_dir():
     # PAS202's Slack formatter embeds it as a literal in the output.
     # We assert the marker rather than the specific id so the test
     # remains stable if a future bootstrap digest replaces this one.
-    assert "*PAS201 digest*" in out
+    # PAS204-B intentionally polished the operator-facing header
+    # from "*PAS201 digest*" to "*PAS rehearsal evidence*"; the
+    # assertion is updated accordingly.
+    assert "*PAS rehearsal evidence*" in out
     assert "pas201-dgst-" in out
     assert "SIMULATION_ONLY" in out
     assert out != MISSING_DIGEST_FALLBACK_MESSAGE
