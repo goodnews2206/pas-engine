@@ -236,33 +236,150 @@ def check_intent_no_outbound_tokens(repo_root: Path) -> List[Check]:
     ]
 
 
+def _extract_pas207_alias_tuple(src: str) -> Optional[Tuple[str, ...]]:
+    """Parse the PAS207 intent source via AST and return the
+    PROACTIVE_DIGEST_ALIASES tuple as a Python tuple of strings.
+    Returns None if the tuple cannot be located or contains
+    non-string elements.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.AnnAssign):
+            target = node.target
+            if isinstance(target, ast.Name) and target.id == "PROACTIVE_DIGEST_ALIASES":
+                value = node.value
+                if isinstance(value, ast.Tuple):
+                    out: List[str] = []
+                    for elt in value.elts:
+                        if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                            out.append(elt.value)
+                        else:
+                            return None
+                    return tuple(out)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "PROACTIVE_DIGEST_ALIASES":
+                    value = node.value
+                    if isinstance(value, ast.Tuple):
+                        out2: List[str] = []
+                        for elt in value.elts:
+                            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                                out2.append(elt.value)
+                            else:
+                                return None
+                        return tuple(out2)
+    return None
+
+
+# PAS207-B — expanded canonical alias set.
+EXPECTED_ALIAS_COUNT = 16
+
+
 def check_intent_alias_count(repo_root: Path) -> List[Check]:
-    """The spec fixes PAS207 to exactly 8 phrases. The readiness
-    gate refuses to drift that count silently.
+    """PAS207-B fixes PAS207 to 16 canonical phrases. The
+    readiness gate refuses to drift that count silently.
     """
     src = _read(repo_root / INTENT_REL_PATH)
-    matches = re.findall(r'"\s*[a-z][a-z \'\-]+\s*"', src)
-    # Heuristic: count entries inside the PROACTIVE_DIGEST_ALIASES tuple
-    # by locating the tuple literal then counting comma-separated strings.
-    m = re.search(
-        r"PROACTIVE_DIGEST_ALIASES[^=]*=\s*\((?P<body>[^)]*)\)", src, re.DOTALL
-    )
-    if not m:
+    aliases = _extract_pas207_alias_tuple(src)
+    if aliases is None:
         return [Check("intent declares PROACTIVE_DIGEST_ALIASES tuple", False,
-                      "could not locate tuple literal")]
-    body = m.group("body")
-    entries = re.findall(r'"([^"]+)"', body)
+                      "could not parse tuple literal via AST")]
     return [
         Check(
-            name="intent alias tuple has exactly 8 entries",
-            passed=(len(entries) == 8),
-            detail=f"found {len(entries)}",
+            name=f"intent alias tuple has exactly {EXPECTED_ALIAS_COUNT} entries",
+            passed=(len(aliases) == EXPECTED_ALIAS_COUNT),
+            detail=f"found {len(aliases)}",
         ),
         Check(
             name="intent alias tuple has no duplicates",
-            passed=(len(entries) == len(set(entries))),
+            passed=(len(aliases) == len(set(aliases))),
             detail="",
         ),
+    ]
+
+
+def check_pas207b_fuzzy_recovery(repo_root: Path) -> List[Check]:
+    """PAS207-B — confirm the bounded typo map and trailing-filler
+    sets exist with exactly the documented stems. The readiness
+    gate refuses to let the map silently grow into a broad fuzzy
+    matcher that would absorb unrelated PAS204 phrases.
+    """
+    src = _read(repo_root / INTENT_REL_PATH)
+    out: List[Check] = []
+
+    # Typo map sanity — must contain each documented stem and no
+    # global "risk → risks" rewrite (which would break "what is at
+    # risk" / "pipeline risk").
+    required_typos = (
+        ("riska",    "risks"),
+        ("pipline",  "pipeline"),
+        ("pipleine", "pipeline"),
+        ("sliping",  "slipping"),
+        ("slippin",  "slipping"),
+        ("attn",     "attention"),
+        ("atention", "attention"),
+        ("revw",     "review"),
+        ("humen",    "human"),
+    )
+    for src_tok, dst_tok in required_typos:
+        marker = f'"{src_tok}":'
+        out.append(Check(
+            name=f"typo map contains '{src_tok}' → '{dst_tok}'",
+            passed=(marker in src),
+            detail="" if marker in src else f"missing typo entry '{src_tok}'",
+        ))
+    out.append(Check(
+        name="typo map does not rewrite bare 'risk' → 'risks'",
+        passed='"risk":' not in src,
+        detail="bare 'risk' must remain singular",
+    ))
+
+    # Trailing-filler set sanity.
+    for token in ("rn", "today", "now", "please"):
+        out.append(Check(
+            name=f"trailing-filler set contains '{token}'",
+            passed=(f'"{token}"' in src),
+            detail="",
+        ))
+
+    return out
+
+
+def check_pas207b_dispatcher_precedence(repo_root: Path) -> List[Check]:
+    """PAS207-B — the dispatcher must run PAS207 BEFORE PAS204 so
+    PAS204's safety/trust scorer cannot capture phrases like
+    "pipeline riska" or "anything at risk".
+    """
+    src = _read(repo_root / DISPATCHER_REL_PATH)
+    pas203_call    = src.find("try_route_simulation_digest(text, _pas203_reports_dir)")
+    pas191_match   = src.find("pas191 = match_intent(text)")
+    pas207_call    = src.find("try_route_needs_attention(text)")
+    pas204_call    = src.find("build_broker_response(text)")
+    pas191_dispatch = src.find("if pas191_intent != INTENT_UNKNOWN:")
+    return [
+        Check("dispatcher contains PAS203 fast-path",  pas203_call    != -1, ""),
+        Check("dispatcher contains PAS191 match call", pas191_match   != -1, ""),
+        Check("dispatcher contains PAS207 fast-path",  pas207_call    != -1, ""),
+        Check("dispatcher contains PAS204 call",        pas204_call    != -1, ""),
+        Check("dispatcher contains PAS191 dispatch",    pas191_dispatch != -1, ""),
+        Check("PAS203 runs before PAS191 match",
+              pas203_call != -1 and pas191_match != -1 and pas203_call < pas191_match,
+              "ordering check"),
+        Check("PAS191 match runs before PAS207 fast-path",
+              pas191_match != -1 and pas207_call != -1 and pas191_match < pas207_call,
+              "ordering check"),
+        Check("PAS207 runs before PAS204 (fixes safety/trust collision)",
+              pas207_call != -1 and pas204_call != -1 and pas207_call < pas204_call,
+              "PAS207 must be ahead of PAS204"),
+        Check("PAS204 runs before PAS191 dispatch",
+              pas204_call != -1 and pas191_dispatch != -1 and pas204_call < pas191_dispatch,
+              "ordering check"),
+        Check("dispatcher contains exactly one PAS207 fast-path call",
+              src.count("try_route_needs_attention(text)") == 1,
+              "PAS207-B must replace the old position, not duplicate it"),
     ]
 
 
@@ -391,7 +508,9 @@ def run_all_checks(repo_root: Path) -> List[Check]:
     checks.extend(check_intent_no_forbidden_imports(repo_root))
     checks.extend(check_intent_no_outbound_tokens(repo_root))
     checks.extend(check_intent_alias_count(repo_root))
+    checks.extend(check_pas207b_fuzzy_recovery(repo_root))
     checks.extend(check_dispatcher_wiring(repo_root))
+    checks.extend(check_pas207b_dispatcher_precedence(repo_root))
     checks.extend(check_no_new_migration(repo_root))
     checks.extend(check_no_secrets_in_pas207_files(repo_root))
     checks.extend(check_doc_clauses(repo_root))
