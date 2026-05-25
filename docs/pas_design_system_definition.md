@@ -569,4 +569,55 @@ A surface ships only when every box is true:
 
 ---
 
-*End of v1.*
+## 31. Documentation pattern: MASTER + per-module overrides
+
+Adopted from the `ui-ux-pro-max-skill` reference (see
+`docs/pas_uiux_reference_study.md` §17.3.1) on 2026-05-25.
+
+This document — `pas_design_system_definition.md` — is the **master**
+for PAS design tokens, behaviours, and the pre-delivery checklist.
+As individual modules ship with specific design needs that genuinely
+deviate from the master (justified deviations only, not preference),
+those deviations live in a thin per-module override file rather than
+amending the master.
+
+### 31.1 Structure
+
+```
+docs/
+├── pas_design_system_definition.md      # MASTER — this file
+└── design-system/
+    └── pages/
+        └── <module>.md                  # Only deviations from MASTER
+```
+
+### 31.2 Override rule
+
+- A consumer (human or downstream agent) building a module reads
+  `docs/design-system/pages/<module>.md` first.
+- If the page file exists, its rules **override** the master only for
+  the named module.
+- If the page file is absent, the master is authoritative.
+- A page file must declare *why* the deviation exists; preferences
+  alone are not a justification.
+
+### 31.3 What does NOT belong in an override file
+
+- Token redefinitions for purely cosmetic reasons.
+- Severity colour reassignment.
+- Demo / rehearsal labelling changes.
+- Accessibility floor relaxation.
+- Pre-delivery checklist exemptions.
+
+The invariants (severity semantics, accessibility floor, demo
+labelling, role-aware behaviour) are master-only and not overridable.
+
+### 31.4 Status
+
+No override files exist yet. The first override should land only when
+a real module ships and demonstrates a justified, named deviation.
+This section is signposting, not pre-emptive structure.
+
+---
+
+*End of v1 + reconciliation 2026-05-25.*

@@ -23,15 +23,13 @@ explicit and worth quoting:
 > all clickable elements; prefers-reduced-motion respected."
 > *(pre-delivery checklist)*
 
-Canonical upstream studied:
-- `nextlevelbuilder/ui-ux-pro-max-skill` (82.5k stars).
-
-The user referenced a fork "Daniel's `ui-ux-pro-max`". At the time of
-study, `goodnews2206/ui-ux-pro-max` returned 404. The reconciliation
-below uses the canonical upstream. If Daniel's fork carries
-brokerage-specific adjustments, a second pass against the fork is
-queued as a follow-up; nothing in this doc forecloses those
-adjustments.
+Sources studied:
+- Canonical upstream: `nextlevelbuilder/ui-ux-pro-max-skill` (82.5k
+  stars).
+- Daniel's fork: `goodnews2206/ui-ux-pro-max-skill` — confirmed at
+  parity with upstream (0 ahead / 0 behind / 0 fork-only files) on
+  2026-05-25. See §17 for the fork-reconciliation pass that retired
+  this caveat.
 
 **This is not a copy of `ui-ux-pro-max`.** It is a reconciliation: we
 keep its strongest disciplines, discard the parts that conflict with
@@ -385,10 +383,139 @@ choices:
 - **Tone of empty-state copy in different modules** — should the
   voice subtly shift (PAS Brain warmer; Audit Logs more clinical)?
   Or hold one voice across the product?
-- **Reconciliation with the user's specific fork** — once Daniel's
-  fork URL is shared, a focused second pass against any
-  brokerage-specific tokens / customisations he carries.
+- **Reconciliation with the user's specific fork** — *resolved in §17
+  below (2026-05-25).*
 
 ---
 
-*End of v1.*
+## 17. Daniel Fork Reconciliation (2026-05-25)
+
+Performed after the user provided the exact fork URL:
+`https://github.com/goodnews2206/ui-ux-pro-max-skill`.
+
+### 17.1 What changed after inspecting Daniel's fork
+
+**Nothing in the fork itself.** GitHub's compare endpoint between
+`nextlevelbuilder:main` and `goodnews2206:main` reports verbatim:
+*"There isn't anything to compare. nextlevelbuilder:main and
+goodnews2206:main are identical."*
+
+Concretely:
+- 0 commits ahead of upstream.
+- 0 commits behind upstream.
+- 0 fork-only files, 0 fork-only commits, 0 diff stats.
+- Default branch `main` matches upstream `main` byte-for-byte at the
+  HEAD of the comparison.
+
+Daniel's fork is a **parity fork** — no brokerage-specific tokens,
+no PAS-specific edits, no customised data files, no override
+templates. The v1 reference study performed against the canonical
+upstream therefore **applies in full** to the fork.
+
+### 17.2 Whether prior conclusions still hold
+
+**Every conclusion from §1–§16 holds.** No reversal, no reordering,
+no anti-pattern flipping sides. The reconciliation table in §15 is
+unchanged.
+
+The reason for the original §0 caveat (study performed against
+upstream rather than the user's fork) is now retired: the two
+sources are demonstrably identical at this snapshot. A future drift
+in the fork would trigger a new reconciliation pass.
+
+### 17.3 New patterns surfaced by the richer read
+
+Direct verbatim access to the fork's README and `CLAUDE.md` (deeper
+than the initial summary read) surfaced a few patterns worth pulling
+into PAS doctrine. These are *additive* — they do not contradict any
+prior conclusion.
+
+#### 17.3.1 The MASTER + per-page overrides documentation pattern
+
+The skill exposes a documentation strategy worth borrowing for PAS's
+own design-system documentation:
+
+```
+design-system/
+├── MASTER.md            # Global tokens, rules, severity, density, demo
+└── pages/
+    └── <module>.md      # Module-specific overrides (only deviations)
+```
+
+The retrieval rule the skill prescribes is: *check the page file
+first; if present, its rules override the master; if absent, the
+master is authoritative.*
+
+PAS already has the canonical doctrine in
+`docs/pas_design_system_definition.md`. As individual modules ship,
+each may carry a thin per-module overrides note under
+`docs/design-system/pages/<module>.md` rather than amending the
+master file. See the small addition to the Design System Definition
+doc (§31) for the formal adoption note.
+
+This is a **documentation** pattern, not a runtime mechanism. PAS
+does not need a generator to consume it; humans and downstream agents
+do.
+
+#### 17.3.2 Decision-rule discipline alongside tokens
+
+The skill ships 161 industry-specific reasoning rules + 99 UX
+guidelines + 25 chart types in CSV-backed databases. The relevant
+takeaway for PAS is *not* the catalog itself — PAS is one product —
+but the **format**: rules are tabular, named, and carry an explicit
+"anti-pattern" column alongside the recommendation.
+
+PAS already adopts this in spirit (anti-pattern lists per design
+section). The reconciliation reinforces it as a *required* author
+discipline: every design rule we write down carries its negative
+twin. This is captured in the existing pre-delivery checklist
+(Design System Definition §29) — no new doc change needed.
+
+#### 17.3.3 Single-command access to the design system
+
+The skill provides one CLI command (`uipro init --ai <platform>`) that
+materialises the design-system surface in any project. The shape of
+that affordance — *one command, one source of truth, regenerable at
+will* — is worth keeping in mind for PAS's downstream tooling. We do
+not need to ship it in v1, but the future direction (a tiny script
+under `scripts/` that emits the current design-token set as CSS
+variables or a Tailwind preset) is now signposted.
+
+### 17.4 Anti-patterns PAS should still reject
+
+All anti-patterns from §3 stand verbatim. The richer read added one
+useful corroboration: the skill explicitly flags **AI purple/pink
+gradients** in the v2 README's banking/fintech example output, and
+ships the same anti-pattern across its industry rules. PAS's rejection
+of that aesthetic is, by transitive endorsement, consistent with the
+upstream's own discipline.
+
+### 17.5 Whether the Frontend Foundation Plan changes
+
+**No change.** The fork has no fork-specific implementation
+recommendations, framework preferences, or build-tool choices that
+would amend `docs/pas_frontend_foundation_plan.md`. The plan's
+framework intent (Next.js), shell structure, state boundaries,
+streaming approach, and 15-step implementation sequence are all
+unaffected.
+
+### 17.6 Whether the Component Inventory changes
+
+**No change.** The fork does not enumerate components in a form that
+adds or removes any item from `docs/pas_component_inventory.md`. The
+P0/P1/P2/P3 priority structure stands.
+
+### 17.7 Net effect
+
+| Document | Change required by fork reconciliation |
+|---|---|
+| `docs/pas_uiux_reference_study.md` | This §17 added; §0 caveat retired; §16 question resolved. No other lines changed. |
+| `docs/pas_design_system_definition.md` | One small additive section (§31) documenting the MASTER + overrides documentation pattern as an option for module-specific design notes. |
+| `docs/pas_frontend_foundation_plan.md` | No change. |
+| `docs/pas_component_inventory.md` | No change. |
+
+The v1 reference study is **confirmed**, not amended.
+
+---
+
+*End of v1 + fork reconciliation 2026-05-25.*
