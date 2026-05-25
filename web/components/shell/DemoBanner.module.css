@@ -1,0 +1,48 @@
+/* ── Demo / rehearsal banner — Design System §26 ── */
+/*
+ * Uses --demo-* tokens which are IMMUTABLE — never remapped by dark theme
+ * or user preference. Rehearsal labelling cannot be hidden.
+ */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 var(--space-lg);
+  height: 36px;
+  background: var(--demo-bg);
+  border-bottom: 1px solid var(--demo-border);
+  flex-shrink: 0;
+}
+
+/* Small filled dot — visual anchor paired with copy */
+.indicator {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--demo-border);
+  flex-shrink: 0;
+}
+
+.copy {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--demo-ink);
+}
+
+/* Mobile: truncate copy to single line */
+@media (max-width: 767px) {
+  .banner {
+    padding: 0 var(--space-md);
+  }
+
+  .copy {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

@@ -1,0 +1,123 @@
+/* ── Tenant / workspace context strip — Dashboard IA §3.7 ── */
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 0 var(--space-lg);
+  height: 36px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* ── Left: workspace context ── */
+.context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--ink-muted);
+}
+
+.value {
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--ink-secondary);
+}
+
+.sep {
+  font-size: var(--text-micro);
+  color: var(--border-strong);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── Right: severity levels / presence rail ── */
+.presenceRail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.level {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.levelDot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.levelLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  white-space: nowrap;
+}
+
+/* Severity colour mapping — tokens from §25 */
+.level-fyi .levelDot        { background: var(--signal-fyi); }
+.level-fyi .levelLabel      { color: var(--signal-fyi); }
+.level-attention .levelDot  { background: var(--signal-attention); }
+.level-attention .levelLabel { color: var(--signal-attention); }
+.level-urgent .levelDot     { background: var(--signal-urgent); }
+.level-urgent .levelLabel   { color: var(--signal-urgent); }
+.level-approval .levelDot   { background: var(--signal-approval); }
+.level-approval .levelLabel { color: var(--signal-approval); }
+.level-critical .levelDot   { background: var(--signal-critical); }
+.level-critical .levelLabel { color: var(--signal-critical); }
+
+/* ── 1280 and below: hide severity labels, keep dots ── */
+@media (max-width: 1279px) {
+  .levelLabel { display: none; }
+  .presenceRail { gap: var(--space-xs); }
+}
+
+/* ── 1023 and below: hide some context items to prevent overflow ── */
+@media (max-width: 1023px) {
+  .sep:nth-of-type(n+3),
+  .item:nth-of-type(n+4) {
+    display: none;
+  }
+}
+
+/* ── Mobile: hide strip entirely ── */
+@media (max-width: 767px) {
+  .strip {
+    display: none;
+  }
+}
