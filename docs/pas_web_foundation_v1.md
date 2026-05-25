@@ -1,8 +1,9 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Step 1 + 2 + 3). Owner: ORVN Labs.
+> Status: shipped (Step 1 + 2 + 3 + 4). Owner: ORVN Labs.
 > Step 1+2 branch: `pas-web-foundation-v1` (merged to main 2026-05-25).
-> Step 3 branch: `pas-web-app-shell-chrome`.
+> Step 3 branch: `pas-web-app-shell-chrome` (merged to main 2026-05-25).
+> Step 4 branch: `pas-web-route-skeletons`.
 
 ## What this is
 
@@ -227,8 +228,117 @@ Each paired with a colored dot (Design System §25 tokens).
 
 ---
 
-## Next steps (Step 4)
+---
+
+## Step 4 — Role-aware route skeletons
 
 `docs/pas_frontend_foundation_plan.md §14` Step 4: **Routing skeleton.**
-All routes mounted with placeholder content. Role gating wired at the
-route layer. No real data yet.
+Branch: `pas-web-route-skeletons`.
+
+### Files created
+
+```
+web/lib/navigation/
+└── routes.ts                   Frontend-only route registry (types, ROUTES[], helpers)
+
+web/components/modules/
+├── ModuleSkeleton.tsx           Reusable RSC: family chip, title, three info sections, disclaimer
+└── ModuleSkeleton.module.css   Module skeleton styles
+
+web/components/shell/
+└── NavList.tsx                  Client component: pathname-aware active nav using route registry
+
+web/app/
+├── page.tsx                     Updated: redirect("/command-center")
+├── command-center/page.tsx      Moved CC placeholder content here
+├── command-center/page.module.css
+├── leads/page.tsx
+├── calls/page.tsx
+├── callbacks/page.tsx
+├── bookings/page.tsx
+├── pipeline-risks/page.tsx
+├── recommendations/page.tsx
+├── action-proposals/page.tsx
+├── evidence-digest/page.tsx
+├── simulation-lab/page.tsx
+├── integrations/page.tsx
+└── settings/page.tsx
+```
+
+Sidebar.tsx was also updated to import `NavList` instead of the former
+hardcoded `NAV` array.
+
+### Route registry (`web/lib/navigation/routes.ts`)
+
+Static TypeScript data layer. No backend dependency. No API calls.
+Exports: `RouteDefinition`, `NavFamily`, `UserRole`, `NavGroup`,
+`DEMO_ROLE`, `ROUTES`, `ROUTES_BY_ID`, `ROUTES_BY_HREF`,
+`getRoutesForRole()`, `getNavGroupsForRole()`.
+
+Every route carries:
+- `id`, `label`, `href`, `family`
+- `description` — one sentence of what the module surfaces
+- `pasCan` — what PAS can do here once wired
+- `notConnectedYet` — intentionally absent in this skeleton step
+- `visibleTo` — list of roles that can see the module (display-only)
+- `status: "skeleton"`, `demoOnly: true`, `noLiveBehavior: true`
+
+### Route families
+
+| Family  | Routes |
+|---------|--------|
+| Operate | Command Center (all roles), Leads (all), Calls (all), Callbacks (no Viewer), Bookings (all) |
+| Notice  | Pipeline Risks (no Agent), Recommendations (no Agent), Action Proposals (Owner/Admin/TeamLead/ORVN), Evidence Digest (no Agent) |
+| System  | Simulation Lab (no Agent/Viewer), Integrations (no Agent/Viewer), Settings (Owner/Admin/ORVN) |
+
+People family is not in scope for v1 skeleton — omitted per Dashboard IA §2.2
+(families with zero visible modules are hidden entirely).
+
+### Role-aware navigation
+
+`DEMO_ROLE = "Broker Owner"` is a compile-time constant in `routes.ts`.
+`NavList.tsx` calls `getNavGroupsForRole(DEMO_ROLE)` and uses
+`usePathname()` to set `aria-current="page"` and the `.active` CSS
+class on the current route.
+
+**This is display-only role shaping. It is NOT a security boundary.**
+Real role resolution and permission gates are Step 5 (auth).
+
+### ModuleSkeleton component
+
+Each skeleton page passes its `RouteDefinition` to `<ModuleSkeleton />`.
+The component renders:
+1. Family chip + Demo/rehearsal chip
+2. H1 module title
+3. One-paragraph description
+4. "What this module will show" section (`route.description`)
+5. "What PAS can help with here" section (`route.pasCan`)
+6. "Not yet connected" section (`route.notConnectedYet`)
+7. Disclaimer: "PAS has not changed live customer behavior."
+
+### Root redirect
+
+`web/app/page.tsx` is now a one-line server-side redirect to
+`/command-center` via `next/navigation`'s `redirect()`.
+
+### What is intentionally static / not implemented
+
+- No API calls — all data is static `RouteDefinition` objects
+- No auth — `DEMO_ROLE` is a static constant; real session in Step 5
+- No real module content — every page except `/command-center` renders
+  `ModuleSkeleton` only
+- No state management — zero client state added in this step
+- No migrations, backend changes, or CORS changes
+
+### Build result (pnpm build)
+
+16 routes compiled, all static (`○`). First Load JS 102 kB shared.
+TypeScript clean, no lint errors.
+
+---
+
+## Next steps (Step 5)
+
+`docs/pas_frontend_foundation_plan.md §14` Step 5: **Auth.**
+Supabase session, real role resolution, route-layer permission gates,
+login/logout flow.

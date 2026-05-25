@@ -1,0 +1,115 @@
+/* ── Module skeleton — shared page template ── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: 640px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Family label — monospace, muted */
+.familyChip {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Demo/rehearsal chip — immutable amber, Design System §26 */
+.demoChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-xs);
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  border: 1px solid var(--demo-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+/* title: display scale — H1 is reserved for surfaces like this */
+.title {
+  font-size: var(--text-display);
+  line-height: var(--lh-display);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+  color: var(--ink-primary);
+}
+
+.description {
+  font-size: var(--text-body-lg);
+  line-height: var(--lh-body-lg);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-body-lg);
+  color: var(--ink-secondary);
+  max-width: 560px;
+}
+
+/* ── Divider ── */
+.divider {
+  width: 40px;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Info sections ── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-hair);
+}
+
+/* caption-scale label, monospace, uppercase — not a heading in the DOM sense */
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.sectionBody {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-secondary);
+}
+
+/* ── Disclaimer — bottom invariant ── */
+.disclaimer {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--demo-ink);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: var(--radius-xs);
+  padding: var(--space-hair) var(--space-xs);
+  width: fit-content;
+}
