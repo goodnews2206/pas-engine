@@ -1,0 +1,370 @@
+/*
+ * PAS Design System — Locked Token Layer v1
+ * Authority: docs/pas_web_design_tokens_v1.md
+ * Spec source: docs/pas_design_system_definition.md
+ *
+ * Structure:
+ *   §1  Raw scales      brand · neutral · severity · demo · role
+ *   §2  Semantic map    surface · ink · border · brand · signal · action
+ *   §3  Typography      families · scale · weights · letter-spacing
+ *   §4  Spacing         8-pt baseline · gutters · flow aliases
+ *   §5  Radius
+ *   §6  Elevation       shadows (two only)
+ *   §7  Motion          durations · easings
+ *   §8  Shell dims      sidebar · topbar · composer · panels · grid
+ *   Base styles
+ *   Dark-mode stub      placeholder — full dark ships in v1.x
+ *   Reduced-motion
+ *
+ * Rule: UI code references ONLY §2 semantic aliases.
+ * Raw scale vars (--_*) are never used directly in surfaces.
+ * No ad-hoc hex or px values outside this file.
+ */
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §1  RAW SCALES
+   Never referenced directly. Consumed only by §2 semantic aliases.
+───────────────────────────────────────────────────────────────── */
+:root {
+
+  /* Brand
+   * PAS Deep Indigo — hue 232°, blue-dominant, saturated, confident.
+   * Avoids "AI lavender" (≥ hue 260°, low saturation) anti-pattern.
+   * Reads: operational authority, not AI product.
+   */
+  --_br-100: #EBF0FE;
+  --_br-200: #C7D3FB;
+  --_br-300: #8FA8F7;
+  --_br-500: #4D62DC;   /* hover  */
+  --_br-600: #3B52D4;   /* ← SIGNATURE HUE */
+  --_br-700: #2B3FB8;   /* pressed / dark */
+  --_br-800: #1E2D8A;   /* deep */
+
+  /* Neutral — custom cool-gray; B channel sits 4–8 pts above RG per step.
+   * Prevents warm-beige drift; harmonises subconsciously with brand indigo.
+   */
+  --_n-950: #0B0B11;
+  --_n-900: #111118;
+  --_n-800: #1C1C27;
+  --_n-700: #2A2A3A;
+  --_n-600: #44445C;
+  --_n-500: #62627A;
+  --_n-400: #8F8FA8;
+  --_n-300: #BCBCD0;
+  --_n-200: #DCDCE8;
+  --_n-150: #E8E8F2;
+  --_n-100: #F0F0F6;
+  --_n-50:  #F6F6FB;
+  --_n-0:   #FFFFFF;
+
+  /* Severity — five distinct hue families; each ≥ 4.5:1 on --surface-base.
+   * Approximate contrast on #F6F6FB:
+   *   FYI 6.8 · Attention 6.1 · Urgent ~4.7 · Approval 5.8 · Critical 7.0
+   * MUST pair colour + icon + position — colour-only signals forbidden.
+   */
+  --_sev-fyi:       #3D5A6C;   /* cool slate      */
+  --_sev-attention: #92400E;   /* warm amber-brown */
+  --_sev-urgent:    #B45309;   /* amber            */
+  --_sev-approval:  #3B52D4;   /* brand — "your call" */
+  --_sev-critical:  #991B1B;   /* deep crimson     */
+
+  /* Demo / rehearsal — IMMUTABLE; cannot be overridden by any theme */
+  --_demo-bg:     #FFFBEB;
+  --_demo-ink:    #78350F;
+  --_demo-border: #B45309;
+
+  /* Role */
+  --_role-owner:    #1D4ED8;
+  --_role-admin:    #6D28D9;
+  --_role-teamlead: #0F766E;
+  --_role-agent:    #374151;
+  --_role-viewer:   #4B5563;
+  --_role-orvn:     #B91C1C;
+
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §2  SEMANTIC ALIASES — light theme
+   All surface code references these. In v1.x dark theme remaps only
+   this layer; raw scale is unchanged.
+───────────────────────────────────────────────────────────────── */
+:root {
+
+  /* Surfaces — four elevation tiers §4 */
+  --surface-base:   var(--_n-50);    /* page background         */
+  --surface-raised: var(--_n-0);     /* cards, sidebar          */
+  --surface-subtle: var(--_n-100);   /* input bg, inset regions */
+  --surface-muted:  var(--_n-150);   /* chips, hover tints      */
+  --surface-sunken: #EBEBF3;         /* depressed wells         */
+
+  /* Ink — five levels */
+  --ink-primary:   var(--_n-900);
+  --ink-secondary: var(--_n-700);
+  --ink-tertiary:  var(--_n-600);
+  --ink-muted:     var(--_n-500);
+  --ink-disabled:  var(--_n-400);
+  --ink-inverse:   var(--_n-0);
+
+  /* Border */
+  --border:        var(--_n-200);
+  --border-strong: var(--_n-300);
+  --border-brand:  rgba(59, 82, 212, 0.20);
+
+  /* Brand */
+  --brand:        var(--_br-600);
+  --brand-hover:  var(--_br-500);
+  --brand-dark:   var(--_br-700);
+  --brand-subtle: rgba(59, 82, 212, 0.08);
+  --brand-muted:  rgba(59, 82, 212, 0.14);
+
+  /* Action §23 */
+  --action-primary:       var(--brand);
+  --action-primary-hover: var(--brand-hover);
+  --action-primary-dark:  var(--brand-dark);
+  --action-destructive:   #B91C1C;
+
+  /* Severity signals §19 §25 */
+  --signal-fyi:           var(--_sev-fyi);
+  --signal-fyi-bg:        rgba(61, 90, 108, 0.08);
+  --signal-attention:     var(--_sev-attention);
+  --signal-attention-bg:  rgba(146, 64, 14, 0.08);
+  --signal-urgent:        var(--_sev-urgent);
+  --signal-urgent-bg:     rgba(180, 83, 9, 0.08);
+  --signal-approval:      var(--_sev-approval);
+  --signal-approval-bg:   rgba(59, 82, 212, 0.08);
+  --signal-critical:      var(--_sev-critical);
+  --signal-critical-bg:   rgba(153, 27, 27, 0.08);
+
+  /* Demo §26 — non-overridable by user or theme */
+  --demo-bg:     var(--_demo-bg);
+  --demo-ink:    var(--_demo-ink);
+  --demo-border: var(--_demo-border);
+
+  /* Role badges §27 */
+  --role-owner:     var(--_role-owner);
+  --role-admin:     var(--_role-admin);
+  --role-team-lead: var(--_role-teamlead);
+  --role-agent:     var(--_role-agent);
+  --role-viewer:    var(--_role-viewer);
+  --role-orvn:      var(--_role-orvn);
+
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §3  TYPOGRAPHY §1
+───────────────────────────────────────────────────────────────── */
+:root {
+
+  /* Families — CSS variables injected by next/font/google in layout.tsx */
+  --font-sans: var(--font-inter, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-jetbrains-mono, ui-monospace, "Courier New", monospace);
+
+  /* Type scale §1.2 — 1.125 major second, 4-pt grid snap.
+   * Letter-spacing: negative at large sizes (tighten display), slightly
+   * positive at small sizes (open micro for legibility).
+   */
+  --text-display:  32px;  --lh-display:  40px;  --ls-display:  -0.02em;
+  --text-title:    24px;  --lh-title:    32px;  --ls-title:    -0.015em;
+  --text-subtitle: 18px;  --lh-subtitle: 28px;  --ls-subtitle: -0.01em;
+  --text-body-lg:  16px;  --lh-body-lg:  24px;  --ls-body-lg:   0em;
+  --text-body:     14px;  --lh-body:     20px;  --ls-body:      0em;
+  --text-caption:  12px;  --lh-caption:  16px;  --ls-caption:   0.01em;
+  --text-micro:    11px;  --lh-micro:    16px;  --ls-micro:     0.04em;
+
+  /* Weight scale — maximum three in active use at any time §1.2 */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  /* 700 is reserved for the single signature brand mark only */
+
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §4  SPACING §2 — 8-pt baseline
+───────────────────────────────────────────────────────────────── */
+:root {
+
+  --space-0:    0px;
+  --space-hair: 4px;
+  --space-xs:   8px;
+  --space-sm:   12px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+  --space-3xl:  64px;
+  --space-4xl:  96px;
+
+  /* Module gutters §2 */
+  --gutter-desktop: var(--space-xl);
+  --gutter-tablet:  var(--space-lg);
+  --gutter-mobile:  var(--space-md);
+
+  /* Semantic flow aliases */
+  --flow-tight: var(--space-xs);   /* 8  — within a component */
+  --flow-base:  var(--space-sm);   /* 12 — between sibling items */
+  --flow-loose: var(--space-lg);   /* 24 — between sections */
+  --inset-sm:   var(--space-xs);   /* 8  — compact content area */
+  --inset-md:   var(--space-md);   /* 16 — default card inset */
+  --inset-lg:   var(--space-lg);   /* 24 — panel inset */
+
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §5  RADIUS §3
+───────────────────────────────────────────────────────────────── */
+:root {
+  --radius-none: 0px;
+  --radius-xs:   4px;    /* chips, badges, tags         */
+  --radius-sm:   6px;    /* inputs, buttons, dense cards */
+  --radius-md:   10px;   /* cards, drawers (inner)       */
+  --radius-lg:   14px;   /* panels, modals, drawers      */
+  --radius-pill: 9999px; /* avatars, dots, severity chips */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §6  ELEVATION §4 §5 — two shadows only
+   Every elevated surface pairs shadow with a 1px hairline border
+   so contrast holds for low-vision users and high-contrast modes.
+───────────────────────────────────────────────────────────────── */
+:root {
+  --shadow-soft:
+    0 1px 2px rgba(13, 13, 20, 0.04),
+    0 1px 1px rgba(13, 13, 20, 0.03);
+
+  --shadow-overlay:
+    0 8px 24px rgba(13, 13, 20, 0.08),
+    0 2px 6px  rgba(13, 13, 20, 0.04);
+
+  --shadow-popover:
+    0 4px 8px  rgba(13, 13, 20, 0.06),
+    0 1px 3px  rgba(13, 13, 20, 0.04);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §7  MOTION §6 §7
+   No duration exceeds 300ms except --anim-presence.
+   No bounce, no overshoot, no spring.
+───────────────────────────────────────────────────────────────── */
+:root {
+  --anim-instant:  80ms;
+  --anim-fast:     150ms;
+  --anim-base:     200ms;
+  --anim-slow:     300ms;
+  --anim-presence: 1200ms;  /* "PAS is thinking" — opacity-only, stops under reduced-motion */
+
+  --ease-out:    cubic-bezier(0, 0, 0.2, 1);    /* entrances    */
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);    /* exits        */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);  /* bidirectional */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   §8  SHELL DIMENSIONS §9 §10 §11.1 §16.1
+───────────────────────────────────────────────────────────────── */
+:root {
+  --sidebar-expanded:  256px;
+  --sidebar-collapsed: 64px;
+  --topbar-height:     56px;
+  --composer-default:  56px;
+  --composer-expanded: 200px;
+
+  --panel-peek:      360px;
+  --panel-inspector: 420px;
+  --panel-approval:  480px;
+  --panel-modal:     640px;
+
+  --grid-max: 1400px;
+
+  /* Density §28 — two tiers only */
+  --row-comfortable: 48px;
+  --row-compact:     36px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   BASE STYLES
+───────────────────────────────────────────────────────────────── */
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-primary);
+  background-color: var(--surface-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* §1.3 — Tabular numerics in all tables, always */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* §21 — Focus ring: 2px brand, 2px offset */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* §6 UI/UX ref — cursor-pointer on every clickable; no "is this clickable?" moments */
+button, [role="button"], a, label[for],
+[tabindex]:not([tabindex="-1"]) { cursor: pointer; }
+
+/* Form element font inheritance */
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* Selection */
+::selection { background: var(--brand-muted); }
+
+/* Scrollbars */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: var(--surface-subtle); }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+
+/* ─────────────────────────────────────────────────────────────────
+   DARK-MODE STUB §22
+   Full dark theme ships in v1.x with dedicated QA pass.
+   Empty block prevents browsers from auto-darkening any surface.
+   Dark token pairs are pre-defined in docs/pas_web_design_tokens_v1.md §dark.
+───────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* intentionally empty — dark theme remap lands in v1.x */
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   REDUCED-MOTION §6 §21
+   Collapses every animation to a 50ms opacity fade.
+   --anim-presence stops entirely; shows as static "Thinking…" label.
+───────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 50ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 50ms !important;
+    scroll-behavior: auto !important;
+  }
+}
