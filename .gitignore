@@ -15,3 +15,11 @@ build/
 server_err.log
 server_out.log
 *.log
+server*.log
+
+# Local report / demo artifacts — keep on disk, do not commit.
+reports/
+backups/
+integrity_check_report.json
+pas169_launch_readiness_report.json
+security_audit_report.json
