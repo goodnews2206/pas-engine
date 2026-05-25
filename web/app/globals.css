@@ -1,0 +1,229 @@
+/*
+ * PAS Design System Tokens v1
+ * Compiled from docs/pas_design_system_definition.md
+ *
+ * Rule: all PAS surfaces use only these tokens.
+ * No ad-hoc hex values, no ad-hoc px values outside this file.
+ * Signature palette hex confirmed in v1.x with design sign-off.
+ */
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Design Tokens ── */
+:root {
+  /* §1.1 — Typography families
+   * Families injected by next/font via CSS variables --font-inter and
+   * --font-jetbrains-mono. Falls back to system stacks if unavailable.
+   */
+  --font-sans: var(--font-inter, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-jetbrains-mono, ui-monospace, "Courier New", monospace);
+
+  /* §1.2 — Type scale (1.125 major-second, snapped to 4-pt grid) */
+  --text-display:  32px;  --lh-display:  40px;
+  --text-title:    24px;  --lh-title:    32px;
+  --text-subtitle: 18px;  --lh-subtitle: 28px;
+  --text-body-lg:  16px;  --lh-body-lg:  24px;
+  --text-body:     14px;  --lh-body:     20px;
+  --text-caption:  12px;  --lh-caption:  16px;
+  --text-micro:    11px;  --lh-micro:    16px;
+
+  /* §1.2 — Weight scale — max 3 in active use at any time */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+
+  /* §2 — Spacing (8-pt baseline) */
+  --space-0:    0px;
+  --space-hair: 4px;
+  --space-xs:   8px;
+  --space-sm:   12px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+  --space-3xl:  64px;
+  --space-4xl:  96px;
+
+  /* §2 — Module outer gutters */
+  --gutter-desktop: var(--space-xl);   /* 32 */
+  --gutter-tablet:  var(--space-lg);   /* 24 */
+  --gutter-mobile:  var(--space-md);   /* 16 */
+
+  /* §3 — Radius */
+  --radius-none: 0px;
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-pill: 9999px;
+
+  /* §5 — Shadows (two only; no coloured shadows, no glow) */
+  --shadow-soft:
+    0 1px 2px rgba(20, 22, 24, 0.04),
+    0 1px 1px rgba(20, 22, 24, 0.03);
+  --shadow-overlay:
+    0 8px 24px rgba(20, 22, 24, 0.08),
+    0 2px 6px rgba(20, 22, 24, 0.04);
+
+  /* §6 — Animation durations */
+  --anim-instant:  80ms;
+  --anim-fast:     150ms;
+  --anim-base:     200ms;
+  --anim-slow:     300ms;
+  --anim-presence: 1200ms;   /* opacity-only; stops under reduced-motion */
+
+  /* §6 — Easings */
+  --ease-out:    cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* §8 — Grid */
+  --grid-max: 1400px;
+  --grid-min: 1024px;
+
+  /* §9 §11.1 §16.1 — Shell dimensions */
+  --sidebar-expanded:  256px;
+  --sidebar-collapsed: 64px;
+  --topbar-height:     56px;
+  --composer-default:  56px;
+  --composer-expanded: 200px;
+
+  /* §10 — Panel widths */
+  --panel-peek:      360px;
+  --panel-inspector: 420px;
+  --panel-approval:  480px;
+  --panel-modal:     640px;
+
+  /* §20 — Breakpoints (CSS custom props for reference; use media queries in practice) */
+  --bp-mobile:  375px;
+  --bp-tablet:  768px;
+  --bp-desktop: 1024px;
+  --bp-wide:    1440px;
+
+  /* §28 — Density (two tiers only; table rows + card padding scale with this) */
+  --row-comfortable: 48px;
+  --row-compact:     36px;
+
+  /* ── Colours — light theme (§22) ──────────────────────────────────────
+   * Palette established from the legacy dashboard (app/static/dashboard/).
+   * Exact signature brand hex confirmed in v1.x with design sign-off.
+   * ------------------------------------------------------------------- */
+
+  /* Surfaces §4 */
+  --surface-base:   #F8F8FC;
+  --surface-raised: #FFFFFF;
+  --surface-subtle: #F2F2F8;
+  --surface-muted:  #EAEAF4;
+
+  /* Ink */
+  --ink-primary:   #111111;
+  --ink-secondary: #1A1A1A;
+  --ink-muted:     #6B7280;
+
+  /* Border */
+  --border:       #E4E4EF;
+  --border-brand: rgba(91, 63, 212, 0.18);
+
+  /* Brand */
+  --brand:       #5B3FD4;
+  --brand-hover: #7B5FEA;
+  --brand-dark:  #3A28A8;
+
+  /* §19 §25 — Severity signals
+   * Each token MUST be paired with icon + position (§21).
+   * Colour alone is never the only signal.
+   * Concrete hex confirmed in v1.x.
+   */
+  --signal-fyi:           #6B7280;
+  --signal-fyi-bg:        rgba(107, 114, 128, 0.08);
+  --signal-attention:     #B45309;
+  --signal-attention-bg:  rgba(180, 83,   9, 0.08);
+  --signal-urgent:        #D97706;
+  --signal-urgent-bg:     rgba(217, 119,  6, 0.08);
+  --signal-approval:      #5B3FD4;
+  --signal-approval-bg:   rgba(91,  63, 212, 0.08);
+  --signal-critical:      #991B1B;
+  --signal-critical-bg:   rgba(153, 27,  27, 0.08);
+
+  /* §26 — Demo / rehearsal — non-overridable by user theme preference */
+  --demo-bg:     #FEF3C7;
+  --demo-ink:    #92400E;
+  --demo-border: #F59E0B;
+
+  /* §27 — Role badges */
+  --role-owner:     #1D4ED8;
+  --role-admin:     #7C3AED;
+  --role-team-lead: #0F766E;
+  --role-agent:     #374151;
+  --role-viewer:    #6B7280;
+  --role-orvn:      #DC2626;
+}
+
+/* ── Base styles ── */
+html {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  color: var(--ink-primary);
+  background-color: var(--surface-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* §1.3 — Tabular numerics in tables (always) */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* §21 — Focus ring: 2 px, brand-adjacent, 2 px offset */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Selection tint */
+::selection {
+  background: rgba(91, 63, 212, 0.15);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-subtle);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
+}
+
+/* §6 §21 — Reduced-motion: collapse all animation to 50 ms opacity fade.
+ * anim-presence stops entirely; shows as static label instead.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 50ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 50ms !important;
+    scroll-behavior: auto !important;
+  }
+}
