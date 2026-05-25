@@ -1,0 +1,47 @@
+/* Shell — persistent skeleton; never unmounts on route change */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--surface-base);
+}
+
+/* frame: sidebar + main side by side */
+.frame {
+  display: flex;
+  flex: 1 0 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* main: top bar → tenant strip → scrollable content → composer */
+.main {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* scrollable module content region */
+.content {
+  flex: 1 1 0;
+  overflow-y: auto;
+  padding: var(--gutter-desktop);
+  /* max content width per Design System §8 grid */
+  max-width: var(--grid-max);
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .content {
+    padding: var(--gutter-tablet);
+  }
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding: var(--gutter-mobile);
+  }
+}

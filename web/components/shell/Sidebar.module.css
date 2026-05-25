@@ -1,0 +1,238 @@
+/* ── Sidebar ── Design System §9 */
+
+.sidebar {
+  width: var(--sidebar-expanded);
+  flex-shrink: 0;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Header: wordmark + brand ── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* 700 weight is the brand mark exception §1.2 */
+.wordmark {
+  font-size: var(--text-title);
+  line-height: var(--lh-title);
+  font-weight: 700;
+  letter-spacing: var(--ls-display);
+  color: var(--brand);
+}
+
+.brand {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ── Workspace + role ── */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-hair);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.workspaceName {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* role-owner token §27 */
+.roleChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-xs);
+  background: rgba(29, 78, 216, 0.08);
+  color: var(--role-owner);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  border-radius: var(--radius-pill);
+  width: fit-content;
+}
+
+/* ── Navigation ── */
+.nav {
+  flex: 1 1 0;
+  padding: var(--space-sm) 0;
+  overflow-y: auto;
+}
+
+.group {
+  margin-bottom: var(--space-xs);
+}
+
+.groupLabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: var(--space-sm) var(--space-md) var(--space-hair);
+}
+
+.items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 3 px left rail per Design System §9 active item */
+.item {
+  display: block;
+  padding: var(--space-xs) var(--space-md);
+  padding-left: calc(var(--space-md) + 3px);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-secondary);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition:
+    background var(--anim-instant) var(--ease-out),
+    color var(--anim-instant) var(--ease-out);
+}
+
+.item:hover {
+  background: var(--surface-subtle);
+  color: var(--ink-primary);
+}
+
+.item.active {
+  border-left-color: var(--brand);
+  background: var(--brand-subtle);
+  color: var(--ink-primary);
+  font-weight: var(--fw-medium);
+}
+
+/* ── Footer: identity slot ── */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.footerWorkspace {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-medium);
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footerRole {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  color: var(--ink-muted);
+}
+
+/* ── Tablet (768–1279): collapsed to 64 px icon strip ── */
+@media (max-width: 1279px) and (min-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-collapsed);
+  }
+
+  .brand,
+  .workspace,
+  .groupLabel,
+  .footer {
+    display: none;
+  }
+
+  .header {
+    align-items: center;
+    padding: var(--space-md) var(--space-xs);
+    gap: 0;
+  }
+
+  .wordmark {
+    font-size: var(--text-body);
+    text-align: center;
+    width: 100%;
+  }
+
+  .item {
+    border-left: none;
+    padding: var(--space-sm) 0;
+    text-align: center;
+    color: transparent;
+    font-size: 0;
+    line-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Dot stands in for label text */
+  .item::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--border-strong);
+    transition: background var(--anim-instant) var(--ease-out),
+      width var(--anim-instant) var(--ease-out),
+      height var(--anim-instant) var(--ease-out);
+  }
+
+  .item:hover::after {
+    background: var(--ink-muted);
+    width: 7px;
+    height: 7px;
+  }
+
+  .item.active::after {
+    background: var(--brand);
+    width: 8px;
+    height: 8px;
+  }
+}
+
+/* ── Mobile: sidebar hidden, replaced by bottom nav (v1.x) ── */
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+}

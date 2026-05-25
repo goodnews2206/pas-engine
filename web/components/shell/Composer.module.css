@@ -1,0 +1,115 @@
+/* ── PAS Composer — Design System §11.3 / §16.1 ── */
+
+.composer {
+  flex-shrink: 0;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border);
+  min-height: var(--composer-default);
+  display: flex;
+  align-items: stretch;
+  padding: var(--space-xs) var(--space-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: var(--grid-max);
+}
+
+/* PAS presence state — "PAS is observing / thinking / waiting" */
+.presence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Calm pulsing dot — animates to anim-presence when PAS is thinking */
+.presenceDot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--signal-fyi);
+  flex-shrink: 0;
+}
+
+.presenceLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* Compose textarea — full-width, borderless inside the composer frame */
+.input {
+  flex: 1 1 0;
+  min-width: 0;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-primary);
+  padding: var(--space-xs) 0;
+  /* Single-line default; grows with content via JS in a later step */
+  overflow: hidden;
+}
+
+.input::placeholder {
+  color: var(--ink-disabled);
+}
+
+.input:focus {
+  outline: none;
+}
+
+/* Keyboard shortcut hint */
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 5px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-tertiary);
+}
+
+.hintText {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* Mobile: hide hint and presence label */
+@media (max-width: 767px) {
+  .composer {
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  .presenceLabel,
+  .hint {
+    display: none;
+  }
+}

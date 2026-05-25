@@ -1,0 +1,200 @@
+/* ── Top bar — Design System §11.1 ── */
+
+.topbar {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0 var(--space-lg);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+/* ── Left: page title + demo status ── */
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+/* subtitle-scale per Design System §1.2 */
+.pageTitle {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  white-space: nowrap;
+}
+
+/* demo token §26 — non-overridable */
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-xs);
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  border: 1px solid var(--demo-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Center: command bar entry §11.2 ── */
+.center {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.searchWrap {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchHint {
+  position: absolute;
+  left: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-disabled);
+  pointer-events: none;
+  user-select: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--space-sm) 0 calc(var(--space-sm) + 28px);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  color: var(--ink-muted);
+  outline: none;
+  transition:
+    border-color var(--anim-instant) var(--ease-out),
+    background var(--anim-instant) var(--ease-out);
+}
+
+.searchInput::placeholder {
+  color: var(--ink-disabled);
+}
+
+.searchInput:focus {
+  border-color: var(--brand);
+  background: var(--surface-raised);
+  color: var(--ink-primary);
+}
+
+/* environment label — signal-fyi / informational */
+.envChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-xs);
+  background: var(--signal-fyi-bg);
+  color: var(--signal-fyi);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Right: bell + avatar ── */
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink-tertiary);
+  transition:
+    background var(--anim-instant) var(--ease-out),
+    color var(--anim-instant) var(--ease-out);
+}
+
+.iconButton:hover {
+  background: var(--surface-subtle);
+  color: var(--ink-primary);
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0;
+}
+
+.profileButton:hover .avatar {
+  opacity: 0.85;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-muted);
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  transition: opacity var(--anim-instant) var(--ease-out);
+}
+
+/* ── Mobile: condensed — hide center search ── */
+@media (max-width: 767px) {
+  .topbar {
+    padding: 0 var(--space-md);
+  }
+
+  .center,
+  .statusChip {
+    display: none;
+  }
+
+  .left {
+    flex: 1;
+  }
+}
