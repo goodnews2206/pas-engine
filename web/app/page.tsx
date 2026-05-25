@@ -15,9 +15,8 @@ export default function HomePage() {
           Making your company queryable, adaptive, and operationally
           intelligent.
         </p>
-        <span className={styles.demoChip}>
-          Demo / rehearsal web foundation
-        </span>
+        <div className={styles.separator} role="presentation" />
+        <span className={styles.demoChip}>Demo / rehearsal web foundation</span>
       </div>
     </main>
   );

@@ -4,46 +4,59 @@
   justify-content: center;
   min-height: 100dvh;
   padding: var(--gutter-desktop);
+  background: var(--surface-base);
 }
 
 .content {
-  max-width: 520px;
+  max-width: 480px;
 }
 
+/* ORVN Labs eyebrow — monospace, small-caps treatment */
 .eyebrow {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   line-height: var(--lh-caption);
   font-weight: var(--fw-medium);
-  color: var(--ink-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;       /* intentionally wider than --ls-caption for all-caps mono */
   text-transform: uppercase;
-  margin-bottom: var(--space-md);
+  color: var(--ink-tertiary);
+  margin-bottom: var(--space-lg);
 }
 
+/* PAS wordmark — the only place font-weight 700 is permitted */
 .wordmark {
   font-size: var(--text-display);
   line-height: var(--lh-display);
-  font-weight: var(--fw-semibold);
+  font-weight: 700;             /* brand mark exception §1.2 */
+  letter-spacing: var(--ls-display);
   color: var(--brand);
-  letter-spacing: -0.01em;
-  margin-bottom: var(--space-xs);
+  margin-bottom: var(--space-sm);
 }
 
+/* Product tagline */
 .tagline {
   font-size: var(--text-body-lg);
   line-height: var(--lh-body-lg);
   font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-body-lg);
   color: var(--ink-secondary);
-  margin-bottom: var(--space-xl);
   max-width: 400px;
 }
 
+/* Thin separator using --border token — demonstrates the neutral scale */
+.separator {
+  width: 40px;
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-xl) 0;
+}
+
+/* Demo / rehearsal chip §26 — amber, immutable */
 .demoChip {
   display: inline-flex;
   align-items: center;
   gap: var(--space-hair);
-  padding: var(--space-hair) var(--space-xs);
+  padding: 3px var(--space-xs);
   background: var(--demo-bg);
   color: var(--demo-ink);
   border: 1px solid var(--demo-border);
@@ -51,10 +64,11 @@
   font-size: var(--text-micro);
   line-height: var(--lh-micro);
   font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
   border-radius: var(--radius-xs);
-  letter-spacing: 0.06em;
 }
 
+/* Mobile gutter §2 */
 @media (max-width: 767px) {
   .root {
     padding: var(--gutter-mobile);
