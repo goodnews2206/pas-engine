@@ -1,6 +1,6 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8). Owner: ORVN Labs.
+> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9). Owner: ORVN Labs.
 > Step 1+2 branch: `pas-web-foundation-v1` (merged to main 2026-05-25).
 > Step 3 branch: `pas-web-app-shell-chrome` (merged to main 2026-05-25).
 > Step 4 branch: `pas-web-route-skeletons`.
@@ -676,9 +676,88 @@ TypeScript clean, pnpm build passes.
 
 ---
 
-## Next steps (Step 9+)
+---
 
-`docs/pas_frontend_foundation_plan.md §14` Step 9: **API wiring.**
+## Step 9 — Module-specific empty states
+
+`docs/pas_frontend_foundation_plan.md §14` Step 9.
+Branch: `pas-web-module-empty-states`.
+
+### Goal
+
+Replace the generic route-registry copy in all 11 skeleton routes with
+premium, role-aware, module-specific empty states. Still static/demo-only —
+no API, no realtime, no auth, no backend calls.
+
+### Config file
+
+`web/lib/demo/moduleEmptyStates.ts` — single typed config:
+
+```typescript
+export interface ModuleEmptyState {
+  id: string;
+  contextCopy: string;                       // header description
+  readonly pasCanAnswer: readonly string[];  // rendered as a dash-list
+  readonly notConnectedYet: readonly string[];
+  demoOnly: true;
+  noLiveBehavior: true;
+}
+export const MODULE_EMPTY_STATES: Readonly<Record<string, ModuleEmptyState>>;
+```
+
+All 11 entries: `leads`, `calls`, `callbacks`, `bookings`, `pipeline-risks`,
+`recommendations`, `action-proposals`, `evidence-digest`, `simulation-lab`,
+`integrations`, `settings`.
+
+### ModuleSkeleton changes
+
+`web/components/modules/ModuleSkeleton.tsx` updated:
+- Accepts optional `emptyState?: ModuleEmptyState` prop.
+- When present: renders `contextCopy` as header description and both
+  `pasCanAnswer` / `notConnectedYet` arrays as `<ul>` dash-lists.
+- When absent: falls back to `route.description` / `route.pasCan` /
+  `route.notConnectedYet` strings (backward-compatible).
+- Section heading changed from "What PAS can help with here" →
+  "What PAS can answer here".
+- `aria-label` updated from `— skeleton` to `— empty state`.
+
+`web/components/modules/ModuleSkeleton.module.css`:
+- Added `.list` and `.listItem` styles (dash prefix via `::before`).
+
+### Routes updated
+
+All 11 module pages now import `MODULE_EMPTY_STATES` and pass
+`emptyState={MODULE_EMPTY_STATES[id]}` alongside the existing `route` prop.
+
+### Empty state copy — per module
+
+| Module | Context copy (first line) |
+|---|---|
+| Leads | "This is where PAS will show lead context, source, ownership…" |
+| Calls | "This is where PAS will surface every call — transcript, outcome…" |
+| Callbacks | "This is where PAS will track every callback promise…" |
+| Bookings | "This is where PAS will show Cal.com-backed appointments…" |
+| Pipeline Risks | "This is where PAS will flag which leads and deals are at risk…" |
+| Recommendations | "This is where PAS will surface what it thinks should happen next…" |
+| Action Proposals | "…bounded, named actions it would like to take — nothing happens until a human approves…" |
+| Evidence Digest | "This is where PAS will show its receipts…" |
+| Simulation Lab | "…rehearsal calls, scenarios, and recommendations with zero live side effects…" |
+| Integrations | "…Read access always comes first. Write access requires explicit approval…" |
+| Settings | "…PAS adapts to how your office works, not the other way around." |
+
+### Invariants preserved
+
+- Every page carries the demo/rehearsal chip.
+- Every page ends with "PAS has not changed live customer behavior."
+- `demoOnly: true` and `noLiveBehavior: true` on every `ModuleEmptyState` entry.
+- No fake live metrics, no fake client claims, no AI-gradient styling.
+- All 16 routes static, build clean.
+
+---
+
+## Next steps (Step 10+)
+
+`docs/pas_frontend_foundation_plan.md §14` Step 10+: **API wiring.**
 Connect composer submit to FastAPI `/api/pas/ask`. Type-safe fetch client.
 Replace the `setTimeout` with a real request. No auth yet — unauthenticated
 endpoint first.
