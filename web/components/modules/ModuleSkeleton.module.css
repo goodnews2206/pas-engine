@@ -99,6 +99,18 @@
   color: var(--ink-secondary);
 }
 
+/* ── Auth/permission boundary note ── */
+.authNote {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--ink-muted);
+  border-left: 2px solid var(--border-strong);
+  padding-left: var(--space-xs);
+}
+
 /* ── Disclaimer — bottom invariant ── */
 .disclaimer {
   font-family: var(--font-mono);

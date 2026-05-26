@@ -1,3 +1,10 @@
+/*
+ * TopBar — 56 px shell header. Design System §11.1.
+ * Static RSC. Avatar and role derived from DEMO_SESSION (build-time constant).
+ * Replace with real session context in the auth step.
+ */
+
+import { DEMO_SESSION } from "@/lib/session/demoSession";
 import styles from "./TopBar.module.css";
 
 function BellIcon() {
@@ -25,6 +32,8 @@ function BellIcon() {
     </svg>
   );
 }
+
+const { user } = DEMO_SESSION;
 
 export default function TopBar() {
   return (
@@ -67,10 +76,10 @@ export default function TopBar() {
         <button
           type="button"
           className={styles.profileButton}
-          aria-label="Profile: Broker Owner"
+          aria-label={`Profile: ${user.name} — ${user.role}`}
         >
           <span className={styles.avatar} aria-hidden="true">
-            BO
+            {user.initials}
           </span>
         </button>
       </div>

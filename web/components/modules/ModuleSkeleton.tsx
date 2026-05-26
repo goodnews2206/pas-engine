@@ -26,6 +26,11 @@ export default function ModuleSkeleton({ route }: ModuleSkeletonProps) {
         <p className={styles.description}>{route.description}</p>
       </div>
 
+      {/* Session / permission boundary note */}
+      <p className={styles.authNote} role="note">
+        Access and permissions shown here are demo-only until real auth is connected.
+      </p>
+
       <div className={styles.divider} role="presentation" />
 
       {/* What this module will show */}
