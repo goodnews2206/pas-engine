@@ -4,22 +4,107 @@
   flex-shrink: 0;
   background: var(--surface-raised);
   border-top: 1px solid var(--border);
-  min-height: var(--composer-default);
-  display: flex;
-  align-items: stretch;
-  padding: var(--space-xs) var(--space-lg);
   box-shadow: var(--shadow-soft);
 }
 
 .inner {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+  flex-direction: column;
   width: 100%;
-  max-width: var(--grid-max);
 }
 
-/* PAS presence state — "PAS is observing / thinking / waiting" */
+/* ── Response panel — appears after submit ── */
+.responsePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-subtle);
+}
+
+.responseHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+/* Echoes the submitted prompt back as a label */
+.responsePrompt {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-caption);
+  color: var(--ink-muted);
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dismissButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition:
+    color var(--anim-instant) var(--ease-out),
+    background var(--anim-instant) var(--ease-out);
+}
+
+.dismissButton:hover {
+  background: var(--surface-muted);
+  color: var(--ink-secondary);
+}
+
+.dismissButton:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.responseText {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-secondary);
+}
+
+/* Demo disclaimer — immutable amber, Design System §26 */
+.responseDisclaimer {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--demo-ink);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: var(--radius-xs);
+  padding: var(--space-hair) var(--space-xs);
+  width: fit-content;
+}
+
+/* ── Input row ── */
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-lg);
+  min-height: var(--composer-default);
+}
+
+/* ── Presence indicator ── */
 .presence {
   display: flex;
   align-items: center;
@@ -27,7 +112,13 @@
   flex-shrink: 0;
 }
 
-/* Calm pulsing dot — animates to anim-presence when PAS is thinking */
+/* Thinking pulse — uses --anim-presence (1200ms) from Design System §7.
+   Opacity-only; stops under prefers-reduced-motion. */
+@keyframes pas-thinking {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
 .presenceDot {
   display: block;
   width: 7px;
@@ -35,6 +126,18 @@
   border-radius: var(--radius-pill);
   background: var(--signal-fyi);
   flex-shrink: 0;
+  transition: background var(--anim-fast) var(--ease-out);
+}
+
+.presenceThinking .presenceDot {
+  background: var(--signal-attention);
+  animation: pas-thinking var(--anim-presence) ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presenceThinking .presenceDot {
+    animation: none;
+  }
 }
 
 .presenceLabel {
@@ -45,9 +148,14 @@
   letter-spacing: var(--ls-micro);
   color: var(--ink-muted);
   white-space: nowrap;
+  transition: color var(--anim-fast) var(--ease-out);
 }
 
-/* Compose textarea — full-width, borderless inside the composer frame */
+.presenceThinking .presenceLabel {
+  color: var(--signal-attention);
+}
+
+/* ── Textarea ── */
 .input {
   flex: 1 1 0;
   min-width: 0;
@@ -55,35 +163,132 @@
   border: none;
   outline: none;
   background: transparent;
+  font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: var(--lh-body);
   letter-spacing: var(--ls-body);
   color: var(--ink-primary);
   padding: var(--space-xs) 0;
-  /* Single-line default; grows with content via JS in a later step */
-  overflow: hidden;
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .input::placeholder {
   color: var(--ink-disabled);
 }
 
-.input:focus {
-  outline: none;
+.input:disabled {
+  color: var(--ink-disabled);
+  cursor: not-allowed;
 }
 
-/* Keyboard shortcut hint */
-.hint {
+/* ── Send button ── */
+.sendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--brand);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink-inverse);
+  cursor: pointer;
+  transition:
+    background var(--anim-instant) var(--ease-out),
+    opacity var(--anim-instant) var(--ease-out);
+}
+
+.sendButton:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+.sendButton:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.sendButton:disabled {
+  background: var(--surface-muted);
+  color: var(--ink-disabled);
+  cursor: not-allowed;
+}
+
+/* ── Prompt chips ── */
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: 0 var(--space-lg) var(--space-xs);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-hair) var(--space-xs);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-caption);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--anim-instant) var(--ease-out),
+    color var(--anim-instant) var(--ease-out),
+    border-color var(--anim-instant) var(--ease-out);
+}
+
+.chip:hover {
+  background: var(--brand-subtle);
+  border-color: var(--border-brand);
+  color: var(--ink-primary);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ── Session meta + keyboard hints ── */
+.sessionMeta {
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  padding: 0 var(--space-lg) var(--space-xs);
+}
+
+.metaItem {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--ink-muted);
+}
+
+.metaSep {
+  font-size: var(--text-micro);
+  color: var(--border-strong);
+  user-select: none;
+}
+
+.hintGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .kbd {
   display: inline-flex;
   align-items: center;
-  padding: 2px 5px;
+  padding: 1px 4px;
   background: var(--surface-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-xs);
@@ -98,18 +303,39 @@
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
   color: var(--ink-muted);
-  white-space: nowrap;
 }
 
-/* Mobile: hide hint and presence label */
+/* ── Mobile ── */
 @media (max-width: 767px) {
-  .composer {
+  .inputRow {
     padding: var(--space-xs) var(--space-md);
   }
 
-  .presenceLabel,
-  .hint {
+  /* Chips scroll horizontally on mobile rather than wrapping */
+  .chipsRow {
+    padding: 0 var(--space-md) var(--space-xs);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .chipsRow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .responsePanel {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  /* Hide supplementary info on mobile */
+  .sessionMeta {
+    display: none;
+  }
+
+  .presenceLabel {
     display: none;
   }
 }
