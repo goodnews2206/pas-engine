@@ -1,6 +1,6 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9). Owner: ORVN Labs.
+> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10). Owner: ORVN Labs.
 > Step 1+2 branch: `pas-web-foundation-v1` (merged to main 2026-05-25).
 > Step 3 branch: `pas-web-app-shell-chrome` (merged to main 2026-05-25).
 > Step 4 branch: `pas-web-route-skeletons`.
@@ -755,9 +755,66 @@ All 11 module pages now import `MODULE_EMPTY_STATES` and pass
 
 ---
 
-## Next steps (Step 10+)
+---
 
-`docs/pas_frontend_foundation_plan.md §14` Step 10+: **API wiring.**
+## Step 10 — Vercel deployment preparation
+
+`docs/pas_frontend_foundation_plan.md §14` Step 10.
+Branch: `pas-web-vercel-deployment-prep`.
+Full deployment guide: `docs/pas_web_vercel_deployment.md`.
+
+### Goal
+
+Prepare the frontend for Vercel deployment without adding backend coupling.
+No API calls, no CORS, no auth, no secrets. Backend untouched.
+
+### Files added
+
+| File | Purpose |
+|---|---|
+| `docs/pas_web_vercel_deployment.md` | Full Vercel setup guide, checklist, CORS sequencing, rollback, smoke test |
+| `web/README.md` | Local dev, build, Vercel root directory, env var context |
+| `web/.env.example` | Env var reference — `NEXT_PUBLIC_PAS_API_BASE_URL` placeholder only |
+
+### Key decisions
+
+**No `vercel.json` added.** The Vercel dashboard Root Directory setting
+(`web`) is sufficient. A `vercel.json` would only be needed for custom
+headers, redirects, rewrites, or multi-region config — none required now.
+
+**No package.json changes.** `dev`, `build`, `start`, and `type-check`
+are all present. Vercel uses `pnpm build`. No lint script was added —
+`type-check` covers static correctness.
+
+**`next.config.ts` unchanged.** The existing comment already notes that
+rewrites to the backend land in a later step once the Vercel domain is known.
+
+### CORS sequencing (documented)
+
+Do not update `app/main.py` until:
+1. Vercel deployment URL is confirmed
+2. Custom domain (`pas.orvnlabs.com`) is active
+3. API wiring step is ready to begin
+
+The deployment guide documents exactly when and how to add CORS origins.
+
+### Vercel project settings (summary)
+
+| Setting | Value |
+|---|---|
+| Root Directory | `web` |
+| Framework Preset | Next.js |
+| Install Command | `pnpm install` |
+| Build Command | `pnpm build` |
+| Output Directory | Next.js default |
+| Target domain | `pas.orvnlabs.com` |
+| `NEXT_PUBLIC_PAS_API_BASE_URL` | empty (wire in Step 11+) |
+
+---
+
+## Next steps (Step 11+)
+
+**API wiring.**
 Connect composer submit to FastAPI `/api/pas/ask`. Type-safe fetch client.
 Replace the `setTimeout` with a real request. No auth yet — unauthenticated
-endpoint first.
+endpoint first. Requires CORS update in `app/main.py` once Vercel URL is known.
