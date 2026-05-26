@@ -1,0 +1,105 @@
+/* ── PipelineSnapshot — Dashboard IA §4.1 item 3 ── */
+
+.section {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.sectionTitle {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.demoChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-xs);
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  border: 1px solid var(--demo-border);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.row:last-child { border-bottom: none; }
+
+.rowLabel {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-secondary);
+  flex: 1;
+}
+
+.rowHint {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.rowHintAttention {
+  color: var(--signal-attention);
+}
+
+.rowCount {
+  font-size: var(--text-body-lg);
+  line-height: var(--lh-body-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-primary);
+  min-width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.disclaimer {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+  margin: 0;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--border);
+}

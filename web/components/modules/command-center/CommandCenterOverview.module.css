@@ -1,0 +1,51 @@
+/* ── CommandCenterOverview — section assembly layout ── */
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* Ask PAS entry point — bottom of the page */
+.askPas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  background: var(--brand-subtle);
+  border: 1px solid var(--border-brand);
+  border-radius: var(--radius-md);
+}
+
+.askPasHead {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.askPasCopy {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+.askPasExamples {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-muted);
+}
+
+.askPasHint {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--brand);
+}

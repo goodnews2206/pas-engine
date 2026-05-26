@@ -1,6 +1,6 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7). Owner: ORVN Labs.
+> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8). Owner: ORVN Labs.
 > Step 1+2 branch: `pas-web-foundation-v1` (merged to main 2026-05-25).
 > Step 3 branch: `pas-web-app-shell-chrome` (merged to main 2026-05-25).
 > Step 4 branch: `pas-web-route-skeletons`.
@@ -564,9 +564,121 @@ When all notifications are marked read, the drawer body shows:
 
 ---
 
-## Next steps (Step 8+)
+---
 
-`docs/pas_frontend_foundation_plan.md §14` Step 8: **API wiring.**
+## Step 8 — Command Center intelligence layout
+
+`docs/pas_frontend_foundation_plan.md §14` Step 8.
+Branch: `pas-web-command-center-layout`.
+
+### Files created
+
+```
+web/lib/demo/
+└── commandCenter.ts             Static demo data: 6 exports, all demoOnly + noLiveBehavior
+
+web/components/modules/command-center/
+├── CommandCenterHeader.tsx      Operating summary + rehearsal badge + counts
+├── CommandCenterHeader.module.css
+├── AttentionSummary.tsx         Ordered attention items (severity rail + chip + action)
+├── AttentionSummary.module.css
+├── RecommendationPreview.tsx    Pending proposals in 2-col grid
+├── RecommendationPreview.module.css
+├── PipelineSnapshot.tsx         Pipeline count rows (demo snapshot)
+├── PipelineSnapshot.module.css
+├── SystemStatusPanel.tsx        Integration health (dot + service + detail)
+├── SystemStatusPanel.module.css
+├── EvidencePreview.tsx          Rehearsal evidence signals
+├── EvidencePreview.module.css
+├── CommandCenterOverview.tsx    Assembly: all sections + Ask PAS prompt
+└── CommandCenterOverview.module.css
+```
+
+### Files updated
+
+```
+web/app/command-center/page.tsx        Renders <CommandCenterOverview /> inside <main>
+web/app/command-center/page.module.css Simplified to single flex-column wrapper
+```
+
+### Layout hierarchy (top to bottom)
+
+Answers the five diagnostic questions within 3 seconds of page load:
+
+| Section | Question answered |
+|---|---|
+| CommandCenterHeader | What is PAS telling me right now? |
+| AttentionSummary | What needs my attention? |
+| RecommendationPreview | What is PAS proposing I do? |
+| PipelineSnapshot | What is today's pipeline state? |
+| SystemStatusPanel | Is the system healthy? |
+| EvidencePreview | What evidence supports this? |
+| Ask PAS prompt | How do I ask PAS anything else? |
+
+### Demo data structure
+
+`web/lib/demo/commandCenter.ts` exports:
+
+| Export | Type | Items |
+|---|---|---|
+| `OPERATING_SUMMARY` | `OperatingSummary` | 1 — headline + context |
+| `ATTENTION_ITEMS` | `AttentionItem[]` | 3 — urgent × 2, needs-attention × 1 |
+| `RECOMMENDATION_CARDS` | `RecommendationCard[]` | 2 — approval-required proposals |
+| `PIPELINE_ROWS` | `PipelineRow[]` | 5 — callbacks, bookings, leads, proposals, stale |
+| `SYSTEM_STATUS` | `SystemStatusItem[]` | 5 — API healthy, Twilio degraded, Cal.com disconnected, Supabase healthy, demo |
+| `EVIDENCE_SIGNALS` | `EvidenceSignal[]` | 3 — rehearsal signals |
+
+Every item carries `demoOnly: true` and `noLiveBehavior: true`.
+
+### Severity rendering — attention items
+
+- Left 3px rail: colour via inline style (signal-urgent / signal-attention)
+- Chip: colour + label (Urgent / Needs attention)
+- Severity is never colour alone — each item has rail + chip + copy hierarchy
+
+### Copy doctrine
+
+- Headline: "PAS has found 3 items worth reviewing before the day gets away from the team."
+- Operational language throughout: calm, plain, no jargon
+- No "AI-generated insights", no "critical alerts", no exclamation marks
+- Every section that uses demo data carries a "PAS has not changed live customer behavior." footer
+
+### Mobile behavior
+
+- Single-column layout on all breakpoints
+- RecommendationPreview 2-col grid collapses to 1-col at ≤1023px
+- No horizontal overflow on any section
+- All content scannable at 375px viewport width
+
+### What is intentionally not connected
+
+- No real lead data, call data, booking data, or callback data
+- No live integration health — Twilio/Cal.com status is demo-only
+- No real pipeline metrics — all counts are static demo values
+- No approve/decline functionality — proposal action links navigate to module skeleton
+- No evidence links — "Why this?" is a placeholder (future: opens approval drawer)
+- No PAS API — Ask PAS prompt directs to the composer which runs demo-only responses
+
+### Future API connection points
+
+| Section | Real wiring target |
+|---|---|
+| AttentionSummary | `GET /api/pas/attention` — proactive observer output |
+| RecommendationPreview | `GET /api/pas/proposals?status=pending` — action proposal queue |
+| PipelineSnapshot | `GET /api/pas/pipeline/summary` — today's operational snapshot |
+| SystemStatusPanel | `GET /api/pas/integrations/health` — integration health endpoint |
+| EvidencePreview | `GET /api/pas/evidence/digest?limit=3` — top evidence signals |
+
+### Build result
+
+`/command-center` route: 1.5 kB (was 568 B). All 16 routes static (○).
+TypeScript clean, pnpm build passes.
+
+---
+
+## Next steps (Step 9+)
+
+`docs/pas_frontend_foundation_plan.md §14` Step 9: **API wiring.**
 Connect composer submit to FastAPI `/api/pas/ask`. Type-safe fetch client.
 Replace the `setTimeout` with a real request. No auth yet — unauthenticated
 endpoint first.

@@ -1,0 +1,181 @@
+/* ── RecommendationPreview — Dashboard IA §4.1 item 2 ── */
+
+.section {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.sectionTitle {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: var(--signal-approval-bg);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: var(--fw-semibold);
+  color: var(--signal-approval);
+}
+
+/* Two-col on desktop, single-col on tablet/mobile */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 1023px) {
+  .cards { grid-template-columns: 1fr; }
+}
+
+.card {
+  display: flex;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cardRail {
+  width: 3px;
+  flex-shrink: 0;
+  background: var(--signal-approval);
+}
+
+.cardBody {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.cardTitle {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.approvalChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  color: var(--signal-approval);
+  background: var(--signal-approval-bg);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.scope {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.evidence {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-regular);
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-xs);
+}
+
+.expires {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--signal-urgent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px var(--space-sm);
+  background: var(--brand);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-inverse);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--anim-instant) var(--ease-out);
+}
+
+.actionBtn:hover { background: var(--brand-hover); }
+
+.actionBtn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.whyLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-muted);
+  cursor: default;
+  user-select: none;
+}
