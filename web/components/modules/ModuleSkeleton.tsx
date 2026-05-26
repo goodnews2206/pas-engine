@@ -1,19 +1,24 @@
 import type { RouteDefinition } from "@/lib/navigation/routes";
+import type { ModuleEmptyState } from "@/lib/demo/moduleEmptyStates";
 import styles from "./ModuleSkeleton.module.css";
 
 interface ModuleSkeletonProps {
   route: RouteDefinition;
+  emptyState?: ModuleEmptyState;
 }
 
 /*
- * Reusable skeleton page for every route not yet connected to real data.
- * Shows: module name, family, demo label, what this module will surface,
- * what PAS can eventually do here, what is intentionally not wired yet,
- * and the invariant demo disclaimer.
+ * Reusable empty-state page for every route not yet connected to real data.
+ * When `emptyState` is supplied the richer per-module copy is rendered;
+ * otherwise falls back to the route registry strings.
  */
-export default function ModuleSkeleton({ route }: ModuleSkeletonProps) {
+export default function ModuleSkeleton({ route, emptyState }: ModuleSkeletonProps) {
+  const contextCopy = emptyState?.contextCopy ?? route.description;
+  const pasCanItems = emptyState?.pasCanAnswer ?? null;
+  const notConnectedItems = emptyState?.notConnectedYet ?? null;
+
   return (
-    <main className={styles.page} aria-label={`${route.label} — skeleton`}>
+    <main className={styles.page} aria-label={`${route.label} — empty state`}>
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.chips}>
@@ -23,7 +28,7 @@ export default function ModuleSkeleton({ route }: ModuleSkeletonProps) {
           </span>
         </div>
         <h1 className={styles.title}>{route.label}</h1>
-        <p className={styles.description}>{route.description}</p>
+        <p className={styles.description}>{contextCopy}</p>
       </div>
 
       {/* Session / permission boundary note */}
@@ -33,20 +38,22 @@ export default function ModuleSkeleton({ route }: ModuleSkeletonProps) {
 
       <div className={styles.divider} role="presentation" />
 
-      {/* What this module will show */}
-      <section className={styles.section} aria-labelledby="what-heading">
-        <h2 className={styles.sectionLabel} id="what-heading">
-          What this module will show
-        </h2>
-        <p className={styles.sectionBody}>{route.description}</p>
-      </section>
-
-      {/* What PAS can help with */}
+      {/* What PAS can answer here */}
       <section className={styles.section} aria-labelledby="pas-heading">
         <h2 className={styles.sectionLabel} id="pas-heading">
-          What PAS can help with here
+          What PAS can answer here
         </h2>
-        <p className={styles.sectionBody}>{route.pasCan}</p>
+        {pasCanItems ? (
+          <ul className={styles.list}>
+            {pasCanItems.map((item) => (
+              <li key={item} className={styles.listItem}>
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.sectionBody}>{route.pasCan}</p>
+        )}
       </section>
 
       {/* What is not connected yet */}
@@ -54,7 +61,17 @@ export default function ModuleSkeleton({ route }: ModuleSkeletonProps) {
         <h2 className={styles.sectionLabel} id="not-connected-heading">
           Not yet connected
         </h2>
-        <p className={styles.sectionBody}>{route.notConnectedYet}</p>
+        {notConnectedItems ? (
+          <ul className={styles.list}>
+            {notConnectedItems.map((item) => (
+              <li key={item} className={styles.listItem}>
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.sectionBody}>{route.notConnectedYet}</p>
+        )}
       </section>
 
       <div className={styles.divider} role="presentation" />
