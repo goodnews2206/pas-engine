@@ -1,6 +1,6 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Step 1 + 2 + 3 + 4). Owner: ORVN Labs.
+> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7). Owner: ORVN Labs.
 > Step 1+2 branch: `pas-web-foundation-v1` (merged to main 2026-05-25).
 > Step 3 branch: `pas-web-app-shell-chrome` (merged to main 2026-05-25).
 > Step 4 branch: `pas-web-route-skeletons`.
@@ -437,9 +437,136 @@ Derived from `DEMO_SESSION` — build-time constant, same as all shell component
 
 ---
 
-## Next steps (Step 7+)
+---
 
-`docs/pas_frontend_foundation_plan.md §14` Step 7: **API wiring.**
+## Step 7 — Notification + presence center shell
+
+`docs/pas_frontend_foundation_plan.md §14` Step 7.
+Branch: `pas-web-notification-presence-shell`.
+
+### Files created
+
+```
+web/lib/notifications/
+└── demoNotifications.ts        SeverityLevel type, DemoNotification interface, 15 demo items
+
+web/components/notifications/
+├── NotificationCenter.tsx       "use client" — bell + badge + open/close state
+├── NotificationCenter.module.css
+├── NotificationDrawer.tsx       "use client" — right-side slide-over / mobile bottom sheet
+├── NotificationDrawer.module.css
+├── NotificationCard.tsx         "use client" — single card with severity rail, chips, reply affordance
+└── NotificationCard.module.css
+```
+
+### Files updated
+
+```
+web/components/shell/TopBar.tsx  Bell button replaced with <NotificationCenter />
+```
+
+### Severity model implemented
+
+Five levels per `docs/pas_notification_architecture.md §2`:
+
+| Level | Badge | Rail color | Chip color |
+|---|---|---|---|
+| FYI | No badge | `--signal-fyi` | `--signal-fyi` / `--signal-fyi-bg` |
+| Needs attention | Yes | `--signal-attention` | `--signal-attention` / `--signal-attention-bg` |
+| Urgent | Yes | `--signal-urgent` | `--signal-urgent` / `--signal-urgent-bg` |
+| Approval required | Yes | `--signal-approval` | `--signal-approval` / `--signal-approval-bg` |
+| Critical | Yes | `--signal-critical` | `--signal-critical` / `--signal-critical-bg` |
+
+Severity is paired with: left-rail color + chip (color + icon + label) + group heading.
+Never colour alone — each card uses three independent severity signals.
+
+### Demo notification dataset
+
+15 static notifications across all five severity levels:
+
+| Count | Severity | Unread |
+|---|---|---|
+| 2 | Critical | 2 |
+| 3 | Approval required | 2 |
+| 3 | Urgent | 2 |
+| 4 | Needs attention | 2 |
+| 3 | FYI | 0 |
+
+All notifications are `isDemoLabelled: true` and show a "Simulated" chip.
+
+### NotificationCenter state
+
+Local React `useState` only — no state library, no network, no persistence.
+
+```typescript
+const [isOpen, setIsOpen] = useState(false);
+const [notifications, setNotifications] = useState<DemoNotification[]>(
+  () => DEMO_NOTIFICATIONS
+);
+// badgeCount = unread non-FYI notifications (FYI does not badge per §3.1)
+```
+
+Read operations: `markRead(id)`, `markAllRead()` — both update local state only.
+
+### Drawer interaction
+
+- Right-side slide-over on desktop (420 px wide, `position: fixed`)
+- Bottom sheet on mobile (100vw, 90dvh max, `translateY` animation)
+- Opens: bell button click
+- Closes: ESC key, overlay click, close button
+- Focus trap: Tab cycles within the drawer while open
+- Body scroll lock: `document.body.style.overflow = "hidden"` while open
+- Enter/close animation: `transform` + `visibility` with `--anim-base` duration
+- Reduced motion: `transition: none` via `@media (prefers-reduced-motion: reduce)`
+
+### NotificationCard
+
+Each card renders:
+1. 3 px left rail (severity color via inline style)
+2. Severity chip (icon + label) + "Simulated" demo chip
+3. Relative timestamp (ISO absolute in `title` attribute for hover)
+4. Mark-as-read button (unread dot, disappears once read)
+5. Title + body text
+6. Module tag + action link (navigates to relevant module)
+7. Reply affordance placeholder (disabled textarea + send button — not wired)
+
+### Grouping order
+
+Drawer groups notifications by severity, ordered Critical → Approval required →
+Urgent → Needs attention → FYI. Empty groups are omitted. Each group shows a
+count badge.
+
+### Empty state
+
+When all notifications are marked read, the drawer body shows:
+"PAS is observing. You will be notified when something requires attention."
+
+### Accessibility
+
+- Bell button: `aria-label` updates with unread count; `aria-expanded`, `aria-haspopup="dialog"`
+- Drawer: `role="dialog"`, `aria-modal="true"`, `aria-label="Notifications"`, `aria-hidden` when closed
+- Focus trap: Tab / Shift+Tab cycle within focusable drawer elements
+- ESC closes drawer and returns focus to bell
+- Mark-read button: `aria-label="Mark as read"`
+- Reply textarea: `aria-label` describes demo-only state
+- Empty state: `role="status"` for screen reader announcement
+- All interactive elements have `:focus-visible` outlines (2px brand)
+
+### What is intentionally not here
+
+- No real notifications — all 15 items are static build-time data
+- No SSE, no WebSockets, no polling, no `setInterval`
+- No localStorage or sessionStorage persistence — state resets on page reload
+- No auth coupling — drawer is visible to all roles in demo mode
+- No per-topic muting or quiet-hours toggle — architecture §4 defines these for v1.x
+- No toast / persistent Critical banner — channel routing is defined in §3.1 for real wiring
+- No reply routing — reply field is a placeholder awaiting the PAS API wiring step
+
+---
+
+## Next steps (Step 8+)
+
+`docs/pas_frontend_foundation_plan.md §14` Step 8: **API wiring.**
 Connect composer submit to FastAPI `/api/pas/ask`. Type-safe fetch client.
 Replace the `setTimeout` with a real request. No auth yet — unauthenticated
 endpoint first.
