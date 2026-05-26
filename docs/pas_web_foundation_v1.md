@@ -337,8 +337,109 @@ TypeScript clean, no lint errors.
 
 ---
 
-## Next steps (Step 5)
+---
 
-`docs/pas_frontend_foundation_plan.md §14` Step 5: **Auth.**
-Supabase session, real role resolution, route-layer permission gates,
-login/logout flow.
+## Step 6 — PAS composer interaction shell
+
+`docs/pas_frontend_foundation_plan.md §14` Step 6.
+Branch: `pas-web-composer-shell`.
+
+### Files updated
+
+```
+web/components/shell/Composer.tsx          Rewritten as "use client" interaction shell
+web/components/shell/Composer.module.css   Rewritten to support all interaction states
+```
+
+### Composer interaction states
+
+| Phase | Behavior |
+|---|---|
+| `idle` | Presence dot (FYI green) + placeholder text + 5 example prompt chips + session meta |
+| `typing` | Input non-empty, send button enabled (brand blue), chips hidden |
+| `thinking` | Textarea disabled, presence dot pulses amber at `--anim-presence` (1200ms), send disabled |
+| `responded` | Response panel appears above input row with prompt echo, response text, disclaimer + dismiss button |
+
+State is local React `useState` — no network, no state library, no persistence.
+
+### Local-only behavior
+
+Submit handler:
+1. Captures prompt text
+2. Clears textarea, resets height
+3. Sets phase → `"thinking"` (1400ms `setTimeout`)
+4. On timer: sets phase → `"responded"`
+
+No fetch, no API call, no backend contact of any kind.
+
+**Future PAS API connection point:** Replace the `setTimeout` in `handleSubmit`
+with `fetch('/api/pas/ask', { method: 'POST', body: prompt })` in the API
+wiring step. The state machine and UX are ready.
+
+### Demo response
+
+```
+Here's what I can help with in this demo shell: pipeline risks,
+recommendations, evidence, integrations, and approvals. Real operational
+answers will connect through the PAS API later.
+
+PAS has not changed live customer behavior.
+```
+
+The disclaimer is rendered in immutable demo tokens (amber, Design System §26).
+
+### Prompt example chips
+
+Five broker-human examples visible when composer is idle and empty:
+
+- What needs attention?
+- Which leads are slipping?
+- What should I handle next?
+- Show recommendations.
+- Explain the simulation evidence.
+
+Clicking a chip populates the textarea and focuses it. Chips disappear
+when the user starts typing or while thinking/responded.
+
+### Session display
+
+Session meta row (below input, hidden on mobile) shows:
+`{workspace.name} · {user.role} · {permissionBoundary} · Enter to ask · Shift+Enter for newline`
+
+Derived from `DEMO_SESSION` — build-time constant, same as all shell components.
+
+### UX principles met
+
+- Embedded into the operating surface — not a floating bubble
+- Premium calm — no bounce, no scale, no colour flash
+- Thinking state: opacity-only pulse on the presence dot (stops under reduced-motion)
+- Chips scroll horizontally on mobile rather than wrapping
+- Session meta hidden on mobile to preserve input surface
+
+### Accessibility
+
+- Textarea: `aria-label="Message PAS"`, `aria-describedby="composer-hint"` (keyboard hints)
+- Enter submits; Shift+Enter inserts newline (handled in `onKeyDown`)
+- Send button: `aria-label="Send message to PAS"`, disabled when empty or thinking
+- Dismiss button: `aria-label="Dismiss PAS response"`, visible focus ring
+- Response panel: `role="status"` — screen readers announce on mount
+- Presence indicator: `aria-label` updates to reflect thinking state
+- All interactive elements have `:focus-visible` outlines (2px brand color)
+- Thinking animation: `@media (prefers-reduced-motion: reduce)` stops the pulse
+
+### What is intentionally not here
+
+- No AI — no OpenAI, Anthropic, or backend call
+- No persistent history — each submit is a single isolated interaction
+- No streaming — full response appears after fixed 1400ms delay
+- No multi-turn — dismiss resets to idle, no message thread
+- No auth — session data is DEMO_SESSION (build-time constant)
+
+---
+
+## Next steps (Step 7+)
+
+`docs/pas_frontend_foundation_plan.md §14` Step 7: **API wiring.**
+Connect composer submit to FastAPI `/api/pas/ask`. Type-safe fetch client.
+Replace the `setTimeout` with a real request. No auth yet — unauthenticated
+endpoint first.
