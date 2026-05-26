@@ -1,37 +1,13 @@
 /*
  * TopBar — 56 px shell header. Design System §11.1.
- * Static RSC. Avatar and role derived from DEMO_SESSION (build-time constant).
+ * RSC. Avatar and role derived from DEMO_SESSION (build-time constant).
+ * NotificationCenter is a client island embedded here.
  * Replace with real session context in the auth step.
  */
 
 import { DEMO_SESSION } from "@/lib/session/demoSession";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 import styles from "./TopBar.module.css";
-
-function BellIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        d="M9 1.5A5.25 5.25 0 0 0 3.75 6.75v2.25L2.25 11.25h13.5l-1.5-2.25V6.75A5.25 5.25 0 0 0 9 1.5Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.125 13.5a1.875 1.875 0 0 0 3.75 0"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 const { user } = DEMO_SESSION;
 
@@ -66,13 +42,7 @@ export default function TopBar() {
 
       {/* Right: notifications bell + profile */}
       <div className={styles.right}>
-        <button
-          type="button"
-          className={styles.iconButton}
-          aria-label="Notifications"
-        >
-          <BellIcon />
-        </button>
+        <NotificationCenter />
         <button
           type="button"
           className={styles.profileButton}

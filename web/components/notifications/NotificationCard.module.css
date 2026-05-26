@@ -1,0 +1,233 @@
+/* ── PAS NotificationCard — Design System §19 §25 ── */
+
+.card {
+  display: flex;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: background var(--anim-instant) var(--ease-out);
+}
+
+.unread {
+  background: var(--surface-subtle);
+}
+
+.read {
+  background: var(--surface-raised);
+}
+
+/* Left severity rail — 3 px, colour set via inline style */
+.rail {
+  width: 3px;
+  flex-shrink: 0;
+}
+
+.body {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+}
+
+/* ── Header row ── */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+}
+
+/* Severity chip colour variants */
+.chipFyi             { color: var(--signal-fyi);       background: var(--signal-fyi-bg);       }
+.chipNeedsAttention  { color: var(--signal-attention);  background: var(--signal-attention-bg); }
+.chipUrgent          { color: var(--signal-urgent);     background: var(--signal-urgent-bg);    }
+.chipApprovalRequired{ color: var(--signal-approval);   background: var(--signal-approval-bg);  }
+.chipCritical        { color: var(--signal-critical);   background: var(--signal-critical-bg);  }
+
+/* Demo label */
+.demoChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--demo-ink);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+}
+
+/* Timestamp + mark-read button */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.markReadBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  padding: 0;
+  transition: background var(--anim-instant) var(--ease-out);
+}
+
+.markReadBtn:hover {
+  background: var(--surface-muted);
+}
+
+.markReadBtn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.unreadDot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+}
+
+/* ── Content ── */
+.title {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.read .title {
+  color: var(--ink-secondary);
+}
+
+.bodyText {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-caption);
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+/* ── Card footer ── */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.moduleTag {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-muted);
+}
+
+.actionLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--brand);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--anim-instant) var(--ease-out);
+}
+
+.actionLink:hover {
+  color: var(--brand-hover);
+}
+
+.actionLink:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* ── Reply affordance (demo placeholder — not wired) ── */
+.replyWrap {
+  display: flex;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--border);
+}
+
+.replyInput {
+  flex: 1 1 0;
+  min-width: 0;
+  resize: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--surface-base);
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-disabled);
+  padding: 3px var(--space-xs);
+  cursor: not-allowed;
+}
+
+.replyInput::placeholder {
+  color: var(--ink-disabled);
+}
+
+.replyBtn {
+  display: flex;
+  align-items: center;
+  padding: 3px var(--space-sm);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-disabled);
+  cursor: not-allowed;
+}

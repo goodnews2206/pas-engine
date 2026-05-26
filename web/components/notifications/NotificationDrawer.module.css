@@ -1,0 +1,274 @@
+/* ── PAS NotificationDrawer — right-side slide-over ── */
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 400;
+  pointer-events: none;
+  transition: background var(--anim-base) var(--ease-out);
+}
+
+.overlayVisible {
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+/* Drawer panel — slides from right on desktop */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  z-index: 401;
+  background: var(--surface-raised);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-overlay);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform var(--anim-base) var(--ease-in),
+    visibility 0s var(--anim-base);
+}
+
+.drawerOpen {
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform var(--anim-base) var(--ease-out),
+    visibility 0s;
+}
+
+/* ── Drawer header ── */
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.drawerTitle {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.drawerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.markAllBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition:
+    background var(--anim-instant) var(--ease-out),
+    color var(--anim-instant) var(--ease-out);
+}
+
+.markAllBtn:hover {
+  background: var(--surface-muted);
+  color: var(--ink-primary);
+}
+
+.markAllBtn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition:
+    background var(--anim-instant) var(--ease-out),
+    color var(--anim-instant) var(--ease-out);
+}
+
+.closeBtn:hover {
+  background: var(--surface-muted);
+  color: var(--ink-secondary);
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* ── Drawer body — scrollable ── */
+.drawerBody {
+  flex: 1 1 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  scrollbar-width: thin;
+}
+
+/* ── Severity group ── */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.groupLabelCritical         { color: var(--signal-critical);  }
+.groupLabelApprovalRequired { color: var(--signal-approval);  }
+.groupLabelUrgent           { color: var(--signal-urgent);    }
+.groupLabelNeedsAttention   { color: var(--signal-attention); }
+.groupLabelFyi              { color: var(--signal-fyi);       }
+
+.groupCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-micro);
+  font-weight: var(--fw-medium);
+  color: var(--ink-muted);
+}
+
+.groupList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.groupItem {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Empty state ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  flex: 1;
+}
+
+.emptyTitle {
+  font-size: var(--text-body-lg);
+  line-height: var(--lh-body-lg);
+  font-weight: var(--fw-medium);
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+.emptyBody {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  color: var(--ink-muted);
+  max-width: 280px;
+  margin: 0;
+}
+
+/* ── Drawer footer ── */
+.drawerFooter {
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.footerNote {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--demo-ink);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: var(--radius-xs);
+  padding: var(--space-hair) var(--space-xs);
+  width: fit-content;
+  margin: 0;
+}
+
+/* ── Mobile — sheet slides up from bottom ── */
+@media (max-width: 767px) {
+  .drawer {
+    width: 100vw;
+    max-height: 90dvh;
+    top: auto;
+    bottom: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(100%);
+  }
+
+  .drawerOpen {
+    transform: translateY(0);
+  }
+
+  .drawerBody {
+    padding: var(--space-md);
+  }
+
+  .drawerHeader {
+    padding: var(--space-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawerOpen,
+  .overlay,
+  .overlayVisible {
+    transition: none;
+  }
+}
