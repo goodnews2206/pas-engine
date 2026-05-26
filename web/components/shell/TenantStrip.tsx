@@ -1,3 +1,10 @@
+/*
+ * TenantStrip — workspace context strip. Dashboard IA §3.7.
+ * Static RSC. Session fields derived from DEMO_SESSION (build-time constant).
+ * Replace with real session context in the auth step.
+ */
+
+import { DEMO_SESSION } from "@/lib/session/demoSession";
 import styles from "./TenantStrip.module.css";
 
 /* Severity levels — visible as static labels per component inventory §10 */
@@ -22,6 +29,8 @@ function severityClass(token: SeverityToken): string {
   return map[token];
 }
 
+const { workspace, user, sessionLabel, permissionBoundary } = DEMO_SESSION;
+
 export default function TenantStrip() {
   return (
     <div className={styles.strip} role="complementary" aria-label="Workspace context">
@@ -29,27 +38,27 @@ export default function TenantStrip() {
       <div className={styles.context}>
         <span className={styles.item}>
           <span className={styles.label}>Workspace</span>
-          <span className={styles.value}>ORVN Demo Realty</span>
+          <span className={styles.value}>{workspace.name}</span>
+        </span>
+        <span className={styles.sep} aria-hidden="true">·</span>
+        <span className={styles.item}>
+          <span className={styles.label}>User</span>
+          <span className={styles.value}>{user.name}</span>
         </span>
         <span className={styles.sep} aria-hidden="true">·</span>
         <span className={styles.item}>
           <span className={styles.label}>Role</span>
-          <span className={styles.value}>Broker Owner</span>
+          <span className={styles.value}>{user.role}</span>
         </span>
         <span className={styles.sep} aria-hidden="true">·</span>
         <span className={styles.item}>
-          <span className={styles.label}>Data</span>
-          <span className={styles.value}>Demo / rehearsal</span>
+          <span className={styles.label}>Session</span>
+          <span className={styles.value}>{sessionLabel}</span>
         </span>
         <span className={styles.sep} aria-hidden="true">·</span>
         <span className={styles.item}>
-          <span className={styles.label}>Backend</span>
-          <span className={styles.value}>Railway</span>
-        </span>
-        <span className={styles.sep} aria-hidden="true">·</span>
-        <span className={styles.item}>
-          <span className={styles.label}>Web</span>
-          <span className={styles.value}>Vercel-ready</span>
+          <span className={styles.label}>Permissions</span>
+          <span className={styles.value}>{permissionBoundary}</span>
         </span>
       </div>
 

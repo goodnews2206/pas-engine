@@ -3,21 +3,23 @@
  *
  * This file defines DISPLAY-ONLY role shaping for the navigation.
  * It is NOT a security boundary. No permissions are enforced here.
- * Real role resolution + permission gates land in a future auth step
- * (Frontend Foundation Plan §14 Step 5).
+ * Real role resolution + permission gates belong to the backend auth layer.
  *
  * Authority: docs/pas_dashboard_information_architecture.md §2–§3
  *            docs/pas_product_design_book.md §2 §4
+ *            docs/pas_web_session_permission_scaffold.md
  */
+
+import type { Permission } from "@/lib/session/demoSession";
 
 export type NavFamily = "Operate" | "Notice" | "People" | "System" | "ORVN";
 
 export type UserRole =
   | "Broker Owner"
-  | "Admin"
+  | "Admin/Ops"
   | "Team Lead"
   | "Agent"
-  | "Viewer"
+  | "Read-only Viewer"
   | "ORVN Internal Admin";
 
 export interface RouteDefinition {
@@ -33,6 +35,8 @@ export interface RouteDefinition {
   notConnectedYet: string;
   /** Roles that can see this module (display-only; not enforced). */
   visibleTo: UserRole[];
+  /** Permissions required to view this route (display-only; not enforced). */
+  requiredPermissions: Permission[];
   status: "skeleton";
   demoOnly: true;
   noLiveBehavior: true;
@@ -42,13 +46,6 @@ export interface NavGroup {
   family: NavFamily;
   routes: RouteDefinition[];
 }
-
-/*
- * DEMO_ROLE — the static role used for navigation display in the
- * skeleton phase. Wired to real auth in Step 5.
- * Not a security boundary.
- */
-export const DEMO_ROLE: UserRole = "Broker Owner";
 
 /* ── Route definitions — copy from Product Design Book §4 ── */
 export const ROUTES: RouteDefinition[] = [
@@ -66,12 +63,13 @@ export const ROUTES: RouteDefinition[] = [
       "Proactive Observer (PAS205), Recommendations (PAS208), Action Proposals (PAS209), live call data, notification delivery.",
     visibleTo: [
       "Broker Owner",
-      "Admin",
+      "Admin/Ops",
       "Team Lead",
       "Agent",
-      "Viewer",
+      "Read-only Viewer",
       "ORVN Internal Admin",
     ],
+    requiredPermissions: [],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -87,7 +85,15 @@ export const ROUTES: RouteDefinition[] = [
       "Find stalled leads, flag pipeline risks, suggest next touchpoints, draft callback requests.",
     notConnectedYet:
       "Lead source integrations (Zillow, Realtor.com, Facebook), CRM adapter, PAS Brain qualification scoring.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Agent", "Viewer", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Agent",
+      "Read-only Viewer",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_all_leads", "view_assigned_leads"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -103,7 +109,15 @@ export const ROUTES: RouteDefinition[] = [
       "Summarize calls, flag items for review, surface objection patterns, identify coaching moments.",
     notConnectedYet:
       "Twilio live routing, Deepgram transcription, ElevenLabs voice, PAS Brain tone model.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Agent", "Viewer", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Agent",
+      "Read-only Viewer",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_calls"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -119,7 +133,14 @@ export const ROUTES: RouteDefinition[] = [
       "Surface missed callbacks, suggest reschedule language, flag stale promises, route to the right agent.",
     notConnectedYet:
       "PAS callback capture flow (PAS128), notification delivery, calendar sync.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Agent", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Agent",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_callbacks"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -135,7 +156,15 @@ export const ROUTES: RouteDefinition[] = [
       "Flag at-risk bookings, suggest reassignment when agents are unavailable, confirm qualification before the meeting.",
     notConnectedYet:
       "Cal.com integration, agent calendar sync, booking confirmation webhooks.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Agent", "Viewer", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Agent",
+      "Read-only Viewer",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_bookings"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -153,7 +182,14 @@ export const ROUTES: RouteDefinition[] = [
       "Explain the risk, propose a recovery action, simulate the intervention outcome before committing.",
     notConnectedYet:
       "Proactive Observer (PAS205), live CRM data, pipeline scoring model.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Viewer", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Read-only Viewer",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_pipeline_risks"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -169,7 +205,14 @@ export const ROUTES: RouteDefinition[] = [
       "Explain its reasoning, refresh evidence on demand, route a recommendation directly to an approval drawer.",
     notConnectedYet:
       "Action Proposals (PAS209), Evidence Digest wiring, approval routing, PAS208 live recommendations.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Viewer", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Read-only Viewer",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_recommendations"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -185,7 +228,13 @@ export const ROUTES: RouteDefinition[] = [
       "Take the bounded action on approval, explain every step, emit a full audit trail, flag if the window lapses.",
     notConnectedYet:
       "PAS209 bounded action layer, integration write paths, audit emission, expiry countdown.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_action_proposals"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -201,7 +250,14 @@ export const ROUTES: RouteDefinition[] = [
       "Expand an evidence chain on demand, explain confidence levels, link to source calls and snapshot rows.",
     notConnectedYet:
       "Audit Logs, linked transcript viewer, PAS201–PAS203 evidence surface, evidence export.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "Viewer", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "Read-only Viewer",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_evidence_digest"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -219,7 +275,13 @@ export const ROUTES: RouteDefinition[] = [
       "Simulate any scenario with rehearsal data, export evidence artifacts, replay a call flow end-to-end.",
     notConnectedYet:
       "Simulation runner, Cal.com sim, voice simulation, scenario library.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_simulation_lab"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -235,7 +297,13 @@ export const ROUTES: RouteDefinition[] = [
       "Show exactly what it can answer with each connection, surface sync errors, guide the reconnect flow.",
     notConnectedYet:
       "OAuth / API key connect flow, CRM adapter, Cal.com, Twilio, Deepgram, ElevenLabs, lead source connectors.",
-    visibleTo: ["Broker Owner", "Admin", "Team Lead", "ORVN Internal Admin"],
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["manage_integrations"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,
@@ -251,7 +319,8 @@ export const ROUTES: RouteDefinition[] = [
       "Flag configuration conflicts with PAS Brain, suggest optimal operational hours, guide initial brokerage setup.",
     notConnectedYet:
       "Settings persistence, PAS Brain config, member management, API key rotation.",
-    visibleTo: ["Broker Owner", "Admin", "ORVN Internal Admin"],
+    visibleTo: ["Broker Owner", "Admin/Ops", "ORVN Internal Admin"],
+    requiredPermissions: ["manage_settings"],
     status: "skeleton",
     demoOnly: true,
     noLiveBehavior: true,

@@ -1,10 +1,18 @@
-import NavList from "./NavList";
-import styles from "./Sidebar.module.css";
-
 /*
  * Sidebar — persistent shell primitive. Design System §9.
  * Static RSC wrapper; NavList is the client boundary for pathname detection.
+ *
+ * Display-only scaffold. Real security belongs to the backend/auth layer.
+ * Workspace and role data comes from DEMO_SESSION (build-time constant).
+ * Replace with real session context in the auth step.
  */
+
+import NavList from "./NavList";
+import { DEMO_SESSION } from "@/lib/session/demoSession";
+import styles from "./Sidebar.module.css";
+
+const { workspace, user } = DEMO_SESSION;
+
 export default function Sidebar() {
   return (
     <aside className={styles.sidebar} aria-label="Main navigation">
@@ -16,9 +24,9 @@ export default function Sidebar() {
 
       {/* Workspace context + role */}
       <div className={styles.workspace}>
-        <span className={styles.workspaceName}>ORVN Demo Realty</span>
-        <span className={styles.roleChip} aria-label="Role: Broker Owner">
-          Broker Owner
+        <span className={styles.workspaceName}>{workspace.name}</span>
+        <span className={styles.roleChip} aria-label={`Role: ${user.role}`}>
+          {user.role}
         </span>
       </div>
 
@@ -29,8 +37,8 @@ export default function Sidebar() {
 
       {/* Footer: identity slot */}
       <div className={styles.footer} aria-label="Workspace identity">
-        <span className={styles.footerWorkspace}>ORVN Demo Realty</span>
-        <span className={styles.footerRole}>Broker Owner</span>
+        <span className={styles.footerWorkspace}>{workspace.name}</span>
+        <span className={styles.footerRole}>{user.role}</span>
       </div>
     </aside>
   );

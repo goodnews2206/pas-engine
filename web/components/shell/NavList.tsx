@@ -1,21 +1,22 @@
 "use client";
 
 /*
- * NavList — client component for role-shaped, pathname-aware navigation.
+ * NavList — client component for session-aware, pathname-aware navigation.
  *
- * DISPLAY-ONLY role shaping. Not a security boundary.
- * Real role resolution + permission gates land in Step 5 (auth).
- * DEMO_ROLE is a static constant; swap it in Step 5 once session context exists.
+ * Display-only scaffold. Real security belongs to the backend/auth layer.
+ * DEMO_SESSION is a static constant; swap for a real server session in the
+ * auth step (Frontend Foundation Plan §14 Step 5 auth phase).
  */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEMO_ROLE, getNavGroupsForRole } from "@/lib/navigation/routes";
+import { DEMO_SESSION } from "@/lib/session/demoSession";
+import { getNavGroupsForSession } from "@/lib/session/permissions";
 import styles from "./Sidebar.module.css";
 
 export default function NavList() {
   const pathname = usePathname();
-  const groups = getNavGroupsForRole(DEMO_ROLE);
+  const groups = getNavGroupsForSession(DEMO_SESSION);
 
   return (
     <>
