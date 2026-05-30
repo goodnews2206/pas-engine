@@ -412,4 +412,28 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+---
+
+## 14. PR A implementation note (2026-05-30)
+
+**PR A — typed operational demo data model — created.** Branch
+`pas-web-demo-data-model`.
+
+- Location: `web/lib/demo/operational/` — `types.ts` (interfaces +
+  closed vocabularies + `DEMO_META`), `assertions.ts` (safety helpers),
+  one file per collection (agents, permissions/users, leads, calls,
+  callbacks, bookings, risks, recommendations, proposals, evidence,
+  integrations, brain, communication), and an `index.ts` barrel with a
+  `DEMO_DATA_MODEL` sanity summary.
+- **No UI** was built. No routes/components changed. No backend, CORS,
+  API, auth, Supabase, mutations, or secrets.
+- Every exported demo object carries `demoOnly: true` +
+  `noLiveBehavior: true`; all data is clearly fictional ("Northwind
+  Realty (DEMO)", `Lead D-1042 (simulated)`, `*.local`/`example.invalid`
+  emails, no phone numbers).
+- **All later modules (PRs B–I) consume this model** — they import demo
+  data from `web/lib/demo/operational`, never define their own.
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
