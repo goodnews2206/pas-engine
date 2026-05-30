@@ -10,6 +10,7 @@ import RecommendationPreview from "./RecommendationPreview";
 import PipelineSnapshot from "./PipelineSnapshot";
 import SystemStatusPanel from "./SystemStatusPanel";
 import EvidencePreview from "./EvidencePreview";
+import BrainInsightStrip from "@/components/modules/pas-brain/BrainInsightStrip";
 import styles from "./CommandCenterOverview.module.css";
 
 export default function CommandCenterOverview() {
@@ -21,6 +22,9 @@ export default function CommandCenterOverview() {
       <PipelineSnapshot />
       <SystemStatusPanel />
       <EvidencePreview />
+
+      {/* Compact PAS Brain strip — a strip, not a redesign */}
+      <BrainInsightStrip />
 
       {/* Ask PAS entry point — Command Center §4.1 item 5 */}
       <section className={styles.askPas} aria-label="Ask PAS">

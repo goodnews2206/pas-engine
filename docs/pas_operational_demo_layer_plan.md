@@ -539,4 +539,34 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 19. PR F implementation note (2026-05-30)
+
+**PR F — PAS Brain surface — created.** Branch `pas-web-pas-brain-surface`.
+
+- New route `/pas-brain` in the **System** family — chosen to align with
+  Frontend Foundation Plan §4 route structure, which lists
+  `/system/pas-brain` alongside integrations / audit / simulation-lab.
+  Registry status `"operational-demo"`; gated (display-only) on a new
+  `view_pas_brain` permission granted to Broker Owner, Admin/Ops, Team
+  Lead, ORVN Internal Admin (not Agent; Viewer deferred).
+- UI: `web/app/pas-brain/` + `web/components/modules/pas-brain/` —
+  `PasBrainOverview`, `BrainInsightStrip`, `MemoryCandidateCard`,
+  `BrainQueryExamples`, `BrainUnknownsPanel`, `BrainEvidencePanel`,
+  `ConfidenceLabel` (+ two `.module.css`). Reuses continuity
+  `EvidenceMiniList` + `ContinuityMetricStrip`.
+- **Command Center integration:** a compact `BrainInsightStrip` ("What
+  PAS is learning" + top candidate memories + "Open PAS Brain" link)
+  inserted after the evidence preview — a strip, not a redesign.
+- Consumes `DEMO_MEMORY_CANDIDATES`, `DEMO_BRAIN_QUERIES`,
+  `DEMO_BRAIN_UNKNOWNS`, `DEMO_EVIDENCE`. No per-component fake brain
+  data.
+- Confidence is **plain English** (Observed · Likely · Still uncertain),
+  never numeric. The **unknowns panel** states what PAS does not know
+  yet (honesty as trust). Language avoids "AI magic" / sentience.
+- **No real search, no vector DB, no `fetch()`, no API, no CORS, no
+  backend, no auth, no Supabase, no mutations, no secrets.** Demo labels
+  preserved.
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
