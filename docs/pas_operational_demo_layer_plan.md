@@ -636,4 +636,38 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
-*End of plan. No code, no backend, no live behaviour — plan only.*
+## 22. PR I implementation note (2026-05-30) — arc complete
+
+**PR I — Command Center refinement — created.** Branch
+`pas-web-command-center-refinement`. **This completes the operational
+demo arc (PRs A–I).**
+
+- `/command-center` rebuilt as the operating home that synthesizes
+  A–H. The stale standalone `web/lib/demo/commandCenter.ts` and its six
+  section components (CommandCenterHeader, AttentionSummary,
+  RecommendationPreview, PipelineSnapshot, SystemStatusPanel,
+  EvidencePreview) were **removed** — Command Center now derives
+  entirely from the PR A model.
+- New snapshot components: `OperatingBrief`, `TodayAttentionQueue`,
+  `CommitmentSnapshot`, `ProposalSnapshot`, `AgentCoverageSnapshot`,
+  `RoomActivityPreview`, `IntegrationHealthSnapshot`, `EvidenceSnapshot`
+  (+ reused `BrainInsightStrip`). One shared `CommandCenterOverview.module.css`.
+- Hierarchy (answers in seconds): brief → attention today → commitments
+  + proposals → coverage → what PAS is learning → discussion → system
+  health → evidence → Ask PAS.
+- Data consumed: `DEMO_LEADS`, `DEMO_CALLBACKS`, `DEMO_AGENTS`,
+  `DEMO_PROPOSALS`, `DEMO_RECOMMENDATIONS`, `DEMO_RISKS`,
+  `DEMO_INTEGRATIONS`, `DEMO_MEMORY_CANDIDATES` (via strip),
+  `DEMO_THREADS`, `DEMO_EVIDENCE`. All derived numbers, no stale data.
+- Module links: `/callbacks`, `/agents`, `/recommendations`,
+  `/action-proposals`, `/pas-brain`, `/pas-room`, `/integrations`.
+- Mobile: single-column priority stack (brief + attention first; `grid2`
+  pairs collapse to one column).
+- **No backend, CORS, API, `fetch()`, realtime, auth, mutations,
+  storage, or secrets.** Demo labels preserved; severity never colour
+  alone.
+
+---
+
+*End of plan. The operational demo arc (PR A–I) is complete. No backend,
+no live behaviour — demo/rehearsal only.*

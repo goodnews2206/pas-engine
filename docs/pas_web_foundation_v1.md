@@ -877,6 +877,12 @@ The deployment guide documents exactly when and how to add CORS origins.
 - **Step 12 — Vercel deployment** has **not been executed**. No Vercel
   project, deployment URL, or `pas.orvnlabs.com` domain has been
   created yet (see `docs/pas_web_vercel_deployment.md`).
+- **Step 12B — Operational demo layer (PRs A–I)** is **complete and
+  merged to `main`**: typed demo data model, Agents, Integrations
+  marketplace, Leads/Calls/Callbacks, Settings, PAS Brain, PAS Room,
+  notification demo replies, and the synthesized Command Center. All
+  frontend-only and demo/rehearsal-labelled — no backend, no live
+  behaviour. See `docs/pas_operational_demo_layer_plan.md`.
 
 ### Step 11 entry point
 
