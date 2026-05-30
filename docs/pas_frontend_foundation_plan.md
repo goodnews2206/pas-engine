@@ -1,9 +1,16 @@
 # PAS Frontend Foundation Plan
 
-> Status: draft v1. Owner: ORVN Labs. Last updated: 2026-05-25.
+> Status: draft v1 — sequence reconciled 2026-05-30. Owner: ORVN Labs.
+> Last updated: 2026-05-30.
 > Sibling to `docs/pas_uiux_reference_study.md` and
 > `docs/pas_design_system_definition.md`. Defines the *shape* of the
-> frontend before any implementation. **No frontend code yet.**
+> frontend.
+>
+> **Authoritative sequence:** `docs/pas_web_foundation_v1.md` is the
+> implementation log of record. The numbered sequence in §14 below has
+> been reconciled to match it. If the two ever diverge again, the
+> implementation log wins and §14 is corrected to follow — never the
+> other way around.
 
 ## 0. Scope
 
@@ -367,46 +374,76 @@ Realtime is a v1 requirement for *some* surfaces:
 
 ---
 
-## 14. Frontend implementation sequence
+## 14. Frontend implementation sequence (reconciled)
 
-Mirrors Product Design Book §10 and §11, with explicit shell-first
-ordering. Each step is its own PR.
+> **Reconciliation note (2026-05-30).** The original §14 sequence
+> diverged from what actually shipped: the implementation folded auth
+> into a session/permission *scaffold* (Step 5), built the Command
+> Center layout and module empty states ahead of the read-only
+> PAS205–208 surfaces, and inserted a dedicated Vercel deployment-prep
+> step. `docs/pas_web_foundation_v1.md` is the implementation log of
+> record; the canonical sequence below has been rewritten to match it.
+> **Step numbers in all future work — branches, commits, planning —
+> follow this list and the implementation log, not the original
+> draft.**
 
-1. **Repo + tooling foundation.** Framework, package manager,
-   linter, formatter, type checking, CI hook. No business code.
-2. **Design tokens.** Compiled from
-   `docs/pas_design_system_definition.md` — typography, spacing,
-   radius, elevation, animation, severity, demo tokens. No
-   components yet.
-3. **App shell.** Top bar (chrome only), sidebar (chrome only),
-   composer (chrome only), main slot, overlay region. No routes
-   yet.
-4. **Routing skeleton.** All routes mounted with placeholder
-   "Coming soon" content. Role gating wired at the route layer.
-5. **Auth + tenant context.** Sign-in, tenant strip, role bundle
-   resolution, sign-out.
-6. **PAS communication shell.** Composer + peek + full thread,
-   wired to a mock stream first, then to the real PAS API. Inline
-   section embed mechanism (mock first).
-7. **Notification shell.** Bell, drawer, toast region, persistent
-   banner region. Mock event stream first.
-8. **PAS205–PAS208 read-only surfaces.** Proactive Observer,
-   Recommendations, Evidence Digest, Action Proposals (read-only
-   first).
-9. **Operate-family modules.** Command Center first, then Leads /
-   Calls / Callbacks / Bookings / Agents.
-10. **Integrations framework.** Connector list, connect flow,
+Each step is its own PR.
+
+### Shipped (Steps 1–10, merged to `main`)
+
+1. **Web tooling foundation.** Next.js + pnpm + TypeScript strict,
+   project isolation under `/web`. No business code.
+2. **Design tokens.** Design System §1–§28 compiled to CSS custom
+   properties. No components yet.
+3. **App shell chrome.** Top bar, sidebar, tenant strip, demo
+   banner, composer — chrome only, no routes.
+4. **Role-aware route skeletons.** All routes mounted with
+   placeholder content; display-only role shaping at the route layer.
+5. **Session/permission scaffold.** Demo session + permission
+   boundary scaffold. **Display-only — not a security boundary;
+   real auth is Step 17, backend-validated enforcement is Step 18.**
+6. **PAS composer shell.** Composer interaction state machine
+   (idle → typing → thinking → responded), local-only, no network.
+7. **Notification/presence center shell.** Bell, badge, drawer,
+   five severity levels. Mock event data only.
+8. **Command Center intelligence layout.** Six-section overview,
+   static demo data.
+9. **Module-specific empty states.** Premium per-module empty
+   states across the skeleton routes. Demo-only.
+10. **Vercel deployment preparation.** Deployment docs + env
+    reference; no backend coupling, no CORS, no API calls.
+
+### Future (Steps 11–20, not yet merged)
+
+11. **API boundary scaffold.** Typed read-only fetch client,
+    `IS_DEMO_MODE` gating, `GET /health` probe, connection-status
+    chip. No live wiring beyond health. *(WIP preserved on branch
+    `pas-web-api-boundary-scaffold`; not merged.)*
+12. **Vercel deployment + domain smoke test.** Deploy `/web`;
+    confirm the production URL and `pas.orvnlabs.com` domain.
+13. **CORS allow-list update.** Add the confirmed Vercel URL/domain
+    to `app/main.py` — only after Step 12 confirms the origin.
+14. **Read-only PAS205–PAS208 surface integration.** Proactive
+    Observer, Recommendations, Evidence Digest, Action Proposals —
+    read-only first.
+15. **Realtime/SSE foundation.** PAS thinking presence, notification
+    arrivals, Critical banner reveal (see §13).
+16. **Integrations framework shell.** Connector list, connect flow,
     health card. Read scopes only.
-11. **Realtime layer (v1 scope).** PAS thinking presence,
-    notification arrivals, Critical banner.
-12. **Approval flows end-to-end.** Approval drawer wired to
-    Action Proposals; mutation gated through the API; audit
-    emission.
-13. **Mobile polish pass.** Bottom tab bar, "More" sheet, drawer
-    full-screen behaviour, composer pinned.
-14. **Dark theme + density polish.** Token-only changes; visual QA.
-15. **Pre-delivery checklist sweep** (Design System §29) against
-    every shipped surface.
+17. **Auth provider selection + auth scaffold.** Choose the provider
+    (see §17 Open questions), wire sign-in / tenant context /
+    sign-out.
+18. **Role enforcement with backend validation.** Promote the
+    display-only role shaping (Step 5) to server-validated gates.
+19. **Action proposal approval UI.** Approval drawer wired to the
+    Action Proposals queue; present-only, no execution yet.
+20. **Live execution gates.** One named, bounded action at a time;
+    mutation gated through the API with audit emission.
+
+> **Quality gates (not separate steps).** Mobile polish, dark-theme /
+> density polish, and the pre-delivery checklist sweep (Design System
+> §29) from the original draft remain required and fold into each
+> surface as it ships.
 
 ---
 

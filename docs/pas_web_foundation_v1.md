@@ -1,9 +1,22 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Step 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10). Owner: ORVN Labs.
+> Status: shipped (Steps 1–10). Owner: ORVN Labs. Sequence reconciled
+> 2026-05-30.
+>
+> **This document is the authoritative implementation log of record.**
+> The numbered sequence here is canonical;
+> `docs/pas_frontend_foundation_plan.md §14` has been reconciled to
+> match it. If the two ever diverge again, this log wins.
+>
 > Step 1+2 branch: `pas-web-foundation-v1` (merged to main 2026-05-25).
 > Step 3 branch: `pas-web-app-shell-chrome` (merged to main 2026-05-25).
-> Step 4 branch: `pas-web-route-skeletons`.
+> Step 4 branch: `pas-web-route-skeletons` (merged).
+> Step 5 branch: `pas-web-session-permission-scaffold` (merged).
+> Step 6 branch: `pas-web-composer-shell` (merged).
+> Step 7 branch: `pas-web-notification-presence-shell` (merged).
+> Step 8 branch: `pas-web-command-center-layout` (merged).
+> Step 9 branch: `pas-web-module-empty-states` (merged).
+> Step 10 branch: `pas-web-vercel-deployment-prep` (merged, PR #39).
 
 ## What this is
 
@@ -812,9 +825,57 @@ The deployment guide documents exactly when and how to add CORS origins.
 
 ---
 
-## Next steps (Step 11+)
+## Canonical sequence — shipped + future
 
-**API wiring.**
-Connect composer submit to FastAPI `/api/pas/ask`. Type-safe fetch client.
-Replace the `setTimeout` with a real request. No auth yet — unauthenticated
-endpoint first. Requires CORS update in `app/main.py` once Vercel URL is known.
+> **This list is authoritative.** `docs/pas_frontend_foundation_plan.md §14`
+> follows it. The step numbers below are the numbers used in all branch
+> names, commits, and future planning.
+
+### Shipped (Steps 1–10, merged to `main`)
+
+| # | Step | Branch |
+|---|---|---|
+| 1 | Web tooling foundation | `pas-web-foundation-v1` |
+| 2 | Design tokens | `pas-web-foundation-v1` |
+| 3 | App shell chrome | `pas-web-app-shell-chrome` |
+| 4 | Role-aware route skeletons | `pas-web-route-skeletons` |
+| 5 | Session/permission scaffold | `pas-web-session-permission-scaffold` |
+| 6 | PAS composer shell | `pas-web-composer-shell` |
+| 7 | Notification/presence center shell | `pas-web-notification-presence-shell` |
+| 8 | Command Center intelligence layout | `pas-web-command-center-layout` |
+| 9 | Module-specific empty states | `pas-web-module-empty-states` |
+| 10 | Vercel deployment preparation | `pas-web-vercel-deployment-prep` (PR #39) |
+
+### Future (Steps 11–20, not yet merged)
+
+| # | Step | Notes |
+|---|---|---|
+| 11 | API boundary scaffold | Typed read-only fetch client, `IS_DEMO_MODE` gating, `GET /health` probe, connection-status chip. No live wiring beyond health. |
+| 12 | Vercel deployment + domain smoke test | Deploy `/web`; confirm production URL + `pas.orvnlabs.com`. |
+| 13 | CORS allow-list update | Add confirmed Vercel URL/domain to `app/main.py` — only after Step 12. |
+| 14 | Read-only PAS205–PAS208 surface integration | Observer, Recommendations, Evidence Digest, Action Proposals — read-only. |
+| 15 | Realtime/SSE foundation | PAS thinking presence, notification arrivals, Critical banner. |
+| 16 | Integrations framework shell | Connector list, connect flow, health card. Read scopes only. |
+| 17 | Auth provider selection + auth scaffold | Provider choice; sign-in / tenant context / sign-out. |
+| 18 | Role enforcement with backend validation | Promote Step 5 display-only shaping to server-validated gates. |
+| 19 | Action proposal approval UI | Approval drawer wired to the Action Proposals queue; present-only. |
+| 20 | Live execution gates | One named, bounded action at a time; mutation gated through the API with audit emission. |
+
+### Outstanding work not yet on the `main` web track
+
+- **Step 11 WIP** is preserved on branch `pas-web-api-boundary-scaffold`
+  (commit `99d7f26`). It is **not merged** — a read-only boundary
+  scaffold with no live API call beyond `GET /health`, no CORS, no
+  auth, no mutations.
+- **PAS209** (bounded action proposal package — the backend that
+  Step 19's approval UI and Step 20's execution gates will eventually
+  surface) was **merged to `main` via PR #40** (`fcffbb4`); remote
+  branch `pas209-bounded-action-proposals` (commit `3a554c9`) remains.
+  Backend only — see `docs/pas209_action_proposals.md`.
+
+### Step 11 entry point
+
+When API wiring begins, replace the composer's `setTimeout` in
+`handleSubmit` with a request through the typed client
+(`web/lib/api/`). Unauthenticated `GET` first; the CORS update
+(Step 13) lands only after the Vercel origin is confirmed (Step 12).
