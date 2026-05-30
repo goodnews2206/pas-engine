@@ -436,4 +436,29 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 15. PR B implementation note (2026-05-30)
+
+**PR B — Agents operational demo route — created.** Branch
+`pas-web-agents-route`.
+
+- New route `/agents` under the **People** family (the family now appears
+  in the sidebar). Registry: `web/lib/navigation/routes.ts` —
+  `status: "operational-demo"`, `demoOnly: true`, `noLiveBehavior: true`,
+  gated (display-only) on a new `view_agents` permission granted to
+  Broker Owner, Admin/Ops, Team Lead, ORVN Internal Admin (not Agent,
+  not Viewer) in `web/lib/session/demoSession.ts`.
+- UI: `web/app/agents/` + `web/components/modules/agents/`
+  (`AgentsOverview`, `AgentCard`, `AgentCoveragePanel`,
+  `AgentSignalsPanel`). All static RSC — no client JS, no network.
+- Consumes the PR A model: `DEMO_AGENTS`, `DEMO_USERS`, `DEMO_CALLBACKS`,
+  `DEMO_CALLS`, `DEMO_LEADS`. Signals are **derived from the data**, not
+  hardcoded.
+- Answers: who is available · who owns follow-up · where coverage is
+  weak · which agents need attention · what PAS recommends watching.
+- Demo/rehearsal labels preserved (demo pill, rehearsal note,
+  "PAS has not changed live customer behavior."). No backend, CORS, API,
+  auth enforcement, Supabase, mutations, or secrets.
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*

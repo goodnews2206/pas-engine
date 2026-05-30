@@ -32,6 +32,7 @@ export type Permission =
   | "approve_action_proposals"
   | "view_simulation_lab"
   | "view_evidence_digest"
+  | "view_agents"
   | "manage_integrations"
   | "manage_settings"
   | "manage_users"
@@ -81,6 +82,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "approve_action_proposals",
     "view_simulation_lab",
     "view_evidence_digest",
+    "view_agents",
     "manage_integrations",
     "manage_settings",
     "manage_users",
@@ -100,6 +102,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "approve_action_proposals",
     "view_simulation_lab",
     "view_evidence_digest",
+    "view_agents",
     "manage_integrations",
     "manage_settings",
     "manage_users",
@@ -117,6 +120,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "view_action_proposals",
     "view_simulation_lab",
     "view_evidence_digest",
+    "view_agents",
   ],
   "Agent": [
     "view_assigned_leads",
@@ -145,6 +149,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "approve_action_proposals",
     "view_simulation_lab",
     "view_evidence_digest",
+    "view_agents",
     "manage_integrations",
     "manage_settings",
     "manage_users",
