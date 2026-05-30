@@ -289,6 +289,28 @@ export const ROUTES: RouteDefinition[] = [
 
   /* ── System ── */
   {
+    id: "pas-brain",
+    label: "PAS Brain",
+    href: "/pas-brain",
+    family: "System",
+    description:
+      "What PAS knows about your brokerage, what it is learning, and what it does not know yet.",
+    pasCan:
+      "Surface candidate memory from repeated signals, answer questions about the brokerage, and show the evidence behind what it believes.",
+    notConnectedYet:
+      "Live memory persistence, vector search, learned signals from real activity, query execution.",
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_pas_brain"],
+    status: "operational-demo",
+    demoOnly: true,
+    noLiveBehavior: true,
+  },
+  {
     id: "simulation-lab",
     label: "Simulation Lab",
     href: "/simulation-lab",

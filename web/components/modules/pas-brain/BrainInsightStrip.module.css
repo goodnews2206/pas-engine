@@ -1,0 +1,98 @@
+/* ── BrainInsightStrip — compact "what PAS is learning" strip ── */
+
+.strip {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.label {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.demoPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--demo-border);
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  flex-shrink: 0;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.statement {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-secondary);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--border);
+}
+
+.note {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+}
+
+.link {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--brand);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover { color: var(--brand-hover); }
+
+.link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
