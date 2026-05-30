@@ -328,7 +328,7 @@ export const ROUTES: RouteDefinition[] = [
       "ORVN Internal Admin",
     ],
     requiredPermissions: ["manage_integrations"],
-    status: "skeleton",
+    status: "operational-demo",
     demoOnly: true,
     noLiveBehavior: true,
   },

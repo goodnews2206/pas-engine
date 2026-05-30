@@ -461,4 +461,31 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 16. PR C implementation note (2026-05-30)
+
+**PR C — Integrations marketplace + detail drawer — created.** Branch
+`pas-web-integrations-marketplace`.
+
+- `/integrations` upgraded from the explanatory skeleton to an
+  operational demo marketplace. Registry status →
+  `"operational-demo"`. Route stays in the System family with the
+  existing `manage_integrations` gate.
+- UI: `web/app/integrations/` + `web/components/modules/integrations/`
+  (`IntegrationsOverview` [client — drawer state only], `IntegrationCard`,
+  `IntegrationDetailDrawer` [client — ESC/focus-trap/scroll-lock],
+  `IntegrationHealthPanel`, `IntegrationSetupSteps`, and a `meta.ts`
+  label/format helper).
+- Consumes `DEMO_INTEGRATIONS` (PR A) only — categories CRM, Lead
+  source, Calendar/booking, Communication, Workspace; 16 connectors.
+  Read scope is always shown before write scope; writes are labelled
+  "approval required".
+- Detail drawer is demo-only: status, health, read/write scopes, setup
+  steps, permissions requested, last sync, connection notes, and an
+  explicit "No OAuth flow has started" warning. Action buttons are
+  inert/disabled.
+- **No OAuth, no `fetch()`, no API, no CORS, no backend, no auth, no
+  Supabase, no mutations, no secrets.** Demo/rehearsal labels preserved.
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
