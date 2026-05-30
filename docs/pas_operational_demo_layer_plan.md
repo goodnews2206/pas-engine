@@ -513,4 +513,30 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 18. PR E implementation note (2026-05-30)
+
+**PR E — Settings controls + account shell — created.** Branch
+`pas-web-settings-controls-demo`.
+
+- `/settings` upgraded from skeleton to a calm trust-controls surface.
+  Registry status → `"operational-demo"`.
+- UI: `web/app/settings/` + `web/components/modules/settings/` —
+  `SettingsOverview` + panels: `WorkspaceProfilePanel`,
+  `AccountShellPanel`, `MembersPanel`, `RolePermissionsPanel`,
+  `ApprovalPolicyPanel`, `NotificationRulesPanel`, `PasBehaviorPanel`
+  (one shared `SettingsOverview.module.css`). All static RSC.
+- Consumes `ROLE_BUNDLES`, `DEMO_USERS`, `DEMO_AGENTS`,
+  `DEMO_INTEGRATIONS` (write-enabled count), and `DEMO_SESSION`
+  (account/workspace). Approval-policy / notification-rule / PAS-behavior
+  copy is local UI policy text, clearly demo-only.
+- Roles shown as **six simple bundle cards** (purpose · permission count
+  · can / cannot) — no RBAC matrix. Account shell shows the demo
+  session with an **inert, disabled sign-out** ("Sign out connects when
+  real authentication is enabled.").
+- **No real auth, no login flow, no real sign-out, no `fetch()`, no API,
+  no CORS, no backend, no Supabase, no mutations, no secrets.** Demo
+  labels preserved; severity never colour-alone.
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
