@@ -3,12 +3,14 @@
 /*
  * NotificationCard — single notification entry.
  * Severity left rail (3px inline color), severity chip + icon, read/unread state,
- * demo label, reply affordance placeholder (not wired).
+ * demo label, local demo reply (quick instruction capture — no network).
  * No network. No persistence.
  * Authority: docs/pas_notification_architecture.md §2 §7
  */
 
+import { useState } from "react";
 import type { DemoNotification, SeverityLevel } from "@/lib/notifications/demoNotifications";
+import { NOTIFICATION_REPLY_CONFIRMATION } from "@/lib/demo/operational";
 import styles from "./NotificationCard.module.css";
 
 const SEVERITY_LABELS: Record<SeverityLevel, string> = {
@@ -54,6 +56,16 @@ export default function NotificationCard({ notification, onRead }: Props) {
     actionLabel,
     actionHref,
   } = notification;
+
+  const [replyText, setReplyText] = useState("");
+  const [submittedReply, setSubmittedReply] = useState<string | null>(null);
+
+  function handleReply() {
+    const trimmed = replyText.trim();
+    if (!trimmed) return;
+    setSubmittedReply(trimmed);
+    setReplyText("");
+  }
 
   return (
     <article className={`${styles.card} ${isRead ? styles.read : styles.unread}`}>
@@ -106,18 +118,47 @@ export default function NotificationCard({ notification, onRead }: Props) {
           )}
         </footer>
 
-        {/* Reply affordance — not wired in this demo shell */}
-        <div className={styles.replyWrap}>
-          <textarea
-            className={styles.replyInput}
-            placeholder="Reply to PAS…"
-            rows={1}
-            disabled
-            aria-label="Reply field — not connected in demo"
-          />
-          <button type="button" className={styles.replyBtn} disabled>
-            Send
-          </button>
+        {/* Local demo reply — quick instruction capture, no network */}
+        <div className={styles.replyForm}>
+          <label htmlFor={`reply-${id}`} className={styles.replyLabel}>
+            Reply with an instruction for PAS
+          </label>
+          <div className={styles.replyRow}>
+            <textarea
+              id={`reply-${id}`}
+              className={styles.replyInput}
+              placeholder="Reply with an instruction for PAS…"
+              rows={1}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleReply();
+                }
+              }}
+              aria-label="Reply with an instruction for PAS"
+            />
+            <button
+              type="button"
+              className={styles.replyBtn}
+              onClick={handleReply}
+              disabled={replyText.trim().length === 0}
+            >
+              Send demo reply
+            </button>
+          </div>
+          {submittedReply && (
+            <div className={styles.replyResult}>
+              <p className={styles.submittedReply}>
+                <span className={styles.submittedLabel}>You (demo):</span>{" "}
+                {submittedReply}
+              </p>
+              <p className={styles.replyConfirm} role="status">
+                {NOTIFICATION_REPLY_CONFIRMATION}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </article>

@@ -608,4 +608,32 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 21. PR H implementation note (2026-05-30)
+
+**PR H — Notification local demo replies — created.** Branch
+`pas-web-notification-demo-replies`.
+
+- Scope: `web/components/notifications/NotificationCard.tsx` +
+  `NotificationCard.module.css` only. The previously inert reply
+  placeholder (disabled textarea + "Send") is now a **local demo
+  reply**.
+- Behavior: textarea ("Reply with an instruction for PAS…") + "Send
+  demo reply" button (disabled when empty). On submit it shows the
+  submitted text locally ("You (demo): …") and the confirmation
+  **`NOTIFICATION_REPLY_CONFIRMATION`** ("PAS captured this instruction
+  in demo mode. No live action was taken.") via `role="status"`. State
+  is `useState` only — **no network, no persistence** (resets on
+  refresh).
+- Kept calm: still a quick instruction capture, **not** a thread or a
+  PAS Room duplicate. One latest reply shown, no chat noise.
+- Accessibility: visually-hidden `<label>` + `aria-label`, button
+  `disabled` when empty, confirmation `role="status"`, Enter submits /
+  Shift+Enter newline, `:focus-visible` preserved, reduced-motion
+  unaffected.
+- **No `fetch()`, no API, no backend, no CORS, no realtime, no storage,
+  no auth, no Supabase, no mutations, no secrets.** Demo labels
+  preserved; reuses existing confirmation copy (no conflicting copy).
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
