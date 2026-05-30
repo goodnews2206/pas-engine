@@ -345,7 +345,7 @@ export const ROUTES: RouteDefinition[] = [
       "Settings persistence, PAS Brain config, member management, API key rotation.",
     visibleTo: ["Broker Owner", "Admin/Ops", "ORVN Internal Admin"],
     requiredPermissions: ["manage_settings"],
-    status: "skeleton",
+    status: "operational-demo",
     demoOnly: true,
     noLiveBehavior: true,
   },
