@@ -1,9 +1,361 @@
-/* ── CommandCenterOverview — section assembly layout ── */
+/* ── Command Center — the operating home (operational demo) ── */
 
 .overview {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: var(--space-lg);
+}
+
+/* Operating brief */
+.brief {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.briefTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.briefTitle {
+  font-size: var(--text-title);
+  line-height: var(--lh-title);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-title);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.demoPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--demo-border);
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-micro);
+  flex-shrink: 0;
+}
+
+.briefHeadline {
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+  color: var(--ink-secondary);
+  margin: 0;
+  max-width: 68ch;
+}
+
+.rehearsalNote {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--demo-ink);
+  margin: 0;
+}
+
+/* Snapshot card */
+.snapshot {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.snapshotHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.snapshotTitle {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.moduleLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+  color: var(--brand);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.moduleLink:hover { color: var(--brand-hover); }
+
+.moduleLink:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.snapshotLead {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+/* Two-up snapshot grid */
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+@media (max-width: 1023px) {
+  .grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tiles */
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+}
+
+.tileTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tileDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.tileValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-primary);
+}
+
+.tileLabel {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-secondary);
+}
+
+/* Attention queue */
+.attnList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.attnItem {
+  display: flex;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.attnRail {
+  width: 3px;
+  flex-shrink: 0;
+}
+
+.attnBody {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+}
+
+.attnMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.attnText {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.attnFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.attnSource {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+}
+
+/* Generic rows */
+.rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-medium);
+  color: var(--ink-primary);
+}
+
+.rowSub {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+}
+
+.rowValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-medium);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+/* Room preview */
+.roomMsg {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+.roomAuthor {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-muted);
+}
+
+.roomBody {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-secondary);
+}
+
+/* Evidence */
+.evidenceRow {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: baseline;
+}
+
+.evidenceId {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--brand);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.evidenceId:hover { color: var(--brand-hover); }
+
+.evidenceId:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.evidenceText {
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-secondary);
+}
+
+.disclaimer {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+  margin: 0;
 }
 
 /* Ask PAS entry point — bottom of the page */

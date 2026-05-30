@@ -1,30 +1,50 @@
 /*
- * CommandCenterOverview — assembles all Command Center sections in order.
- * Dashboard IA §4.1: attention → proposals → pipeline → status → evidence → ask PAS.
- * Static RSC. No client state.
+ * CommandCenterOverview — the operating home. Static RSC, demo-only.
+ * Synthesizes the operational demo layer (PR A–H) into one calm brief so a
+ * broker owner can read the state of the brokerage in seconds.
+ *
+ * Hierarchy: brief → attention → commitments → proposals → coverage →
+ * what PAS is learning → discussion → system health → evidence → ask PAS.
+ * Every figure derives from the PR A model. No network, no live behavior.
  */
 
-import CommandCenterHeader from "./CommandCenterHeader";
-import AttentionSummary from "./AttentionSummary";
-import RecommendationPreview from "./RecommendationPreview";
-import PipelineSnapshot from "./PipelineSnapshot";
-import SystemStatusPanel from "./SystemStatusPanel";
-import EvidencePreview from "./EvidencePreview";
+import OperatingBrief from "./OperatingBrief";
+import TodayAttentionQueue from "./TodayAttentionQueue";
+import CommitmentSnapshot from "./CommitmentSnapshot";
+import ProposalSnapshot from "./ProposalSnapshot";
+import AgentCoverageSnapshot from "./AgentCoverageSnapshot";
+import RoomActivityPreview from "./RoomActivityPreview";
+import IntegrationHealthSnapshot from "./IntegrationHealthSnapshot";
+import EvidenceSnapshot from "./EvidenceSnapshot";
 import BrainInsightStrip from "@/components/modules/pas-brain/BrainInsightStrip";
 import styles from "./CommandCenterOverview.module.css";
 
 export default function CommandCenterOverview() {
   return (
     <div className={styles.overview}>
-      <CommandCenterHeader />
-      <AttentionSummary />
-      <RecommendationPreview />
-      <PipelineSnapshot />
-      <SystemStatusPanel />
-      <EvidencePreview />
+      <OperatingBrief />
 
-      {/* Compact PAS Brain strip — a strip, not a redesign */}
+      {/* 1. What needs attention today */}
+      <TodayAttentionQueue />
+
+      {/* 2. Commitments + proposals */}
+      <div className={styles.grid2}>
+        <CommitmentSnapshot />
+        <ProposalSnapshot />
+      </div>
+
+      {/* 3. Coverage + what PAS is learning */}
+      <AgentCoverageSnapshot />
       <BrainInsightStrip />
+
+      {/* 4. Discussion + system health */}
+      <div className={styles.grid2}>
+        <RoomActivityPreview />
+        <IntegrationHealthSnapshot />
+      </div>
+
+      {/* 5. Evidence */}
+      <EvidenceSnapshot />
 
       {/* Ask PAS entry point — Command Center §4.1 item 5 */}
       <section className={styles.askPas} aria-label="Ask PAS">
@@ -41,6 +61,10 @@ export default function CommandCenterOverview() {
           Use the composer below &darr;
         </span>
       </section>
+
+      <p className={styles.disclaimer}>
+        Demo/rehearsal data. PAS has not changed live customer behavior.
+      </p>
     </div>
   );
 }
