@@ -851,7 +851,7 @@ The deployment guide documents exactly when and how to add CORS origins.
 | # | Step | Notes |
 |---|---|---|
 | 11 | API boundary scaffold | Typed read-only fetch client, `IS_DEMO_MODE` gating, `GET /health` probe, connection-status chip. No live wiring beyond health. |
-| 12 | Vercel deployment + domain smoke test | Deploy `/web`; confirm production URL + `pas.orvnlabs.com`. |
+| 12 | Vercel deployment + domain smoke test | Deploy `/web` as a **separate** Vercel project (demo mode, `NEXT_PUBLIC_PAS_API_BASE_URL` unset); confirm production URL + subdomain `pas.orvnlabs.com`. Must not disturb the existing ORVN website project (`orvnlabs.com` / `www`) — see coexistence rules in `docs/pas_web_vercel_deployment.md`. |
 | 13 | CORS allow-list update | Add confirmed Vercel URL/domain to `app/main.py` — only after Step 12. |
 | 14 | Read-only PAS205–PAS208 surface integration | Observer, Recommendations, Evidence Digest, Action Proposals — read-only. |
 | 15 | Realtime/SSE foundation | PAS thinking presence, notification arrivals, Critical banner. |
