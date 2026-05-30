@@ -37,7 +37,7 @@ export interface RouteDefinition {
   visibleTo: UserRole[];
   /** Permissions required to view this route (display-only; not enforced). */
   requiredPermissions: Permission[];
-  status: "skeleton";
+  status: "skeleton" | "operational-demo";
   demoOnly: true;
   noLiveBehavior: true;
 }
@@ -166,6 +166,30 @@ export const ROUTES: RouteDefinition[] = [
     ],
     requiredPermissions: ["view_bookings"],
     status: "skeleton",
+    demoOnly: true,
+    noLiveBehavior: true,
+  },
+
+  /* ── People ── */
+  {
+    id: "agents",
+    label: "Agents",
+    href: "/agents",
+    family: "People",
+    description:
+      "Your team — who is available, who owns follow-up, where coverage is thin, and who PAS is watching.",
+    pasCan:
+      "Watch agent coverage against callback promises and lead ownership, flag stretched agents, surface coaching moments.",
+    notConnectedYet:
+      "Live agent presence, CRM ownership sync, response-time telemetry, performance history.",
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_agents"],
+    status: "operational-demo",
     demoOnly: true,
     noLiveBehavior: true,
   },
