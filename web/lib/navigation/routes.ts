@@ -193,6 +193,28 @@ export const ROUTES: RouteDefinition[] = [
     demoOnly: true,
     noLiveBehavior: true,
   },
+  {
+    id: "pas-room",
+    label: "PAS Room",
+    href: "/pas-room",
+    family: "People",
+    description:
+      "The brokerage operating room — decisions kept attached to the work they affect.",
+    pasCan:
+      "Surface what it noticed, answer mentions in a thread, and record approvals, assignments, and decisions as company memory.",
+    notConnectedYet:
+      "Realtime delivery, message persistence, thread search, mentions routing.",
+    visibleTo: [
+      "Broker Owner",
+      "Admin/Ops",
+      "Team Lead",
+      "ORVN Internal Admin",
+    ],
+    requiredPermissions: ["view_pas_room"],
+    status: "operational-demo",
+    demoOnly: true,
+    noLiveBehavior: true,
+  },
 
   /* ── Notice ── */
   {

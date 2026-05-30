@@ -569,4 +569,43 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 20. PR G implementation note (2026-05-30)
+
+**PR G — PAS Room + in-app communication shell — created.** Branch
+`pas-web-pas-room-shell`.
+
+- New route `/pas-room` in the **People** family — chosen because PAS
+  Room is communication attached to people/work; Frontend Foundation
+  Plan §4 places communications under People. Registry status
+  `"operational-demo"`; gated (display-only) on a new `view_pas_room`
+  permission granted to Broker Owner, Admin/Ops, Team Lead, ORVN
+  Internal Admin (Agent deferred).
+- UI: `web/app/pas-room/` + `web/components/modules/pas-room/` —
+  `PasRoomOverview`, `RoomMessageFeed` (client — local appends),
+  `RoomMessageCard`, `RoomComposerDemo` (client — local input),
+  `ObjectThreadPanel`, `ObjectThreadCard`, `MessageTypeBadge` (+ one
+  shared `.module.css`). Reuses continuity `EvidenceMiniList`.
+- Two regions: **Operating room feed** (typed messages: human · pas ·
+  approval · assignment · evidence_reference · decision_record, each
+  with author + type badge + receipt) and **Object threads** (welded to
+  leads/callbacks/proposals; title, last message, participants, status,
+  receipt count).
+- Consumes `DEMO_THREADS` (room feed + object threads — there is no
+  separate `DEMO_ROOM_MESSAGES`; messages live inside threads),
+  `DEMO_USERS`/`DEMO_AGENTS` (author names), `DEMO_CALLBACKS`/
+  `DEMO_PROPOSALS` (thread titles), `DEMO_EVIDENCE` (receipts),
+  `NOTIFICATION_REPLY_CONFIRMATION` (composer copy).
+- **Local demo composer:** appends a note in-memory and shows "PAS
+  captured this instruction in demo mode. No live action was taken."
+  No network, no persistence (resets on refresh).
+- **No Slack clone, no DMs, no channels, no emoji/reactions, no
+  realtime/websocket/SSE, no `fetch()`, no API, no CORS, no backend, no
+  auth, no Supabase, no mutations, no localStorage/sessionStorage, no
+  secrets.** Message types use label + structure, not colour alone.
+- Command Center integration **deferred** — the Brain strip already
+  occupies that slot; adding a Room strip would crowd it. Documented as
+  a future light addition.
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
