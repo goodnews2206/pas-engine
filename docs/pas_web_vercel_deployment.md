@@ -21,6 +21,48 @@ At this step:
 
 ---
 
+## Coexistence with the existing ORVN Labs website
+
+`orvnlabs.com` already exists in Vercel and powers the ORVN Labs
+marketing website. PAS web is a **separate concern** and must not
+disturb that project.
+
+**Hard rules:**
+
+- The existing ORVN website stays on its **current Vercel project**.
+  Do not import the PAS repo into it.
+- `orvnlabs.com` and `www.orvnlabs.com` **must remain untouched** — do
+  not edit, move, or remove these domains from the existing project.
+- PAS web deploys as a **new, separate Vercel project** (suggested
+  name: `pas-web` / `pas-engine-web`) importing the same GitHub repo
+  `goodnews2206/pas-engine` with Root Directory `web`.
+- PAS uses the **subdomain `pas.orvnlabs.com` only**. Adding a
+  subdomain to the new project does not affect the apex `orvnlabs.com`
+  or `www` on the existing project — Vercel scopes each hostname
+  independently.
+- **First deploy is demo mode:** `NEXT_PUBLIC_PAS_API_BASE_URL` stays
+  unset, so the app makes no backend calls. No secrets, no env vars.
+- **Backend CORS is not touched** until the PAS Vercel URL/domain is
+  confirmed and Railway is ready (see "When to add CORS" below).
+
+### If Vercel reports a domain conflict
+
+If Vercel says `pas.orvnlabs.com` (or the domain) is already in use, or
+shows any "assigned to another project" message:
+
+1. **Stop.** Do not proceed with the domain attach.
+2. **Do not** click any option that removes or reassigns the domain
+   from another project — that would risk the existing ORVN website.
+3. Record the **exact** message verbatim and escalate before any
+   further action.
+
+The subdomain `pas.orvnlabs.com` is expected to be free even though the
+apex `orvnlabs.com` is in use elsewhere. A conflict on the subdomain
+means it was previously assigned and needs manual review — never an
+automatic removal.
+
+---
+
 ## Vercel project setup
 
 ### 1. Create project from GitHub
@@ -65,7 +107,10 @@ Click **Deploy**. Vercel will:
 
 ## Custom domain
 
-Target: `pas.orvnlabs.com`
+Target: `pas.orvnlabs.com` — attached to the **new, separate PAS Vercel
+project**, never the existing ORVN website project (see "Coexistence
+with the existing ORVN Labs website" above). The apex `orvnlabs.com`
+and `www.orvnlabs.com` stay where they are.
 
 Steps (after first deploy succeeds):
 1. Vercel → Project → Settings → Domains → Add `pas.orvnlabs.com`
