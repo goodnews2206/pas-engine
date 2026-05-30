@@ -1,7 +1,8 @@
 # PAS Web Foundation v1
 
-> Status: shipped (Steps 1–10). Owner: ORVN Labs. Sequence reconciled
-> 2026-05-30.
+> Status: shipped (Steps 1–11). Owner: ORVN Labs. Sequence reconciled
+> 2026-05-30. Next pending step: 12 (Vercel deployment — **not yet
+> executed**).
 >
 > **This document is the authoritative implementation log of record.**
 > The numbered sequence here is canonical;
@@ -17,6 +18,7 @@
 > Step 8 branch: `pas-web-command-center-layout` (merged).
 > Step 9 branch: `pas-web-module-empty-states` (merged).
 > Step 10 branch: `pas-web-vercel-deployment-prep` (merged, PR #39).
+> Step 11 branch: `pas-web-api-boundary-scaffold` (merged, PR #42).
 
 ## What this is
 
@@ -831,7 +833,7 @@ The deployment guide documents exactly when and how to add CORS origins.
 > follows it. The step numbers below are the numbers used in all branch
 > names, commits, and future planning.
 
-### Shipped (Steps 1–10, merged to `main`)
+### Shipped (Steps 1–11, merged to `main`)
 
 | # | Step | Branch |
 |---|---|---|
@@ -845,12 +847,12 @@ The deployment guide documents exactly when and how to add CORS origins.
 | 8 | Command Center intelligence layout | `pas-web-command-center-layout` |
 | 9 | Module-specific empty states | `pas-web-module-empty-states` |
 | 10 | Vercel deployment preparation | `pas-web-vercel-deployment-prep` (PR #39) |
+| 11 | API boundary scaffold | `pas-web-api-boundary-scaffold` (PR #42) — read-only fetch client, `IS_DEMO_MODE` gating, `GET /health` probe, connection-status chip. No live wiring beyond health. |
 
-### Future (Steps 11–20, not yet merged)
+### Next pending step (12) and future (Steps 12–20, not yet merged)
 
 | # | Step | Notes |
 |---|---|---|
-| 11 | API boundary scaffold | Typed read-only fetch client, `IS_DEMO_MODE` gating, `GET /health` probe, connection-status chip. No live wiring beyond health. |
 | 12 | Vercel deployment + domain smoke test | Deploy `/web` as a **separate** Vercel project (demo mode, `NEXT_PUBLIC_PAS_API_BASE_URL` unset); confirm production URL + subdomain `pas.orvnlabs.com`. Must not disturb the existing ORVN website project (`orvnlabs.com` / `www`) — see coexistence rules in `docs/pas_web_vercel_deployment.md`. |
 | 13 | CORS allow-list update | Add confirmed Vercel URL/domain to `app/main.py` — only after Step 12. |
 | 14 | Read-only PAS205–PAS208 surface integration | Observer, Recommendations, Evidence Digest, Action Proposals — read-only. |
@@ -861,17 +863,20 @@ The deployment guide documents exactly when and how to add CORS origins.
 | 19 | Action proposal approval UI | Approval drawer wired to the Action Proposals queue; present-only. |
 | 20 | Live execution gates | One named, bounded action at a time; mutation gated through the API with audit emission. |
 
-### Outstanding work not yet on the `main` web track
+### Merge status
 
-- **Step 11 WIP** is preserved on branch `pas-web-api-boundary-scaffold`
-  (commit `99d7f26`). It is **not merged** — a read-only boundary
-  scaffold with no live API call beyond `GET /health`, no CORS, no
-  auth, no mutations.
+- **Step 11 — API boundary scaffold** was **merged to `main` via
+  PR #42** (main at `9baaf50`); commit `99d7f26` is preserved as the
+  sole feature commit. It is a read-only boundary scaffold with no
+  live API call beyond `GET /health`, no CORS, no auth, no mutations.
 - **PAS209** (bounded action proposal package — the backend that
   Step 19's approval UI and Step 20's execution gates will eventually
   surface) was **merged to `main` via PR #40** (`fcffbb4`); remote
   branch `pas209-bounded-action-proposals` (commit `3a554c9`) remains.
   Backend only — see `docs/pas209_action_proposals.md`.
+- **Step 12 — Vercel deployment** has **not been executed**. No Vercel
+  project, deployment URL, or `pas.orvnlabs.com` domain has been
+  created yet (see `docs/pas_web_vercel_deployment.md`).
 
 ### Step 11 entry point
 
