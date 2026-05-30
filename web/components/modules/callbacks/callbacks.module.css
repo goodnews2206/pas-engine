@@ -1,0 +1,152 @@
+/* ── Callbacks (flagship) — Commitment Watch ── */
+
+.watch {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.watchHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.watchTitle {
+  font-size: var(--text-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-subtitle);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.watchCopy {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-secondary);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.watchGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+@media (max-width: 767px) {
+  .watchGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+}
+
+.tileTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tileDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.tileValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-title);
+  line-height: var(--lh-title);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-primary);
+}
+
+.tileLabel {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-secondary);
+}
+
+/* Proposed recovery actions */
+.recovery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+}
+
+.recoveryHeading {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.recoveryList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.recoveryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-sm);
+  background: var(--signal-approval-bg);
+  border-radius: var(--radius-sm);
+}
+
+.recoveryTitle {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  font-weight: var(--fw-medium);
+  color: var(--ink-primary);
+}
+
+.recoveryMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--signal-approval);
+}
+
+.recoveryEmpty {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+/* Related proposal line on a card */
+.cardProposal {
+  font-size: var(--text-caption);
+  line-height: var(--lh-caption);
+  color: var(--signal-approval);
+  margin: 0;
+}
