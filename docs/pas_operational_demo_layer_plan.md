@@ -488,4 +488,29 @@ If a surface cannot answer those five, it is not ready.
 
 ---
 
+## 17. PR D implementation note (2026-05-30)
+
+**PR D — Leads / Calls / Callbacks operational demos — created.** Branch
+`pas-web-leads-calls-callbacks-demo`.
+
+- `/leads`, `/calls`, `/callbacks` upgraded from skeletons to operational
+  demo modules. Registry status → `"operational-demo"` for all three.
+- Shared layer: `web/components/modules/continuity/` — `ContinuityHeader`,
+  `ContinuityMetricStrip`, `OperationalRecordCard`, `EvidenceMiniList`,
+  `OwnershipBadge`, `RiskChip`, a `severity.ts` helper, and one shared
+  `continuity.module.css`.
+- Modules: `web/components/modules/{leads,calls,callbacks}/`. **Callbacks
+  is the flagship** — a top "Commitment Watch" section (overdue · due
+  soon · at risk · recovery proposed) plus per-callback recovery
+  proposals and evidence receipts.
+- Relations resolved from the model by id: callbacks/calls per lead,
+  owner via `agentId`, evidence via `evidenceIds` (and id-mention match),
+  recovery proposal via callback-id mention, call→callback via
+  `sourceCallId`. No per-component fabricated records.
+- All static RSC. Demo/rehearsal labels preserved. **No backend, CORS,
+  API, `fetch()`, auth, Supabase, mutations, calling/SMS/email, or
+  secrets.** Severity is never colour alone (rail + chip + text).
+
+---
+
 *End of plan. No code, no backend, no live behaviour — plan only.*
