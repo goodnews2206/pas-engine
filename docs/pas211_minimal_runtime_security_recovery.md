@@ -152,4 +152,34 @@ PAS212 (Memory Candidate Pipeline) is unaffected by **PAS211A** and can follow i
 
 ---
 
-*End of PAS211 specification. Documentation only — no runtime code, tests, migrations, or security modules restored. PAS209 untouched, parked stash untouched, no `__pycache__` deleted, no dependencies added.*
+## PAS211A — Implementation note (completed)
+
+**Status: implemented.** The two Required-Now config-hardening guards are live; no corpus modules were rebuilt, no migration, no encryption, no RLS.
+
+- **RN-1 — Production config guard (implemented).** `app/config.py` adds production
+  indicators (`RENDER`, `VERCEL`, `FLY_APP_NAME`, `HEROKU_APP_NAME`, `DYNO`,
+  `RAILWAY_ENVIRONMENT`/`RAILWAY_PROJECT_ID`/`RAILWAY_SERVICE_ID`,
+  `KUBERNETES_SERVICE_HOST`, and an `https://` non-localhost `BASE_URL`) plus
+  `is_production` / `looks_like_production()` / `validate_runtime_security()`.
+  `app/main.py` calls `validate_runtime_security()` at startup: a production-like
+  host running with a non-production `ENVIRONMENT` now **fails fast** instead of
+  silently running on dev defaults. Local development (no indicators) is unaffected.
+- **RN-2 — Signature bypass blocked in production (implemented).** Twilio
+  verification is now gated on `settings.require_twilio_signature` (True in every
+  non-development environment) in both `/twilio/voice` and `/twilio/status`, so a
+  forged webhook can never be silently accepted in production. Slack already fails
+  closed on a missing signing secret (`slack_command.py:152-154`); a regression
+  test now guards it. RN-1 additionally guarantees a production host can never be
+  in the dev-bypass state.
+- **Tests:** `tests/mvp/test_pas211a_production_config_guards.py` (12) — fail-fast
+  on prod-indicator + non-production env, https-BASE_URL indicator, explicit
+  `production`/`prod` allowed, dev preserved, Twilio `/voice` + `/status` reject
+  unsigned requests in production, Slack fail-closed on missing secret.
+- **PAS211B still pending:** at-rest secret encryption (RL-1, critical) and RLS
+  policies (RL-2) remain the scheduled data-protection work before a real
+  brokerage's secrets/PII flow through PAS. PAS211A did **not** touch encryption,
+  RLS, memory, or ingestion.
+
+---
+
+*End of PAS211 specification + PAS211A implementation note. PAS211A added only config guards and tests; no migration, encryption, RLS, or restored corpus modules. PAS209 untouched, parked stash untouched, no `__pycache__` deleted, no dependencies added.*

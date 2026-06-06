@@ -3,8 +3,30 @@ PAS Configuration — All env vars in one place.
 Copy .env.example to .env and fill in values.
 """
 
+import os
 from functools import lru_cache
+from typing import List
+
 from pydantic_settings import BaseSettings
+
+
+# PAS211A — values of ENVIRONMENT that count as production.
+_PRODUCTION_ENV_VALUES = {"production", "prod"}
+
+# PAS211A — deployment-platform env vars whose mere presence implies a hosted,
+# production-like runtime. If any is set but ENVIRONMENT is not production, the
+# deployment is almost certainly mis-configured (dev defaults on a real host).
+_PRODUCTION_INDICATOR_VARS = (
+    "RENDER",
+    "VERCEL",
+    "FLY_APP_NAME",
+    "HEROKU_APP_NAME",
+    "DYNO",
+    "RAILWAY_ENVIRONMENT",
+    "RAILWAY_PROJECT_ID",
+    "RAILWAY_SERVICE_ID",
+    "KUBERNETES_SERVICE_HOST",
+)
 
 
 class Settings(BaseSettings):
@@ -71,6 +93,50 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    # ── PAS211A — production config + signature guards ──────────────
+
+    @property
+    def is_production(self) -> bool:
+        return (self.ENVIRONMENT or "").strip().lower() in _PRODUCTION_ENV_VALUES
+
+    @property
+    def is_development(self) -> bool:
+        return (self.ENVIRONMENT or "").strip().lower() == "development"
+
+    @property
+    def require_twilio_signature(self) -> bool:
+        """RN-2: Twilio signature verification is skipped ONLY in explicit
+        development. Any non-development environment (incl. production) enforces
+        it, so a forged webhook can never be silently accepted in production."""
+        return not self.is_development
+
+    def production_indicators(self) -> List[str]:
+        """Deployment signals suggesting a production-like host. Read live from
+        os.environ so a mis-set ENVIRONMENT is caught even with cached settings."""
+        found = [v for v in _PRODUCTION_INDICATOR_VARS if os.environ.get(v)]
+        base = (self.BASE_URL or "").strip().lower()
+        if base.startswith("https://") and "localhost" not in base and "127.0.0.1" not in base:
+            found.append("BASE_URL(https)")
+        return found
+
+    def looks_like_production(self) -> bool:
+        return bool(self.production_indicators())
+
+    def validate_runtime_security(self) -> None:
+        """RN-1: fail fast when a production-like deployment is running with a
+        non-production ENVIRONMENT. Dev defaults on a real host would silently
+        disable Twilio signature enforcement, weaken admin-key checks, and expose
+        /docs. Local development (no indicators) is unaffected."""
+        if self.looks_like_production() and not self.is_production:
+            indicators = ", ".join(self.production_indicators())
+            raise RuntimeError(
+                "PAS refused to start: production deployment indicators detected "
+                f"({indicators}) but ENVIRONMENT={self.ENVIRONMENT!r}. Set "
+                "ENVIRONMENT=production to enforce signature verification and "
+                "admin-key checks, or remove the deployment indicators for local "
+                "development."
+            )
 
 
 @lru_cache()
