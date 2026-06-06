@@ -43,8 +43,10 @@ async def incoming_call(request: Request):
     # Rate limit: 60 webhook hits/min per IP (Twilio CDN IPs are consistent)
     rate_limit(f"twilio_voice:{client_ip(request)}", max_requests=60, window_seconds=60)
 
-    # Verify the request genuinely came from Twilio
-    if settings.ENVIRONMENT != "development" and not _verify_twilio(request, form_dict):
+    # Verify the request genuinely came from Twilio. RN-2 (PAS211A): the seam is
+    # require_twilio_signature, which is True in every non-development env, so a
+    # forged webhook can never be silently accepted in production.
+    if settings.require_twilio_signature and not _verify_twilio(request, form_dict):
         logger.warning(f"Rejected forged Twilio voice webhook from {client_ip(request)}")
         raise HTTPException(status_code=403, detail="Invalid Twilio signature.")
 
@@ -121,7 +123,8 @@ async def call_status(request: Request):
     form_data = await request.form()
     form_dict = dict(form_data)
 
-    if settings.ENVIRONMENT != "development" and not _verify_twilio(request, form_dict):
+    # RN-2 (PAS211A): enforce in every non-development env (see /voice above).
+    if settings.require_twilio_signature and not _verify_twilio(request, form_dict):
         logger.warning(f"Rejected forged Twilio status webhook from {client_ip(request)}")
         raise HTTPException(status_code=403, detail="Invalid Twilio signature.")
 

@@ -59,10 +59,16 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     logger.info("PAS Engine starting up...")
 
+    # PAS211A / RN-1: refuse to run a production-like deployment with a
+    # non-production ENVIRONMENT. Dev defaults on a real host would silently
+    # disable Twilio signature enforcement and admin-key checks. Local
+    # development (no deployment indicators) is unaffected.
+    settings.validate_runtime_security()
+
     # SECURITY: weak/empty admin keys must never serve /admin/* in production.
     # In development we keep the existing loud warning so local testing isn't blocked.
     if (settings.ADMIN_API_KEY or "") in _WEAK_ADMIN_KEYS:
-        if settings.ENVIRONMENT == "production":
+        if settings.is_production:
             logger.critical(
                 "SECURITY: ADMIN_API_KEY is missing or weak in production — refusing to start."
             )
@@ -74,8 +80,12 @@ async def lifespan(app: FastAPI):
             "This is allowed in development only."
         )
 
-    if settings.ENVIRONMENT == "development":
-        logger.warning("SECURITY: Running in DEVELOPMENT mode — Twilio signature verification is DISABLED.")
+    if settings.is_development:
+        logger.warning(
+            "SECURITY: Running in explicit DEVELOPMENT mode — Twilio signature "
+            "verification is DISABLED. This is never reached on a production-like "
+            "host (RN-1 fails fast there)."
+        )
 
     # Warn about missing external service keys (but never block startup)
     _warn_missing = []
