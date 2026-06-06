@@ -24,6 +24,7 @@ from app.routes.simulate import router as simulate_router
 from app.routes.onboarding import router as onboarding_router
 from app.routes.system import router as system_router
 from app.routes.events import router as events_router
+from app.routes.lead_ingestion import router as lead_ingestion_router  # PAS213
 from app.db.supabase_client import init_supabase
 from app.config import get_settings
 
@@ -154,6 +155,7 @@ app.include_router(portal_router, prefix="/portal", tags=["Portal"])
 app.include_router(demo_router, prefix="/demo", tags=["Demo"])
 app.include_router(simulate_router, tags=["Simulation"])
 app.include_router(onboarding_router, prefix="/onboarding", tags=["Onboarding"])
+app.include_router(lead_ingestion_router, prefix="/ingest", tags=["Ingestion"])  # PAS213
 
 # Serve the brokerage client dashboard at /dashboard
 _dashboard_dir = os.path.join(os.path.dirname(__file__), "static", "dashboard")
