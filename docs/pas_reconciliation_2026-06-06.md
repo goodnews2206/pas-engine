@@ -217,4 +217,32 @@ Representative error: `[BLOCK] prior_phase:scripts/pas179_controlled_learning_re
 
 > The prior reports no longer match the repository: PAS is a working voice MVP plus two demo-grade layers (analytics and UI), not a system one crypto-blocker from launch. PAS169 is moot because the code it audited is absent. The highest-leverage next move is to point the already-built operational-intelligence stack at live tenant data (PAS210) — but only after reconciling the lost, never-committed PAS160–169 work and fixing two runtime-breaking imports.
 
-*End of reconciliation report. Documentation only — no code modified, no files restored, no caches deleted, PAS209 untouched, parked stash untouched, PAS210 not implemented.*
+---
+
+## 12. PAS210 — Live Operational Snapshot Bridge (completed)
+
+The bridge identified throughout this report is now built. PAS210 is the **first
+operational-intelligence bridge**: it points the already-committed PAS205
+observer / PAS207 needs-attention surface at **real per-tenant Supabase data**
+via the committed PAS206 read-only adapter, instead of the demo snapshot.
+
+Properties (all by construction):
+- **Read-only.** No writes, no scheduling, no outbound actions, no mutations.
+- **Feature-flagged.** Single flag `PAS_LIVE_OPERATIONAL_SNAPSHOT_ENABLED`; unset
+  or non-`"true"` → demo behaviour is byte-for-byte unchanged.
+- **Tenant-scoped, fail-closed.** Live mode requires a non-empty `brokerage_id`;
+  missing tenant → explicit *unavailable*, never inferred or cross-tenant.
+- **No silent fallback / mixing.** A live-adapter failure returns an explicit,
+  labelled *unavailable* state — never a silent demo blend.
+- **Source-transparent.** Every result carries `source_mode` ∈ {demo, live,
+  unavailable}; the event stream records it.
+
+Implementation: `app/services/proactive/live_snapshot_bridge.py`, wired into the
+PAS207 path in `app/routes/slack_command.py`. Observer, renderer, adapter, and
+matcher logic are unchanged. This is the moment PAS can tell a brokerage
+something **true about its own pipeline** — the doctrine's "queryable,
+operationally intelligent" claim made real on live data, still strictly observe-only.
+
+---
+
+*End of reconciliation report. PAS210 (live snapshot bridge) completed read-only and feature-flagged; PAS160–169 recovery work and the deferred rebuilds (PAS211+) remain as separately tracked. No files restored, no caches deleted, PAS209 untouched, parked stash untouched.*

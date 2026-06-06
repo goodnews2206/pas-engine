@@ -87,8 +87,12 @@ from app.services.slack.demo_data_detector import (
 # execution, no filesystem writes. Owns a closed set of 8 phrases
 # that the PAS191 next-action carry-forward test deliberately
 # excludes.
-from app.services.slack.proactive_digest_intent import (
-    try_route_needs_attention,
+# PAS210 — Live Operational Snapshot Bridge. Read-only, feature-flagged.
+# Routes the PAS207 needs-attention surface through demo or tenant-scoped
+# live data depending on PAS_LIVE_OPERATIONAL_SNAPSHOT_ENABLED. The bridge
+# wraps the PAS207 matcher/renderer (try_route_needs_attention) internally.
+from app.services.proactive.live_snapshot_bridge import (
+    build_needs_attention_bridge,
 )
 
 router = APIRouter()
@@ -236,8 +240,12 @@ async def slack_command(request: Request):
     # on"), so those continue to dispatch through PAS191 unchanged.
     # PAS207 never writes to disk, never sends a Slack message,
     # never calls Twilio, never mutates the DB.
-    pas207_resp = try_route_needs_attention(text)
-    if pas207_resp is not None:
+    # PAS210 — route the needs-attention surface through the live snapshot
+    # bridge. Flag off → identical demo output. Flag on → tenant-scoped live
+    # data (read-only) or an explicit, labelled unavailable state. The result
+    # always carries source_mode (demo / live / unavailable) for transparency.
+    pas207_bridge = build_needs_attention_bridge(text, brokerage_id=brokerage["id"])
+    if pas207_bridge is not None:
         log_event_bg(
             "slack.intent.matched",
             event_category="ops",
@@ -247,9 +255,10 @@ async def slack_command(request: Request):
                 "brokerage_id": brokerage["id"],
                 "intent":       "needs_attention",
                 "surface":      "slack_command_pas207",
+                "source_mode":  pas207_bridge.source_mode,
             },
         )
-        return JSONResponse({"text": pas207_resp, "response_type": "in_channel"})
+        return JSONResponse({"text": pas207_bridge.text, "response_type": "in_channel"})
 
     # PAS204-A — Broker conversation intelligence. Pure string
     # output: no Slack API call, no simulation execution, no

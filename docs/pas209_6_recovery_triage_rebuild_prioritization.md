@@ -185,4 +185,27 @@ the two runtime-breaking lazy imports in `app/routes/slack_command.py`.
 
 ---
 
-*End of PAS209.6 triage + PAS209.7 repair note.*
+## PAS210 — Live Operational Snapshot Bridge (note)
+
+**Status: completed.** The highest-leverage checkpoint from this triage is built.
+
+- New module `app/services/proactive/live_snapshot_bridge.py` bridges the PAS207
+  needs-attention surface from the demo snapshot to **real per-tenant Supabase
+  data** via the committed PAS206 adapter — read-only, feature-flagged, tenant
+  scoped, fail-closed, source-transparent. Wired into `app/routes/slack_command.py`.
+- Single flag: `PAS_LIVE_OPERATIONAL_SNAPSHOT_ENABLED` (literal `"true"` enables
+  live; anything else preserves demo behaviour exactly).
+- Confirms the dependency analysis above: PAS210 used **only** committed assets
+  (PAS206 adapter + live `pas_events`/`leads`/`calls`/`bookings`) plus the
+  PAS209.7 import repair. It did **not** require ingestion (PAS213), memory
+  (PAS212), or broader security (PAS211) — those remain deferred as triaged.
+- Tests: `tests/mvp/test_pas210_live_snapshot_bridge.py` (default-demo, live,
+  brokerage required, fail-closed, adapter-failure, no-silent-mixing, source-mode
+  transparency, demo preserved, tenant-scoped read). The PAS207 dispatcher
+  precedence guard was updated to the new bridge call (precedence unchanged).
+
+Next per the sequence above: **PAS211 — Minimal Runtime Security Recovery**.
+
+---
+
+*End of PAS209.6 triage + PAS209.7 repair note + PAS210 bridge note.*

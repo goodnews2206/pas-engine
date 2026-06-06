@@ -345,12 +345,15 @@ def test_dispatcher_wires_pas207_after_pas191_match_before_pas204_and_dispatch()
     scorer (keys on tokens like "risk" / "risky").
     """
     src = _read(DISPATCHER_PATH)
-    assert "try_route_needs_attention" in src, (
-        "dispatcher must import the PAS207 router"
+    # PAS210 — the PAS207 needs-attention surface is now dispatched through the
+    # live snapshot bridge (build_needs_attention_bridge), which wraps the
+    # PAS207 matcher/renderer internally. Dispatcher precedence is unchanged.
+    assert "build_needs_attention_bridge" in src, (
+        "dispatcher must wire the PAS207 router (via the PAS210 bridge)"
     )
     pas203_call    = src.find("try_route_simulation_digest(text, _pas203_reports_dir)")
     pas191_match   = src.find("pas191 = match_intent(text)")
-    pas207_call    = src.find("try_route_needs_attention(text)")
+    pas207_call    = src.find("build_needs_attention_bridge(text")
     pas204_call    = src.find("build_broker_response(text)")
     pas191_dispatch = src.find("if pas191_intent != INTENT_UNKNOWN:")
     assert pas203_call    != -1, "PAS203 fast-path missing"
@@ -364,7 +367,7 @@ def test_dispatcher_wires_pas207_after_pas191_match_before_pas204_and_dispatch()
     assert pas204_call    < pas191_dispatch, "PAS204 must run before PAS191 dispatch"
     # Only one PAS207 fast-path remains in the file (no stale copy
     # left behind from the move).
-    assert src.count("try_route_needs_attention(text)") == 1
+    assert src.count("build_needs_attention_bridge(text") == 1
 
 
 # ──────────────────────────────────────────────────────────────────
