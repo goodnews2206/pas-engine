@@ -143,14 +143,52 @@ behaviour change.
   context includes evidence/provenance/confidence; formatting implies no
   behaviour change; retrieval never returns unapproved.
 
-### Future: PAS212D — governed injection boundary
-The only remaining step toward "adaptive" is **governed injection**: feeding
-approved, read-only memory context into a live call **operator-gated, opt-in,
-per-tenant, and never autonomous**, with the prompt-injection quarantine path
-from the corpus `classifier`/`governance` spec. PAS212C deliberately stops at
-producing the context; PAS212D would own the boundary that lets it influence a
-call, and is the point at which behaviour could change — so it must be gated.
+### PAS212D — governed injection boundary (next)
+PAS212C produces approved read-only context. The boundary that lets it reach a
+runtime component is PAS212D, below.
 
 ---
 
-*End of PAS212 / PAS212C. Candidate pipeline + approved-memory retrieval only: deterministic generation, in-memory tenant-scoped store, explicit approval boundary, read-only approved retrieval. No injection, no DB/migration, no embeddings, no behaviour change, no PAS209/stash/`__pycache__` touched, no dependencies added.*
+## PAS212D — Governed memory context boundary (completed)
+
+**Status: implemented.** PAS212D defines the **single, opt-in, default-off seam**
+through which approved memory may be offered to PAS runtime components as
+read-only context — **without changing any behaviour automatically.**
+
+- **Module:** `app/services/memory/memory_context_boundary.py`.
+- **Feature flag:** `PAS_APPROVED_MEMORY_CONTEXT_ENABLED` — **default off** (only
+  the literal `"true"` enables). Off → no context is ever returned to runtime
+  callers.
+- **Opt-in at the call site.** Even with the flag on, context is returned only
+  when the caller explicitly passes a `brokerage_id` (optionally narrowed by
+  `subject_type` / `subject_id` / `candidate_type`). Missing tenant → no context.
+- **Public surface:** `memory_context_enabled()`, `build_memory_context(...)`
+  (governed envelope), `sanitize_memory_context(...)` (drops injection /
+  instruction / transcript blocks), `format_memory_context_for_prompt(...)`
+  (neutral read-only string; `""` when disabled/empty).
+- **Safety guarantees:** approved-only (built on PAS212C), tenant-scoped,
+  read-only, evidence-backed, no instruction / autonomous-action language, no
+  transcript leakage, no other-brokerage memory, no candidate/rejected/archived,
+  and prompt-injection / autonomous-action phrases are **dropped** before any
+  block is offered.
+- **Runtime integration: NONE.** PAS212D does **not** wire into `state_machine`,
+  `claude_client`, `call_summary`, or `self_trainer`. It only *produces* governed
+  context; no production file was changed, so production behaviour is unchanged.
+  When the flag is off (default), `format_memory_context_for_prompt(...)` returns
+  `""`, so a future caller that prepends it is a no-op until explicitly enabled.
+- **Tests:** `tests/mvp/test_pas212d_memory_context_boundary.py` (10) — flag-off
+  no context; literal-`"true"` only; flag-on approved-only; candidate/rejected/
+  archived excluded; tenant isolation; missing brokerage → none; read-only +
+  evidence-backed; injection/instruction memory sanitized; no behaviour change
+  when off; no behavioural imports.
+
+### Future: PAS212E — explicit runtime integration checkpoint
+Actually consuming this context inside a live call (e.g. prepending
+`format_memory_context_for_prompt(...)` to an objection prompt) is its own
+checkpoint: it must be operator-gated, opt-in per tenant, measured, and is the
+first point at which behaviour could change. PAS212D deliberately builds only the
+boundary, never the wiring.
+
+---
+
+*End of PAS212 / PAS212C / PAS212D. Candidate pipeline + approved-memory retrieval + governed default-off context boundary. No runtime wiring, no injection by default, no DB/migration, no embeddings, no behaviour change, no PAS209/stash/`__pycache__` touched, no dependencies added.*
