@@ -112,4 +112,45 @@ PAS300/PAS301 define identity, session, and **workspace/memory ownership** (who 
 
 ---
 
-*End of PAS212. Minimal candidate pipeline only: deterministic generation + in-memory tenant-scoped store + explicit approval boundary. No DB/migration, no embeddings, no behaviour change, no PAS209/stash/`__pycache__` touched, no dependencies added.*
+---
+
+## PAS212C — Approved memory retrieval layer (completed)
+
+**Status: implemented.** PAS212 created and approved candidates; **PAS212C makes
+approved memory readable as read-only context** — without any injection or
+behaviour change.
+
+- **Module:** `app/services/memory/approved_memory_retrieval.py`.
+- **Retrieval (`retrieve_approved`)** — returns **approved-only** memories for a
+  `brokerage_id`, with optional `subject_type` / `subject_id` / `candidate_type`
+  filters; returns `[]` when none. The APPROVED filter is hard-coded (the caller
+  cannot widen it), and a defensive final pass guarantees no candidate /
+  rejected / archived record is ever surfaced. Tenant isolation is enforced by
+  the store (a brokerage can never read another's memory).
+- **Context formatting (`format_approved_context`)** — turns approved memories
+  into neutral, **read-only** context blocks carrying `source="approved_memory"`,
+  `read_only=True`, `subject_type`/`subject_id`/`candidate_type`,
+  `approved_memory` (the summary), `evidence_refs`, `provenance`, and
+  `confidence`. It adds **no directive/instruction language** and surfaces no
+  transcript text.
+- **No injection yet.** Nothing here writes to the engine, alters a prompt, or
+  changes call behaviour. Retrieval produces context blocks only; whether/how
+  they ever reach a live call is out of scope.
+- **No behaviour change.** Reading approved memory is observation, not action.
+- **Tests:** `tests/mvp/test_pas212c_approved_memory_retrieval.py` (11) —
+  approved retrievable; candidate/rejected/archived not retrievable; tenant
+  isolation; subject + candidate_type filters; empty when none; formatted
+  context includes evidence/provenance/confidence; formatting implies no
+  behaviour change; retrieval never returns unapproved.
+
+### Future: PAS212D — governed injection boundary
+The only remaining step toward "adaptive" is **governed injection**: feeding
+approved, read-only memory context into a live call **operator-gated, opt-in,
+per-tenant, and never autonomous**, with the prompt-injection quarantine path
+from the corpus `classifier`/`governance` spec. PAS212C deliberately stops at
+producing the context; PAS212D would own the boundary that lets it influence a
+call, and is the point at which behaviour could change — so it must be gated.
+
+---
+
+*End of PAS212 / PAS212C. Candidate pipeline + approved-memory retrieval only: deterministic generation, in-memory tenant-scoped store, explicit approval boundary, read-only approved retrieval. No injection, no DB/migration, no embeddings, no behaviour change, no PAS209/stash/`__pycache__` touched, no dependencies added.*
