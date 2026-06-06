@@ -154,4 +154,35 @@ Build **PAS209.7 — Security Runtime Import Repair** next: reconstruct only the
 
 ---
 
-*End of PAS209.6 triage. Planning only.*
+## PAS209.7 — Security Runtime Import Repair (note)
+
+**Status: completed.** Category A repair executed with scope strictly limited to
+the two runtime-breaking lazy imports in `app/routes/slack_command.py`.
+
+- Implemented minimal source modules from the PAS209.5 corpus *as specification*
+  (docstring + symbol names + constants; no bytecode copied):
+  - `app/services/security/rate_limit.py` — exposes `check_rate_limit(...)` (the
+    only imported symbol) plus the coherent minimal surface
+    (`resolve_rate_limit_policy`, `build_rate_limit_bucket_key`,
+    `rate_limit_public_error`, closed `ALLOWED_SURFACES` / `DEFAULT_POLICIES`).
+    Uses a **process-local fixed-window** counter — no DB, no network, no new
+    dependencies — with conservative per-surface defaults and **fail-open** on
+    error. The original durable `rate_limit_store` (Supabase-backed) remains a
+    deferred rebuild (PAS211).
+  - `app/services/operator/circuit_breaker_policy.py` — exposes
+    `should_block_new_outbound_for_brokerage(...)`. Advisory, read-only,
+    **fail-open** (`False`) — PAS188's `circuit_breaker` ledger is absent, so the
+    advisory policy correctly reports "do not block."
+  - Re-established `app/services/security/__init__.py` and
+    `app/services/operator/__init__.py` as packages.
+- Added narrow tests: `tests/mvp/test_pas209_7_security_import_repair.py` (imports
+  resolve, expected symbols exist, Slack lazy-import sites no longer throw,
+  conservative/fail-open defaults correct, bucket key is a PII-free sha256).
+- **Scope was limited to import repair.** No other security/operator modules were
+  reconstructed. **Full runtime security recovery remains PAS211**; the broader
+  operator surface (audit chain, fleet status, incidents) and the durable
+  rate-limit store remain deferred per the table above.
+
+---
+
+*End of PAS209.6 triage + PAS209.7 repair note.*
