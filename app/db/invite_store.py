@@ -21,6 +21,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from app.config import get_settings
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("pas.invites")
@@ -52,6 +53,16 @@ def generate_invite_key(brokerage_id: str, created_by: str = "admin", ttl_days: 
         "revoked": False,
         "created_at": now.isoformat(),
     }
+
+    # PAS211F: store the hash (key_hash/key_lookup columns added in migrate_v7)
+    # and clear the plaintext key once hashing is enabled. The raw key is still
+    # returned (once) to the caller.
+    if get_settings().SECRETS_HASHING_ENABLED:
+        from app.services.security.secret_hash import hash_invite_key
+        key_hash = hash_invite_key(key)
+        payload["key_hash"] = key_hash
+        payload["key_lookup"] = key_hash
+        payload["key"] = ""
 
     db.table("onboarding_keys").insert(payload).execute()
     logger.info(f"Invite key generated | brokerage={brokerage_id} | expires={expires}")
@@ -103,12 +114,27 @@ def claim_invite_key(key: str, used_by_email: str = "") -> Optional[dict]:
     """
     try:
         db = get_supabase()
-        result = db.table("onboarding_keys").select("*").eq("key", key).limit(1).execute()
-        if not result.data:
+
+        # PAS211F: hashed lookup first (keys issued after activation store only
+        # the hash), with a legacy plaintext fallback for keys issued before.
+        record = None
+        if get_settings().SECRETS_HASHING_ENABLED:
+            try:
+                from app.services.security.secret_hash import hash_invite_key
+                hk = hash_invite_key(key)
+                hres = db.table("onboarding_keys").select("*").eq("key_hash", hk).limit(1).execute()
+                if hres.data:
+                    record = hres.data[0]
+            except Exception as e:
+                logger.warning(f"Hashed invite lookup unavailable; trying legacy: {e}")
+        if record is None:
+            result = db.table("onboarding_keys").select("*").eq("key", key).limit(1).execute()
+            record = result.data[0] if result.data else None
+
+        if not record:
             logger.warning(f"Invite key not found: {key[:12]}...")
             return None
 
-        record = result.data[0]
         now = datetime.now(timezone.utc)
 
         if record.get("used"):
@@ -121,12 +147,13 @@ def claim_invite_key(key: str, used_by_email: str = "") -> Optional[dict]:
             logger.warning(f"Invite key expired: {key[:12]}...")
             return None
 
-        # Mark key as used
+        # Mark key as used — target by primary key id (the plaintext `key` may be
+        # cleared once hashing is enabled).
         db.table("onboarding_keys").update({
             "used": True,
             "used_at": now.isoformat(),
             "used_by_email": used_by_email,
-        }).eq("key", key).execute()
+        }).eq("id", record["id"]).execute()
 
         # Return the brokerage (including api_key)
         brokerage_result = db.table("brokerages").select("*").eq(

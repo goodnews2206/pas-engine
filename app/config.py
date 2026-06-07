@@ -103,6 +103,19 @@ class Settings(BaseSettings):
     # a client cannot spoof the header to mint unlimited rate-limit buckets.
     TRUST_PROXY_HEADERS: bool = False
 
+    # ── PAS211F — secrets at rest ───────────────────────────────────
+    # When enabled, newly created/rotated brokerage API keys and invite keys are
+    # stored HASHED (api_key_hash / key_hash) and the plaintext column is left
+    # empty; lookups hash the presented value. DEFAULT OFF — turn on only AFTER
+    # applying scripts/migrate_v10_secrets_encryption_rotation.sql (which adds
+    # api_key_hash). Pre-existing plaintext keys keep working via a legacy
+    # fallback during the compatibility phase.
+    SECRETS_HASHING_ENABLED: bool = False
+
+    # Optional deployment-wide pepper mixed into credential hashes so a stolen
+    # database alone cannot be brute-forced without it. Rotate via key_version.
+    SECRET_HASH_PEPPER: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = True
