@@ -64,8 +64,14 @@ def get_or_build_workflow_for_call(
     if not call_id:
         return _empty_envelope(call_id="", brokerage_id=brokerage_id, lead_id=None)
 
+    # PAS211E: the event read is fail-closed on tenant scope. A portal caller
+    # always supplies brokerage_id (so the read is scoped); only an admin
+    # audience may read a call's events without one (cross-tenant by design).
+    allow_global = (audience == "admin")
     call_row = fetch_call_summary(call_id, brokerage_id=brokerage_id)
-    events = fetch_workflow_events(call_id, brokerage_id=brokerage_id)
+    events = fetch_workflow_events(
+        call_id, brokerage_id=brokerage_id, allow_global=allow_global
+    )
 
     # Lead id resolution: prefer the calls.lead_id column; fall back to
     # the first non-empty lead_id we observe in the event stream.

@@ -63,6 +63,7 @@ async def admin_events_recent(
         since_iso=since_iso,
         limit=limit,
         offset=offset,
+        allow_global=True,  # PAS211E: admin route — cross-tenant view is intentional
     )
     return {
         "events": events,
@@ -86,6 +87,7 @@ async def admin_events_callbacks(
         since_iso=since_iso,
         limit=limit,
         offset=offset,
+        allow_global=True,  # PAS211E: admin route — cross-tenant view is intentional
     )
     return {
         "events": events,
@@ -105,7 +107,7 @@ async def admin_events_for_call(
     """All pas_events for a single call, oldest first (timeline order)."""
     if not call_id:
         raise HTTPException(status_code=400, detail="call_id required")
-    events = events_for_call(call_id, brokerage_id=brokerage_id, limit=limit)
+    events = events_for_call(call_id, brokerage_id=brokerage_id, limit=limit, allow_global=True)
     return {"call_id": call_id, "events": events, "count": len(events)}
 
 
@@ -180,6 +182,7 @@ async def admin_intelligence_summary(
         list(by_call.keys()),
         list(distinct_lead_ids),
         brokerage_id=brokerage_id,
+        allow_global=True,  # PAS211E: admin summary — cross-tenant view is intentional
     )
 
     leakage_counts: Counter = Counter()

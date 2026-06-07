@@ -571,13 +571,13 @@ async def portal_add_agent(body: PortalAgentCreate, brokerage=Depends(require_br
 async def portal_update_agent(agent_id: str, body: PortalAgentUpdate, brokerage=Depends(require_brokerage)):
     """Update an agent's profile. Only fields provided are changed."""
     from app.db.agent_store import update_agent, get_agent
-    agent = get_agent(agent_id)
+    agent = get_agent(agent_id, brokerage_id=brokerage["id"])
     if not agent or agent.get("brokerage_id") != brokerage["id"]:
         raise HTTPException(status_code=404, detail="Agent not found")
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
-    ok = update_agent(agent_id, updates)
+    ok = update_agent(agent_id, updates, brokerage_id=brokerage["id"])
     if not ok:
         raise HTTPException(status_code=500, detail="Update failed")
     return {"status": "updated", "agent_id": agent_id}
@@ -587,10 +587,10 @@ async def portal_update_agent(agent_id: str, body: PortalAgentUpdate, brokerage=
 async def portal_delete_agent(agent_id: str, brokerage=Depends(require_brokerage)):
     """Remove an agent from the authenticated brokerage."""
     from app.db.agent_store import delete_agent, get_agent
-    agent = get_agent(agent_id)
+    agent = get_agent(agent_id, brokerage_id=brokerage["id"])
     if not agent or agent.get("brokerage_id") != brokerage["id"]:
         raise HTTPException(status_code=404, detail="Agent not found")
-    ok = delete_agent(agent_id)
+    ok = delete_agent(agent_id, brokerage_id=brokerage["id"])
     if not ok:
         raise HTTPException(status_code=500, detail="Delete failed")
     return {"status": "deleted", "agent_id": agent_id}
@@ -606,10 +606,10 @@ async def portal_set_agent_status(
     from app.db.agent_store import set_agent_status, get_agent
     if body.status not in ("available", "busy", "offline"):
         raise HTTPException(status_code=400, detail="status must be: available | busy | offline")
-    agent = get_agent(agent_id)
+    agent = get_agent(agent_id, brokerage_id=brokerage["id"])
     if not agent or agent.get("brokerage_id") != brokerage["id"]:
         raise HTTPException(status_code=404, detail="Agent not found")
-    ok = set_agent_status(agent_id, body.status)
+    ok = set_agent_status(agent_id, body.status, brokerage_id=brokerage["id"])
     if not ok:
         raise HTTPException(status_code=500, detail="Status update failed")
     return {"status": "updated", "agent_id": agent_id, "new_status": body.status}
