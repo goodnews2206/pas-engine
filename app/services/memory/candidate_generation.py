@@ -28,6 +28,7 @@ from app.services.memory.candidate_contracts import (
     MemoryCandidate,
     make_candidate,
 )
+from app.services.security.prompt_safety import sanitize_for_memory_candidate
 
 # Conservative thresholds.
 _MIN_OBJECTIONS_FOR_PATTERN = 2
@@ -59,13 +60,16 @@ def generate_lead_fact_candidates(
         lead_id = _row_id(lead, "id", "lead_id")
         if not lead_id:  # no id → no evidence → no candidate
             continue
+        # PAS211H: lead-controlled fields are sanitized before they can become
+        # proposed memory (instruction phrases redacted, length-capped). Benign
+        # qualification values pass through unchanged.
         facts = []
         if lead.get("intent"):
-            facts.append(f"intent={lead['intent']}")
+            facts.append(f"intent={sanitize_for_memory_candidate(lead['intent'])}")
         if lead.get("budget"):
-            facts.append(f"budget={lead['budget']}")
+            facts.append(f"budget={sanitize_for_memory_candidate(lead['budget'])}")
         if lead.get("timeline"):
-            facts.append(f"timeline={lead['timeline']}")
+            facts.append(f"timeline={sanitize_for_memory_candidate(lead['timeline'])}")
         if not facts:
             continue
         proposed = "Lead qualification facts: " + "; ".join(facts) + "."

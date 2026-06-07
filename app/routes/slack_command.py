@@ -330,6 +330,48 @@ async def slack_command(request: Request):
 
 # ───────────── INTENT PARSING ─────────────
 
+# PAS211H: the LLM intent parser can emit arbitrary JSON; never trust it blindly.
+# Mutating actions and the writable property fields are allow-listed below.
+_ALLOWED_SLACK_ACTIONS = frozenset({
+    "pause", "resume", "push_property", "remove_property",
+    "query_calls", "query_leads", "query_stats", "unknown",
+})
+_ALLOWED_PROPERTY_KEYS = ("address", "price", "beds", "baths", "notes")
+
+
+def _validate_slack_intent(intent: dict) -> dict:
+    """Allow-list the model's parsed intent before it can mutate state.
+
+    Unknown action names collapse to ``unknown`` (no mutation). For
+    push_property, only allow-listed string fields survive and each value is
+    sanitized (featured properties are later read into call prompts)."""
+    from app.services.security.prompt_safety import sanitize_for_memory_candidate
+
+    if not isinstance(intent, dict):
+        return {"action": "unknown"}
+    action = intent.get("action")
+    if action not in _ALLOWED_SLACK_ACTIONS:
+        return {"action": "unknown"}
+
+    clean: dict = {"action": action}
+    if action == "push_property":
+        raw_prop = intent.get("property") if isinstance(intent.get("property"), dict) else {}
+        prop = {}
+        for k in _ALLOWED_PROPERTY_KEYS:
+            if raw_prop.get(k) not in (None, ""):
+                prop[k] = sanitize_for_memory_candidate(str(raw_prop.get(k)))
+        clean["property"] = prop
+    elif action == "remove_property":
+        clean["address"] = sanitize_for_memory_candidate(str(intent.get("address", "")))
+    elif action == "query_calls":
+        period = str(intent.get("period", "today"))
+        clean["period"] = period if period in ("today", "week", "month") else "today"
+    elif action == "query_leads":
+        flt = str(intent.get("filter", "hot"))
+        clean["filter"] = flt if flt in ("hot", "all", "not_booked") else "hot"
+    return clean
+
+
 async def _parse_intent(text: str) -> dict:
     provider = get_provider()
     if provider is None:
@@ -343,7 +385,8 @@ async def _parse_intent(text: str) -> dict:
             temperature=0,
             purpose="slack_intent",
         )
-        return json.loads(raw.strip())
+        # PAS211H: validate/allow-list the model JSON before it drives a mutation.
+        return _validate_slack_intent(json.loads(raw.strip()))
     except Exception as e:
         logger.error(f"[{provider.name}] intent parsing failed: {e}")
         log_event_bg(

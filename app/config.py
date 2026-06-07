@@ -130,6 +130,14 @@ class Settings(BaseSettings):
     # database alone cannot be brute-forced without it. Rotate via key_version.
     SECRET_HASH_PEPPER: str = ""
 
+    # ── PAS211H — prompt & memory injection safety ──────────────────
+    # Self-training distils call transcripts into a persisted
+    # OBJECTION_SYSTEM_PROMPT. PAS211H sanitizes/delimits transcript input AND
+    # denylist-validates the generated prompt before saving. This flag is the
+    # operator kill-switch: set False to stop persisting generated system prompts
+    # entirely (training still computes insights; the prompt is just not saved).
+    SELF_TRAINING_PROMPT_PERSIST_ENABLED: bool = True
+
     class Config:
         env_file = ".env"
         case_sensitive = True
