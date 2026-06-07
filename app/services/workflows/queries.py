@@ -18,9 +18,20 @@ from app.services.intelligence.queries import events_for_call
 logger = logging.getLogger("pas.workflows.queries")
 
 
-def fetch_workflow_events(call_id: str, brokerage_id: Optional[str] = None) -> list:
-    """All pas_events for a call in chronological order."""
-    return events_for_call(call_id, brokerage_id=brokerage_id, limit=100)
+def fetch_workflow_events(
+    call_id: str,
+    brokerage_id: Optional[str] = None,
+    allow_global: bool = False,
+) -> list:
+    """All pas_events for a call in chronological order.
+
+    PAS211E: ``allow_global`` is threaded to the fail-closed ``events_for_call``
+    helper. Portal callers always pass ``brokerage_id`` (tenant-scoped); only the
+    admin runtime sets ``allow_global``.
+    """
+    return events_for_call(
+        call_id, brokerage_id=brokerage_id, limit=100, allow_global=allow_global
+    )
 
 
 def fetch_call_summary(call_id: str, brokerage_id: Optional[str] = None) -> dict:

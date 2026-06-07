@@ -1,11 +1,14 @@
 """
 Bounded query helpers over pas_events.
 
-Thin Supabase wrappers used by the (future) intelligence routes. Every
+Thin Supabase wrappers used by the intelligence/portal routes. Every
 function:
   - Caps `limit` at MAX_LIMIT (100).
-  - Accepts an optional brokerage_id filter — required for portal callers
-    (the route layer is responsible for passing it).
+  - Is **tenant fail-closed (PAS211E):** a tenant scope is mandatory. A caller
+    must either pass a ``brokerage_id`` (tenant-facing) or explicitly opt into a
+    cross-tenant read with ``allow_global=True`` (admin-only routes). Omitting
+    both returns an EMPTY result — never the global stream — so a forgetful
+    caller can no longer silently leak every tenant's events.
   - Never raises. Returns [] on any failure.
   - Performs no LLM/provider calls and reads no secrets.
 """
@@ -19,6 +22,18 @@ logger = logging.getLogger("pas.intelligence.queries")
 
 MAX_LIMIT = 100
 DEFAULT_LIMIT = 25
+
+
+def _tenant_scope_ok(brokerage_id: Optional[str], allow_global: bool, fn: str) -> bool:
+    """PAS211E fail-closed guard: refuse an unscoped read unless an admin caller
+    explicitly opted into a global read."""
+    if brokerage_id or allow_global:
+        return True
+    logger.warning(
+        "%s called without brokerage_id and without allow_global — refusing "
+        "global read (PAS211E fail-closed)", fn,
+    )
+    return False
 
 
 def _bounded_limit(limit) -> int:
@@ -40,8 +55,11 @@ def recent_events(
     since_iso: Optional[str] = None,
     limit: int = DEFAULT_LIMIT,
     offset: int = 0,
+    allow_global: bool = False,
 ) -> list:
     """Most recent pas_events rows, newest first. Filters AND-combined."""
+    if not _tenant_scope_ok(brokerage_id, allow_global, "recent_events"):
+        return []
     try:
         db = get_supabase()
         capped = _bounded_limit(limit)
@@ -70,9 +88,12 @@ def events_for_call(
     call_id: str,
     brokerage_id: Optional[str] = None,
     limit: int = MAX_LIMIT,
+    allow_global: bool = False,
 ) -> list:
     """All pas_events for a single call, oldest first (timeline order)."""
     if not call_id:
+        return []
+    if not _tenant_scope_ok(brokerage_id, allow_global, "events_for_call"):
         return []
     try:
         db = get_supabase()
@@ -96,6 +117,7 @@ def fetch_call_and_lead_context(
     call_ids,
     lead_ids,
     brokerage_id: Optional[str] = None,
+    allow_global: bool = False,
 ) -> tuple:
     """
     Batch-fetch call rows and lead rows for leakage classification context.
@@ -114,6 +136,9 @@ def fetch_call_and_lead_context(
     """
     calls_by_id: dict = {}
     leads_by_id: dict = {}
+
+    if not _tenant_scope_ok(brokerage_id, allow_global, "fetch_call_and_lead_context"):
+        return calls_by_id, leads_by_id
 
     cap_call_ids = [cid for cid in (call_ids or []) if cid][:MAX_LIMIT]
     cap_lead_ids = [lid for lid in (lead_ids or []) if lid][:MAX_LIMIT]
@@ -160,11 +185,14 @@ def callback_events(
     since_iso: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
+    allow_global: bool = False,
 ) -> list:
     """
     callback.requested + call.ended_with_callback events, newest first.
     Powers the callback queue panel.
     """
+    if not _tenant_scope_ok(brokerage_id, allow_global, "callback_events"):
+        return []
     try:
         db = get_supabase()
         capped = _bounded_limit(limit)

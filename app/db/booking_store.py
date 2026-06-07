@@ -64,8 +64,18 @@ def create_booking(
         return False
 
 
-def update_booking_status(booking_id: str, status: str, admin_note: str = "") -> bool:
-    """Update booking status: completed | no_show | cancelled | rescheduled."""
+def update_booking_status(
+    booking_id: str,
+    status: str,
+    admin_note: str = "",
+    brokerage_id: Optional[str] = None,
+) -> bool:
+    """Update booking status: completed | no_show | cancelled | rescheduled.
+
+    PAS211E: pass ``brokerage_id`` from any tenant-facing caller — the update
+    then carries a ``brokerage_id`` predicate so a cross-tenant booking id
+    matches zero rows and is not modified. Admin callers may omit it.
+    """
     try:
         db = get_supabase()
         payload = {
@@ -74,7 +84,10 @@ def update_booking_status(booking_id: str, status: str, admin_note: str = "") ->
         }
         if admin_note:
             payload["admin_note"] = admin_note
-        db.table("bookings").update(payload).eq("id", booking_id).execute()
+        q = db.table("bookings").update(payload).eq("id", booking_id)
+        if brokerage_id:
+            q = q.eq("brokerage_id", brokerage_id)
+        q.execute()
         logger.info(f"Booking {booking_id} status → {status}")
         return True
     except Exception as e:
@@ -106,10 +119,19 @@ def list_bookings(
         return []
 
 
-def get_booking(booking_id: str) -> Optional[dict]:
+def get_booking(booking_id: str, brokerage_id: Optional[str] = None) -> Optional[dict]:
+    """Fetch one booking by id.
+
+    PAS211E: tenant-facing callers pass ``brokerage_id`` so a booking owned by a
+    different brokerage returns ``None`` instead of leaking lead PII across
+    tenants. Admin callers may omit it.
+    """
     try:
         db = get_supabase()
-        result = db.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+        q = db.table("bookings").select("*").eq("id", booking_id)
+        if brokerage_id:
+            q = q.eq("brokerage_id", brokerage_id)
+        result = q.limit(1).execute()
         return result.data[0] if result.data else None
     except Exception as e:
         logger.error(f"get_booking failed for {booking_id}: {e}")

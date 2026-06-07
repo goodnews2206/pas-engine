@@ -42,10 +42,20 @@ def create_agent(brokerage_id: str, data: dict) -> dict:
     return result.data[0] if result.data else payload
 
 
-def get_agent(agent_id: str) -> Optional[dict]:
+def get_agent(agent_id: str, brokerage_id: Optional[str] = None) -> Optional[dict]:
+    """Fetch one agent by id.
+
+    PAS211E: pass ``brokerage_id`` from any tenant-facing caller — the lookup is
+    then scoped to that tenant and returns ``None`` for an agent owned by a
+    different brokerage (defence-in-depth against cross-tenant IDOR). Admin /
+    internal callers may omit it for a global lookup.
+    """
     try:
         db = get_supabase()
-        result = db.table("agents").select("*").eq("id", agent_id).limit(1).execute()
+        q = db.table("agents").select("*").eq("id", agent_id)
+        if brokerage_id:
+            q = q.eq("brokerage_id", brokerage_id)
+        result = q.limit(1).execute()
         return result.data[0] if result.data else None
     except Exception as e:
         logger.error(f"get_agent failed: {e}")
@@ -65,21 +75,38 @@ def list_agents(brokerage_id: str, status: str = None) -> list:
         return []
 
 
-def update_agent(agent_id: str, updates: dict) -> bool:
+def update_agent(agent_id: str, updates: dict, brokerage_id: Optional[str] = None) -> bool:
+    """Update one agent.
+
+    PAS211E: when ``brokerage_id`` is supplied (tenant-facing callers) the write
+    carries an additional ``brokerage_id`` predicate, so an attempt to mutate an
+    agent owned by another tenant matches zero rows and changes nothing.
+    """
     try:
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
         db = get_supabase()
-        db.table("agents").update(updates).eq("id", agent_id).execute()
+        q = db.table("agents").update(updates).eq("id", agent_id)
+        if brokerage_id:
+            q = q.eq("brokerage_id", brokerage_id)
+        q.execute()
         return True
     except Exception as e:
         logger.error(f"update_agent failed: {e}")
         return False
 
 
-def delete_agent(agent_id: str) -> bool:
+def delete_agent(agent_id: str, brokerage_id: Optional[str] = None) -> bool:
+    """Delete one agent.
+
+    PAS211E: tenant-scoped when ``brokerage_id`` is supplied — a cross-tenant
+    delete matches zero rows (defence-in-depth).
+    """
     try:
         db = get_supabase()
-        db.table("agents").delete().eq("id", agent_id).execute()
+        q = db.table("agents").delete().eq("id", agent_id)
+        if brokerage_id:
+            q = q.eq("brokerage_id", brokerage_id)
+        q.execute()
         return True
     except Exception as e:
         logger.error(f"delete_agent failed: {e}")
@@ -88,9 +115,9 @@ def delete_agent(agent_id: str) -> bool:
 
 # ───────────── AVAILABILITY ─────────────
 
-def set_agent_status(agent_id: str, status: str) -> bool:
-    """status: available | busy | offline"""
-    return update_agent(agent_id, {"status": status})
+def set_agent_status(agent_id: str, status: str, brokerage_id: Optional[str] = None) -> bool:
+    """status: available | busy | offline (PAS211E: tenant-scoped when given)."""
+    return update_agent(agent_id, {"status": status}, brokerage_id=brokerage_id)
 
 
 # ───────────── BEST-FIT ROUTING ─────────────
