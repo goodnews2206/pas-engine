@@ -51,6 +51,7 @@ from app.db.booking_store import list_bookings
 from app.db.error_store import list_errors, resolve_error
 from app.db.invite_store import generate_invite_key, get_invite_status, revoke_invite_key
 from app.db.supabase_client import get_supabase
+from app.services.security.secret_redaction import redact_brokerage
 from app.services.training.self_trainer import run_training
 
 router = APIRouter()
@@ -162,8 +163,10 @@ async def create_account(body: BrokerageCreate, _=Depends(require_admin)):
     try:
         account = create_brokerage(body.model_dump())
         logger.info(f"Admin created brokerage: {body.id}")
+        # PAS211F: show the raw api_key once (creation), but never echo the Slack
+        # signing secret / webhook URL back.
         return {
-            "brokerage": account,
+            "brokerage": redact_brokerage(account, keep_api_key=True),
             "note": "Save the api_key — it is shown only once and used for /outbound/call requests.",
         }
     except Exception as e:
@@ -175,7 +178,9 @@ async def create_account(body: BrokerageCreate, _=Depends(require_admin)):
 async def list_accounts(_=Depends(require_admin)):
     """List all brokerage accounts with high-level stats."""
     brokerages = list_brokerages()
-    return {"brokerages": brokerages, "count": len(brokerages)}
+    # PAS211F: never return api_key / slack secrets in admin reads.
+    redacted = [redact_brokerage(b) for b in brokerages]
+    return {"brokerages": redacted, "count": len(redacted)}
 
 
 @router.get("/brokerages/{brokerage_id}")
@@ -185,7 +190,8 @@ async def get_account(brokerage_id: str, _=Depends(require_admin)):
     if brokerage["id"] == "demo" and brokerage_id != "demo":
         raise HTTPException(status_code=404, detail="Brokerage not found")
     stats = get_brokerage_stats(brokerage_id)
-    return {"brokerage": brokerage, "stats": stats}
+    # PAS211F: never return api_key / slack secrets in admin reads.
+    return {"brokerage": redact_brokerage(brokerage), "stats": stats}
 
 
 @router.patch("/brokerages/{brokerage_id}")

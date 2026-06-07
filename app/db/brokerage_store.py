@@ -14,6 +14,7 @@ import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.config import get_settings
 from app.db.supabase_client import get_supabase
 
 logger = logging.getLogger("pas.brokerage")
@@ -166,11 +167,30 @@ def get_brokerage_by_id(brokerage_id: str) -> dict:
 
 
 def get_brokerage_by_api_key(api_key: str) -> Optional[dict]:
-    """Validates the brokerage's API key for authenticated endpoints."""
+    """Validates the brokerage's API key for authenticated endpoints.
+
+    PAS211F: when SECRETS_HASHING_ENABLED, look up by ``api_key_hash`` first
+    (keys created/rotated after activation store only the hash). A legacy
+    plaintext lookup always runs as a fallback so keys created BEFORE activation
+    keep working through the compatibility phase. Each lookup is isolated so a
+    missing ``api_key_hash`` column (flag enabled before the migration) degrades
+    to plaintext rather than locking everyone out.
+    """
     if not api_key:
         return None
+    db = get_supabase()
+
+    if get_settings().SECRETS_HASHING_ENABLED:
+        try:
+            from app.services.security.secret_hash import hash_api_key
+            key_hash = hash_api_key(api_key)
+            result = db.table("brokerages").select("*").eq("api_key_hash", key_hash).limit(1).execute()
+            if result.data:
+                return _row(result.data[0])
+        except Exception as e:
+            logger.warning(f"Hashed api_key lookup unavailable; trying legacy: {e}")
+
     try:
-        db = get_supabase()
         result = db.table("brokerages").select("*").eq("api_key", api_key).limit(1).execute()
         if result.data:
             return _row(result.data[0])
@@ -245,10 +265,20 @@ def create_brokerage(data: dict) -> dict:
         "updated_at": now,
     }
 
+    # PAS211F: store the hash and NO plaintext once hashing is enabled. The raw
+    # key is still returned (once) to the caller for display.
+    if get_settings().SECRETS_HASHING_ENABLED:
+        from app.services.security.secret_hash import hash_api_key
+        payload["api_key_hash"] = hash_api_key(api_key)
+        payload["api_key_version"] = 1
+        payload["api_key"] = ""
+
     db = get_supabase()
     db.table("brokerages").insert(payload).execute()
     logger.info(f"Brokerage created | id={data['id']}")
-    return _row(payload)
+    created = _row(payload)
+    created["api_key"] = api_key  # one-time raw key for the create response
+    return created
 
 
 def update_brokerage(brokerage_id: str, updates: dict) -> bool:
@@ -264,9 +294,17 @@ def update_brokerage(brokerage_id: str, updates: dict) -> bool:
 
 
 def rotate_api_key(brokerage_id: str) -> str:
-    """Generate and store a new API key for a brokerage."""
+    """Generate and store a new API key for a brokerage. Returns the raw key
+    once; the old key stops working immediately.
+
+    PAS211F: when hashing is enabled, the new key is stored as ``api_key_hash``
+    with the plaintext column cleared (no raw key at rest)."""
     new_key = "pas_" + secrets.token_urlsafe(32)
-    update_brokerage(brokerage_id, {"api_key": new_key})
+    if get_settings().SECRETS_HASHING_ENABLED:
+        from app.services.security.secret_hash import hash_api_key
+        update_brokerage(brokerage_id, {"api_key": "", "api_key_hash": hash_api_key(new_key)})
+    else:
+        update_brokerage(brokerage_id, {"api_key": new_key})
     return new_key
 
 
