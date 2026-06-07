@@ -7,10 +7,11 @@ POST /onboarding/claim  → validates key, marks used, returns api_key
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.db.invite_store import claim_invite_key
+from app.utils.rate_limiter import client_ip, rate_limit
 
 router = APIRouter()
 logger = logging.getLogger("pas.onboarding")
@@ -22,13 +23,18 @@ class ClaimRequest(BaseModel):
 
 
 @router.post("/claim")
-async def claim_key(body: ClaimRequest):
+async def claim_key(body: ClaimRequest, request: Request):
     """
     Consume a one-time invite key issued by the ORVN admin.
 
     Returns the brokerage's api_key on success — this is the credential
     used for all subsequent /portal/* requests. Store it securely.
     """
+    # PAS211D: this endpoint is unauthenticated by design (the key is the
+    # credential) and returns a brokerage api_key on success, so throttle it to
+    # blunt brute-force enumeration of the invite-key space.
+    rate_limit(f"onboarding_claim:{client_ip(request)}", max_requests=10, window_seconds=60)
+
     if not body.key or not body.key.startswith("orvn_"):
         raise HTTPException(status_code=400, detail="Invalid invite key format.")
 

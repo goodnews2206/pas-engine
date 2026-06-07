@@ -120,6 +120,10 @@ async def incoming_call(request: Request):
 
 @router.post("/status")
 async def call_status(request: Request):
+    # PAS211D: throttle status callbacks per source IP (none before). Generous
+    # so legitimate Twilio status bursts pass, but spam can't pile up unbounded.
+    rate_limit(f"twilio_status:{client_ip(request)}", max_requests=120, window_seconds=60)
+
     form_data = await request.form()
     form_dict = dict(form_data)
 

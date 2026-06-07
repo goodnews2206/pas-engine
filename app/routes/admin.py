@@ -26,6 +26,7 @@ Routes:
   PATCH  /admin/error-logs/{error_id}/resolve     → mark error resolved
 """
 
+import hmac
 import logging
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -60,7 +61,13 @@ logger = logging.getLogger("pas.admin")
 
 def require_admin(x_admin_key: str = Header(...)):
     settings = get_settings()
-    if not settings.ADMIN_API_KEY or x_admin_key != settings.ADMIN_API_KEY:
+    expected = settings.ADMIN_API_KEY or ""
+    # PAS211D: constant-time compare so the admin secret can't be recovered
+    # byte-by-byte via response-timing. An empty configured key always rejects.
+    # (The weak/empty-key production startup refusal in main.py is unchanged.)
+    if not expected or not hmac.compare_digest(
+        (x_admin_key or "").encode("utf-8"), expected.encode("utf-8")
+    ):
         raise HTTPException(status_code=401, detail="Invalid admin key")
     return True
 
