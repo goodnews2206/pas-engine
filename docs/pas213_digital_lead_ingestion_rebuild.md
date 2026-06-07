@@ -162,9 +162,38 @@ emits **nothing** — with no tenant there is nothing to scope an event to.
 
 ---
 
-*End of PAS213B. Durable lead persistence + dedupe + lifecycle events on top of
-PAS213, within the same boundaries: durable `lead_ingestion_dedupe` ledger
-(migration proposal only — not applied), durable `pas_events` lifecycle logging,
-tenant isolation preserved, PII-free events, no outbound dial, no Gmail/OAuth, no
-external services, no new dependencies, no behaviour change outside ingestion.
-PAS209 / parked stash / `__pycache__` untouched. Corpus used as spec only.*
+## 10. PAS213B.1 — migration readiness (apply/verify runbook)
+
+PAS213B.1 makes the durable dedupe migration **safe, reviewable, and
+production-ready** without applying it. No product scope, no dependency, no
+ingestion behaviour change.
+
+- **Migration readiness documented.** `scripts/migrate_v8_digital_ingestion_dedupe.sql`
+  is validated as additive-only, idempotent (`CREATE TABLE/INDEX IF NOT EXISTS`),
+  non-destructive (no `DROP`/`DELETE`/`TRUNCATE`/`UPDATE`; the only `ALTER` is
+  `ENABLE ROW LEVEL SECURITY`), PII-free at rest, tenant-scoped via
+  `UNIQUE(brokerage_id, dedupe_key)`, RLS-enabled (repo parity), and
+  self-contained (soft refs only — no FK, no `auth.users` dependency).
+- **Still not applied by code.** The migration remains operator-applied by hand,
+  exactly like every prior `migrate_v*.sql`; runtime continues to **fail open**
+  until it is applied, so no lead is lost in the meantime.
+- **Runbook created:** `docs/pas213b_1_dedupe_migration_runbook.md` — purpose,
+  when/prerequisites, exact file, pre-apply checks, apply steps, post-apply
+  verification SQL, rollback/disable, before/after behaviour, a sample
+  duplicate-lead test, and paid-client safety notes.
+- **Readiness tests added:** `tests/mvp/test_pas213b_1_migration_readiness.py`
+  guards the SQL's safety properties and asserts no code applies the migration.
+- **Paid-client deployment requires apply + verify.** Before a paying brokerage's
+  digital leads flow through PAS in production, run the runbook (staging first):
+  apply `migrate_v8`, confirm `ingested → duplicate` on a sample, then promote.
+
+---
+
+*End of PAS213B / PAS213B.1. Durable lead persistence + dedupe + lifecycle events
+on top of PAS213, plus a validated, not-yet-applied dedupe migration with an
+apply/verify runbook — within the same boundaries: durable `lead_ingestion_dedupe`
+ledger (migration proposal only — not applied), durable `pas_events` lifecycle
+logging, tenant isolation preserved, PII-free events, no outbound dial, no
+Gmail/OAuth, no external services, no new dependencies, no behaviour change
+outside ingestion. PAS209 / parked stash / `__pycache__` untouched. Corpus used
+as spec only.*
