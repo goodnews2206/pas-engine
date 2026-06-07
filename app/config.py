@@ -90,6 +90,20 @@ class Settings(BaseSettings):
     ENABLE_LEGACY_ADMIN_KEY_AUTH: bool = True
     ENABLE_LEGACY_BROKERAGE_KEY_AUTH: bool = True
 
+    # ── PAS211G.1 — principal resolver boundary ─────────────────────
+    # JWT verification is SCAFFOLDING ONLY in PAS211G.1. While JWT_AUTH_ENABLED
+    # is False (default) the resolver's JWT path returns None (no Bearer auth).
+    # When an operator flips it True before PAS211G.2 wires real verification,
+    # the JWT path FAILS CLOSED (still returns None) — it must never grant access
+    # without a verified token. No JWT secret is required at startup either way.
+    JWT_AUTH_ENABLED: bool = False
+    JWT_ISSUER: str = ""        # reserved for PAS211G.2 verification
+    JWT_AUDIENCE: str = ""      # reserved for PAS211G.2 verification
+
+    # Master switch for the legacy X-Admin-Key / X-API-Key resolver paths. Kept
+    # True so existing API-key flows are unchanged in PAS211G.1.
+    ENABLE_LEGACY_API_KEY_AUTH: bool = True
+
     # ── PAS211D — critical security fix pack 1 ──────────────────────
     # Demo / simulation endpoints (/simulate-call, /demo/token) are developer +
     # sales tools, not paid-client surfaces. They stay available outside
