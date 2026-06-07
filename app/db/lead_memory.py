@@ -13,6 +13,7 @@ from typing import Optional
 
 from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
+from app.services.security.pii_safety import mask_phone
 
 logger = logging.getLogger("pas.memory")
 
@@ -32,7 +33,7 @@ def get_lead(brokerage_id: str, phone_number: str) -> Optional[dict]:
         if result.data:
             return result.data[0]
     except Exception as e:
-        logger.warning(f"Lead memory lookup failed for {phone_number}: {e}")
+        logger.warning(f"Lead memory lookup failed for {mask_phone(phone_number)}: {e}")
     return None
 
 
@@ -57,7 +58,7 @@ def upsert_lead(brokerage_id: str, phone_number: str, updates: dict):
             updates["total_calls"] = (existing.get("total_calls") or 0) + 1
             updates["updated_at"] = now
             db.table("leads").update(updates).eq("id", existing["id"]).execute()
-            logger.info(f"Lead updated | brokerage={brokerage_id} | phone={phone_number}")
+            logger.info(f"Lead updated | brokerage={brokerage_id} | phone={mask_phone(phone_number)}")
             log_event_bg(
                 "lead.updated",
                 brokerage_id=brokerage_id,
@@ -78,7 +79,7 @@ def upsert_lead(brokerage_id: str, phone_number: str, updates: dict):
                 "updated_at": now,
                 **updates,
             }).execute()
-            logger.info(f"Lead created | brokerage={brokerage_id} | phone={phone_number}")
+            logger.info(f"Lead created | brokerage={brokerage_id} | phone={mask_phone(phone_number)}")
             log_event_bg(
                 "lead.updated",
                 brokerage_id=brokerage_id,
@@ -90,7 +91,7 @@ def upsert_lead(brokerage_id: str, phone_number: str, updates: dict):
                 },
             )
     except Exception as e:
-        logger.error(f"Lead upsert failed for {phone_number}: {e}")
+        logger.error(f"Lead upsert failed for {mask_phone(phone_number)}: {e}")
 
 
 def mark_booked(brokerage_id: str, phone_number: str):

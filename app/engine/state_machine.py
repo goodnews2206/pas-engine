@@ -9,6 +9,7 @@ from typing import Optional
 from app.db.event_logger import log_event_bg
 from app.services.llm.claude_client import handle_objection
 from app.services.booking.calcom_client import book_appointment
+from app.services.security.pii_safety import redact_pii
 from app.utils.slot_formatter import format_slot_for_speech
 
 logger = logging.getLogger("pas.engine")
@@ -536,7 +537,9 @@ class PASEngine:
             state=self.state.current.value,
             payload={
                 "category": category,
-                "text": text[:500],
+                # PAS211I: keep the classified category + a length signal, not the
+                # raw objection wording (may contain spoken PII).
+                "text_len": len(text or ""),
                 "total_so_far": sum(self.state.objection_count.values()),
             },
         )
@@ -630,7 +633,8 @@ class PASEngine:
             state=self.state.current.value,
             payload={
                 "from_state": self.state.current.value,
-                "trigger_excerpt": (text or "")[:200],
+                # PAS211I: drop the raw transcript excerpt; keep a length signal.
+                "trigger_len": len(text or ""),
             },
         )
 
@@ -759,7 +763,8 @@ class PASEngine:
                 "preferred_time_normalized": self.state.lead.preferred_callback_time_normalized,
                 "best_number_confirmed": self.state.lead.best_number_confirmed,
                 "callback_confirmed": self.state.lead.callback_confirmed,
-                "callback_reason_excerpt": (self.state.lead.callback_reason or "")[:120],
+                # PAS211I: keep the reason (operationally useful) but PII-redacted.
+                "callback_reason_excerpt": redact_pii((self.state.lead.callback_reason or "")[:120]),
                 "intent": self.state.lead.intent,
                 "followup_status": self.state.lead.followup_status,
             },
@@ -922,7 +927,9 @@ class PASEngine:
             payload={
                 "field": field,
                 "value": value,
-                "raw_text": (raw_text or "")[:300],
+                # PAS211I: do NOT store the raw spoken text (it can carry
+                # phone/email/name). Keep only a length signal for analytics.
+                "raw_text_len": len(raw_text or ""),
             },
         )
 

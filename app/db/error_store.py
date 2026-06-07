@@ -16,6 +16,7 @@ from typing import Optional
 
 from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
+from app.services.security.pii_safety import sanitize_error_message
 
 logger = logging.getLogger("pas.error_store")
 
@@ -46,6 +47,12 @@ def log_error(
     safe_service = service if service in VALID_SERVICES else "system"
     safe_severity = severity if severity in VALID_SEVERITIES else "error"
 
+    # PAS211I: redact PII / secret-shaped tokens BEFORE the message/detail reach
+    # pas_events, the error_logs table, or the admin dashboard. An upstream
+    # exception can echo a phone/email or an Authorization bearer token.
+    safe_message = sanitize_error_message(message, max_len=500)
+    safe_detail = sanitize_error_message(detail, max_len=1000) if detail else None
+
     # Mirror to pas_events first (fire-and-forget, non-blocking).
     log_event_bg(
         "system.error",
@@ -57,8 +64,8 @@ def log_error(
         severity=safe_severity,
         payload={
             "service": safe_service,
-            "message": (message or "")[:500],
-            "detail_excerpt": (detail or "")[:1000] if detail else None,
+            "message": safe_message,
+            "detail_excerpt": safe_detail,
         },
     )
 
@@ -69,8 +76,8 @@ def log_error(
             "brokerage_id": brokerage_id,
             "call_sid": call_sid,
             "severity": safe_severity,
-            "message": message,
-            "detail": detail,
+            "message": safe_message,
+            "detail": safe_detail,
             "resolved": False,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }).execute()

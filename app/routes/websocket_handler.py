@@ -28,6 +28,7 @@ from app.services.training.self_trainer import maybe_train
 from app.config import get_settings
 from app.services.summary.call_summary import generate_call_summary
 from app.services.notifications.slack_client import send_call_summary, send_agent_reminder
+from app.services.security.pii_safety import mask_phone, redact_pii
 from app.services.notifications.sms_client import send_booking_confirmation_sms
 from app.services.notifications.lead_alerts import dispatch_lead_notification
 
@@ -74,7 +75,10 @@ async def media_stream(websocket: WebSocket, call_sid: str):
     async def handle_transcript(transcript: str, is_final: bool):
         if not is_final or not transcript.strip():
             return
-        logger.info(f"[{call_sid}] TRANSCRIPT: {transcript!r}")
+        # PAS211I: never log the full transcript at INFO (it carries spoken PII).
+        # Keep a length signal at INFO; the redacted text is available at DEBUG.
+        logger.info(f"[{call_sid}] transcript received (len={len(transcript)})")
+        logger.debug(f"[{call_sid}] transcript (redacted): {redact_pii(transcript)!r}")
         response_text, done = await engine.process_input(transcript)
 
         # Speak the response before acting on transfer/done flags
@@ -151,9 +155,9 @@ async def media_stream(websocket: WebSocket, call_sid: str):
                         engine.state.lead.intent = existing.get("intent") or ""
                         engine.state.lead.budget = existing.get("budget") or ""
                         engine.state.lead.source = "returning"
-                        logger.info(f"[{call_sid}] Returning caller — memory loaded for {caller}")
+                        logger.info(f"[{call_sid}] Returning caller — memory loaded for {mask_phone(caller)}")
 
-                logger.info(f"[{call_sid}] Stream started | caller={caller}")
+                logger.info(f"[{call_sid}] Stream started | caller={mask_phone(caller)}")
 
             elif event == "media":
                 raw_audio = base64.b64decode(data["media"]["payload"])
@@ -255,7 +259,7 @@ async def _warm_transfer(call_sid: str, engine: "PASEngine", brokerage: dict):
             f"</Dial>"
             f"</Response>"
         )
-        logger.info(f"[{call_sid}] Warm transfer → {agent_name} ({agent_phone})")
+        logger.info(f"[{call_sid}] Warm transfer → {agent_name} ({mask_phone(agent_phone)})")
     else:
         # No agent available — offer callback
         twiml = (
