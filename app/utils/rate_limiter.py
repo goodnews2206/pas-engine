@@ -7,6 +7,8 @@ import time
 from collections import defaultdict
 from fastapi import HTTPException, Request
 
+from app.config import get_settings
+
 # { key -> [timestamp, timestamp, ...] }
 _windows: dict[str, list[float]] = defaultdict(list)
 
@@ -29,8 +31,17 @@ def rate_limit(key: str, max_requests: int, window_seconds: int = 60):
 
 
 def client_ip(request: Request) -> str:
-    """Extract real client IP, respecting reverse-proxy forwarding."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Extract the client IP used to key per-IP rate limits.
+
+    PAS211D: ``X-Forwarded-For`` is client-controlled, so trusting it by default
+    lets an attacker rotate the header to mint unlimited rate-limit buckets and
+    bypass every per-IP throttle. We therefore use the real peer
+    (``request.client.host``) unless the deployment EXPLICITLY declares it sits
+    behind a trusted reverse proxy via ``TRUST_PROXY_HEADERS=true`` — in which
+    case the left-most forwarded hop is honoured. Default is fail-safe.
+    """
+    if get_settings().TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"

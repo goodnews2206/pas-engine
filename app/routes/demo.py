@@ -16,7 +16,7 @@ Setup required (one-time, in Twilio console):
 """
 
 import logging
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VoiceGrant
@@ -27,18 +27,40 @@ from app.config import get_settings
 from app.db.brokerage_store import get_brokerage_by_id
 from app.db.call_logger import create_call_record
 from app.utils.call_store import active_calls
+from app.utils.rate_limiter import client_ip, rate_limit
 
 router = APIRouter()
 logger = logging.getLogger("pas.demo")
 
 
+def _demo_cors_origin(settings) -> str:
+    """PAS211D: only the wide-open `*` in development. In any other environment
+    restrict the demo token's CORS to the configured site origin so an arbitrary
+    third-party page can't mint billable Twilio voice tokens via the browser."""
+    if settings.is_development:
+        return "*"
+    return (settings.BASE_URL or "").split(",")[0].strip() or "null"
+
+
 @router.get("/token")
-async def get_demo_token():
+async def get_demo_token(request: Request):
     """
     Returns a 5-minute Twilio Access Token for the browser SDK.
-    Called directly from the website — CORS is open so any origin can fetch it.
+
+    PAS211D: this mints a *billable* live Twilio voice grant, so it is disabled
+    in production unless explicitly re-enabled (ENABLE_DEMO_ENDPOINTS), is
+    per-IP rate limited, and its CORS is restricted to the site origin outside
+    development.
     """
     settings = get_settings()
+    cors_origin = _demo_cors_origin(settings)
+
+    if not settings.demo_endpoints_allowed:
+        # Don't advertise the capability in production.
+        raise HTTPException(status_code=404, detail="Not found")
+
+    # Throttle anonymous token minting (each token can place a billable call).
+    rate_limit(f"demo_token:{client_ip(request)}", max_requests=10, window_seconds=60)
 
     if not all([settings.TWILIO_API_KEY_SID, settings.TWILIO_API_SECRET, settings.TWILIO_TWIML_APP_SID]):
         logger.warning("Demo calling requested but TWILIO_API_KEY_SID / TWILIO_API_SECRET / TWILIO_TWIML_APP_SID not configured")
@@ -46,7 +68,7 @@ async def get_demo_token():
             status_code=503,
             content={"error": "Demo calling is not configured yet. Contact ORVN."}
         )
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Origin"] = cors_origin
         return response
 
     token = AccessToken(
@@ -60,8 +82,7 @@ async def get_demo_token():
 
     logger.info("Demo token issued for browser call")
     response = JSONResponse(content={"token": token.to_jwt(), "ttl": 300})
-    # Open CORS — this token has no data access, only lets a browser place one demo call
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = cors_origin
     response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
     return response
 
@@ -69,8 +90,9 @@ async def get_demo_token():
 @router.options("/token")
 async def demo_token_preflight():
     """Handle CORS preflight from the website."""
+    cors_origin = _demo_cors_origin(get_settings())
     response = Response(status_code=204)
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = cors_origin
     response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return response

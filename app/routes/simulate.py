@@ -46,10 +46,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel
 
-from app.db.brokerage_store import get_brokerage_by_id
+from app.config import get_settings
+from app.db.brokerage_store import get_brokerage_by_api_key, get_brokerage_by_id
 from app.db.call_logger import create_call_record, update_call_outcome
 from app.db.event_logger import log_event_bg
 from app.db.lead_memory import upsert_lead, mark_booked
@@ -88,15 +89,48 @@ class SimulateRequest(BaseModel):
     message: str = ""
 
 
+def _authorize_simulation(brokerage_id: str, x_api_key: Optional[str]) -> None:
+    """PAS211D: prevent anonymous, body-driven writes to real tenant data.
+
+    Anyone may simulate the ``demo`` tenant (the demo flow never writes real lead
+    memory or fires real-tenant notifications). Simulating a *real* brokerage
+    requires that brokerage's own API key, and the key's tenant must match the
+    requested ``brokerage_id`` — so a caller can never poison another tenant.
+    """
+    if brokerage_id == "demo":
+        return
+    if not x_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="X-API-Key is required to simulate a non-demo brokerage.",
+        )
+    brokerage = get_brokerage_by_api_key(x_api_key)
+    if not brokerage or brokerage.get("id") != brokerage_id:
+        raise HTTPException(
+            status_code=403,
+            detail="API key does not authorize this brokerage_id.",
+        )
+
+
 @router.post("/simulate-call")
-async def simulate_call(body: SimulateRequest, request: Request):
+async def simulate_call(
+    body: SimulateRequest,
+    request: Request,
+    x_api_key: Optional[str] = Header(None),
+):
     """
     Run one turn of a simulated PAS call.
 
     First call (no call_sid): starts a session and returns the PAS greeting.
     Subsequent calls (same call_sid + a message): processes the lead's message.
     """
+    # PAS211D: a developer/sales tool — disabled in production unless explicitly
+    # re-enabled, and never lets an anonymous caller write to a real tenant.
+    if not get_settings().demo_endpoints_allowed:
+        raise HTTPException(status_code=404, detail="Not found")
+
     brokerage_id = body.brokerage_id or "demo"
+    _authorize_simulation(brokerage_id, x_api_key)
     call_sid = body.call_sid
 
     # ── NEW SESSION ──────────────────────────────────────────────────────────

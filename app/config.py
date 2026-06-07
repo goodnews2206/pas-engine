@@ -90,6 +90,19 @@ class Settings(BaseSettings):
     ENABLE_LEGACY_ADMIN_KEY_AUTH: bool = True
     ENABLE_LEGACY_BROKERAGE_KEY_AUTH: bool = True
 
+    # ── PAS211D — critical security fix pack 1 ──────────────────────
+    # Demo / simulation endpoints (/simulate-call, /demo/token) are developer +
+    # sales tools, not paid-client surfaces. They stay available outside
+    # production; in production they are disabled (404) unless an operator
+    # explicitly opts back in here. Closes the anonymous-exposure holes from
+    # the PAS211C audit while keeping local/dev usable.
+    ENABLE_DEMO_ENDPOINTS: bool = False
+
+    # Only honour X-Forwarded-For for per-IP rate limiting when the deployment
+    # explicitly declares it sits behind a trusted reverse proxy. Default off so
+    # a client cannot spoof the header to mint unlimited rate-limit buckets.
+    TRUST_PROXY_HEADERS: bool = False
+
     class Config:
         env_file = ".env"
         case_sensitive = True
@@ -103,6 +116,13 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return (self.ENVIRONMENT or "").strip().lower() == "development"
+
+    @property
+    def demo_endpoints_allowed(self) -> bool:
+        """PAS211D: demo/simulation routes are open outside production; in
+        production they require an explicit ENABLE_DEMO_ENDPOINTS opt-in. Keeps
+        local/dev usable while closing the production exposure."""
+        return (not self.is_production) or self.ENABLE_DEMO_ENDPOINTS
 
     @property
     def require_twilio_signature(self) -> bool:
