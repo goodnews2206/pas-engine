@@ -21,9 +21,11 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from app.config import get_settings
 from app.db.event_logger import log_event_bg
 from app.db.supabase_client import get_supabase
 from app.services.llm.factory import get_provider
+from app.services.security.prompt_safety import looks_like_meta_prompt, safe_prompt_block
 
 logger = logging.getLogger("pas.trainer")
 
@@ -129,6 +131,25 @@ async def run_training(brokerage_id: str) -> dict:
             logger.error("Training produced invalid objection_system_prompt — discarding")
             return {}
 
+        # PAS211H: a transcript could try to distil instruction/meta-prompt
+        # content into the generated prompts (which become a live system prompt).
+        # Reject any generated prompt that looks like it is trying to override
+        # behaviour, exfiltrate, or reference tools/links — never persist it.
+        if looks_like_meta_prompt(objection_prompt) or looks_like_meta_prompt(booking_prompt):
+            logger.warning(
+                "Training produced a prompt with instruction/meta-prompt content "
+                "— rejecting (PAS211H), nothing saved."
+            )
+            log_event_bg(
+                "training.rejected",
+                brokerage_id=brokerage_id,
+                event_category="llm",
+                event_source="self_trainer",
+                severity="warning",
+                payload={"reason": "generated_prompt_failed_injection_screen"},
+            )
+            return {}
+
     except Exception as e:
         logger.error(f"[{provider.name}] training analysis failed: {e}")
         log_event_bg(
@@ -146,12 +167,19 @@ async def run_training(brokerage_id: str) -> dict:
         )
         return {}
 
+    # PAS211H kill-switch: when prompt persistence is disabled, keep the insights
+    # but do NOT save the generated system/booking prompts (the engine then keeps
+    # using the safe built-in defaults).
+    persist_prompts = get_settings().SELF_TRAINING_PROMPT_PERSIST_ENABLED
     training_config = {
-        "booking_prompt": result["booking_prompt"],
-        "objection_system_prompt": result["objection_system_prompt"],
         "insights": result.get("insights", {}),
         "trained_at": datetime.now(timezone.utc).isoformat(),
     }
+    if persist_prompts:
+        training_config["booking_prompt"] = result["booking_prompt"]
+        training_config["objection_system_prompt"] = result["objection_system_prompt"]
+    else:
+        logger.info("SELF_TRAINING_PROMPT_PERSIST_ENABLED is false — not saving generated prompts")
 
     _save_training_config(brokerage_id, training_config, result.get("insights", {}))
     logger.info(f"Training complete for {brokerage_id} | rate={result.get('insights', {}).get('booking_rate', '?')}")
@@ -183,7 +211,10 @@ def _build_analysis_prompt(booked: list, not_booked: list) -> str:
             return f"--- {label}: none ---"
         parts = [f"--- {label} ({len(calls)} calls) ---"]
         for i, c in enumerate(calls[:15], 1):  # cap per category
-            parts.append(f"\n[Call {i}]\n{c.get('transcript', '(no transcript)')}")
+            # PAS211H: each transcript is untrusted — wrap as a data-only block so
+            # it cannot inject instructions into the analysis prompt.
+            block = safe_prompt_block(f"call_{i}", c.get("transcript", "(no transcript)"))
+            parts.append(f"\n[Call {i}]\n{block}")
         return "\n".join(parts)
 
     return (
