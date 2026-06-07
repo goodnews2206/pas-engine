@@ -84,4 +84,87 @@ Idempotent: a repeated identical submission under the same tenant returns `dupli
 
 ---
 
-*End of PAS213. Minimal digital lead ingestion: contract + pure normalizers + deterministic tenant-scoped dedupe + service + narrow route. No external services, no Gmail/OAuth/inbox scanning, no outbound dial, no migration, no new dependencies, no behaviour change outside ingestion. PAS209/stash/`__pycache__` untouched. Corpus used as spec only.*
+## 9. PAS213B — durable persistence, dedupe & event logging
+
+PAS213 was service-first and test-safe but its dedupe was **process-local** — a
+restart lost the seen-key set, so a re-posted form after a redeploy could create
+a second operational record. PAS213B upgrades ingestion to be **durable enough
+for a paying brokerage** without widening any boundary: no Gmail/OAuth, no inbox
+scanning, no external vendors, no CRM writeback, no outbound call, no auth
+rewrite, no new dependency.
+
+> Note: §8 originally pencilled "PAS213B" as the email forwarder. That work is
+> re-tagged **PAS214** below; PAS213B is the durability checkpoint that landed.
+
+### 9.1 Durable persistence decision
+
+The normalized lead already persists to the existing **`leads`** table via
+`lead_memory.upsert_lead` (tenant-scoped, `UNIQUE(brokerage_id, phone_number)`),
+which is exactly what the **PAS210 / PAS206 read-only snapshot adapter** reads to
+build operational intelligence. That write path is durable and unchanged — so
+digital leads already land where the snapshot bridge can see them. PAS213B keeps
+it as the default writer; no change to the `leads` schema was needed.
+
+### 9.2 Durable dedupe strategy
+
+Dedupe moves from in-memory to a dedicated **`lead_ingestion_dedupe`** ledger
+(`SupabaseLeadDedupeStore`, now the service default):
+
+- **Restart-survival:** the seen-key set lives in Postgres, not process memory.
+- **Tenant-scoped:** `brokerage_id` is part of `UNIQUE(brokerage_id, dedupe_key)`
+  and every read filters on it → **no cross-tenant dedupe**, ever.
+- **Key preference unchanged** from PAS213: `external_lead_id` preferred, else a
+  `contact | (message-hash | received-day)` fallback (deterministic, PII-free
+  `dl_<sha>` token).
+- **Race backstop:** the `UNIQUE` constraint rejects a concurrent duplicate
+  registration, which the store swallows — race-safe to the extent the existing
+  check-then-write DB pattern allows (the same pattern `lead_memory` uses).
+- **Fails open, never silent-drops:** on any DB error (including *table not yet
+  created because the migration is unapplied*), `is_duplicate` returns False and
+  the lead is still persisted + evented. A rare duplicate is acceptable; a lost
+  lead is not. The dedupe key is registered **after** the lead write so a write
+  failure cannot strand a key and drop a legitimate retry.
+- Injecting the process-local `LeadDedupeStore` still works (and still surfaces
+  `lead_dedupe_store_is_process_local`) for unit tests.
+
+### 9.3 Migration status
+
+**Created, NOT applied:** `scripts/migrate_v8_digital_ingestion_dedupe.sql`
+(additive, idempotent `CREATE TABLE IF NOT EXISTS` + indexes + RLS-enable,
+following the existing `migrate_v*.sql` convention). It must be applied by an
+operator in the Supabase SQL editor, exactly like every prior migration. Until
+then, durable dedupe degrades safely (§9.2). The table stores **no raw PII** —
+only the opaque dedupe-key token, the source label, and an optional vendor
+`external_lead_id`.
+
+### 9.4 Event logging behaviour
+
+Ingestion now emits the full lifecycle through the existing durable
+`pas_events` sink (`event_logger.log_event_bg`), all **PII-free**:
+
+| event | when | payload (structural only) |
+|-------|------|---------------------------|
+| `lead.ingested` | new lead persisted | source, raw_source_label, external_lead_id, dedupe_key, has_email, has_message, lead_created |
+| `lead.duplicate` | dedupe hit | source, raw_source_label, external_lead_id, dedupe_key |
+| `lead.rejected` | normalization failure or `tenant_mismatch` | reason, errors / claimed_brokerage_id, source |
+
+No phone / email / name / message text ever enters a payload. `tenant_unresolved`
+emits **nothing** — with no tenant there is nothing to scope an event to.
+
+### 9.5 What remains for PAS213C / PAS214
+
+- **PAS213C** — apply `migrate_v8`, then optional safe deferred call enqueue
+  (still never a direct dial from ingestion) and dedupe `hit_count`/`last_seen_at`
+  bumping on repeat hits.
+- **PAS214** — email-forwarder endpoint (signed `X-PAS-Webhook-Secret` / HMAC)
+  and per-provider source adapters projecting onto this same `NormalizedLead`.
+  Still no Gmail/OAuth/inbox scanning.
+
+---
+
+*End of PAS213B. Durable lead persistence + dedupe + lifecycle events on top of
+PAS213, within the same boundaries: durable `lead_ingestion_dedupe` ledger
+(migration proposal only — not applied), durable `pas_events` lifecycle logging,
+tenant isolation preserved, PII-free events, no outbound dial, no Gmail/OAuth, no
+external services, no new dependencies, no behaviour change outside ingestion.
+PAS209 / parked stash / `__pycache__` untouched. Corpus used as spec only.*
