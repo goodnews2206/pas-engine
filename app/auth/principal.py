@@ -30,8 +30,8 @@ Source vocabulary
   legacy_brokerage_key — X-API-Key header
 """
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, Tuple
 
 
 # ───────────── role constants ─────────────
@@ -50,6 +50,52 @@ ROLE_BROKERAGE_LEGACY: str = "brokerage_legacy"
 SOURCE_JWT: str = "jwt"
 SOURCE_LEGACY_ADMIN: str = "legacy_admin_key"
 SOURCE_LEGACY_BROKERAGE: str = "legacy_brokerage_key"
+SOURCE_SLACK_SIGNATURE: str = "slack_signature"
+SOURCE_TWILIO_SIGNATURE: str = "twilio_signature"
+SOURCE_SYSTEM: str = "system"
+
+
+# ───────────── PAS211G principal-type vocabulary ─────────────
+# Coarse identity class used by the PAS211G route auth matrix / RBAC. Distinct
+# from `role` (the PAS133A fine role) — both are carried on the Principal so
+# legacy role helpers keep working while PAS211G gates on principal_type.
+
+TYPE_ORVN_ADMIN: str = "ORVN_ADMIN"
+TYPE_BROKER_OWNER: str = "BROKER_OWNER"
+TYPE_TEAM_LEAD: str = "TEAM_LEAD"
+TYPE_AGENT: str = "AGENT"
+TYPE_INTEGRATION_FORWARDER: str = "INTEGRATION_FORWARDER"
+TYPE_SLACK_OPERATOR: str = "SLACK_OPERATOR"
+TYPE_SYSTEM_WORKER: str = "SYSTEM_WORKER"
+
+ALL_PRINCIPAL_TYPES: Tuple[str, ...] = (
+    TYPE_ORVN_ADMIN,
+    TYPE_BROKER_OWNER,
+    TYPE_TEAM_LEAD,
+    TYPE_AGENT,
+    TYPE_INTEGRATION_FORWARDER,
+    TYPE_SLACK_OPERATOR,
+    TYPE_SYSTEM_WORKER,
+)
+
+# Principal types that are tenant-scoped (a brokerage_id is required to be usable).
+_BROKERAGE_SCOPED_TYPES = frozenset({
+    TYPE_BROKER_OWNER,
+    TYPE_TEAM_LEAD,
+    TYPE_AGENT,
+    TYPE_INTEGRATION_FORWARDER,
+    TYPE_SLACK_OPERATOR,
+})
+
+
+# ───────────── auth-method constants ─────────────
+
+AUTH_ADMIN_KEY: str = "admin_key"
+AUTH_BROKERAGE_API_KEY: str = "brokerage_api_key"
+AUTH_JWT: str = "jwt"
+AUTH_SLACK_SIGNATURE: str = "slack_signature"
+AUTH_TWILIO_SIGNATURE: str = "twilio_signature"
+AUTH_SYSTEM: str = "system"
 
 
 # ───────────── role buckets ─────────────
@@ -95,12 +141,24 @@ class Principal:
     brokerage_id: Optional[str]
     source: str
 
+    # ── PAS211G.1 additive fields (all optional → existing construction
+    #    sites and tests that pass only the five PAS133A fields still work) ──
+    principal_type: Optional[str] = None     # TYPE_* (coarse identity class)
+    permissions: Tuple[str, ...] = ()        # fine-grained capability grants
+    auth_method: Optional[str] = None        # AUTH_* (how this request authed)
+    session_id: Optional[str] = None         # optional, for revocation/audit
+
     # ── role helpers ──
+
+    @property
+    def principal_id(self) -> Optional[str]:
+        """Stable identity for this principal (alias of user_id)."""
+        return self.user_id
 
     @property
     def is_admin(self) -> bool:
         """True for ORVN admins (JWT or legacy key)."""
-        return self.role in _ADMIN_ROLES
+        return self.role in _ADMIN_ROLES or self.principal_type == TYPE_ORVN_ADMIN
 
     @property
     def is_brokerage_user(self) -> bool:
@@ -136,3 +194,22 @@ class Principal:
     def is_legacy(self) -> bool:
         """True if this principal was authenticated by a legacy key."""
         return self.role in _LEGACY_ROLES or self.source in _LEGACY_SOURCES
+
+    # ── PAS211G.1 type / scope helpers ──
+
+    @property
+    def is_brokerage_scoped(self) -> bool:
+        """True for any tenant-scoped principal_type that has a brokerage_id.
+
+        Mirrors ``is_brokerage_user`` but keyed on the PAS211G principal_type
+        vocabulary (so it also covers TEAM_LEAD / INTEGRATION_FORWARDER /
+        SLACK_OPERATOR). A scoped type without a brokerage_id is not usable.
+        """
+        return self.principal_type in _BROKERAGE_SCOPED_TYPES and bool(self.brokerage_id)
+
+    def require_brokerage_id(self) -> str:
+        """Return the brokerage_id or raise — for call sites that must be
+        tenant-scoped. Never returns an empty/None tenant."""
+        if not self.brokerage_id:
+            raise ValueError("Principal has no brokerage_id (not tenant-scoped)")
+        return self.brokerage_id
