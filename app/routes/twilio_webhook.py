@@ -14,25 +14,69 @@ from app.db.call_logger import create_call_record
 from app.db.brokerage_store import get_brokerage_by_phone
 from app.utils.call_store import pending_leads, active_calls
 from app.utils.rate_limiter import rate_limit, client_ip
+from app.utils import twilio_replay
 
 router = APIRouter()
 logger = logging.getLogger("pas.twilio_webhook")
 settings = get_settings()
 
 
+def _pinned_webhook_url(request: Request) -> str:
+    """PAS211J: the canonical URL Twilio signed, derived from the configured
+    BASE_URL — NOT from spoofable ``X-Forwarded-Proto`` / ``X-Forwarded-Host`` /
+    ``Host`` headers. A captured signature is only valid for the URL Twilio was
+    configured to call; pinning to BASE_URL means an attacker who controls the
+    forwarded headers cannot steer verification onto a URL they signed.
+
+    Preserves the real route path and query string. Returns ``""`` when BASE_URL
+    is missing or is not an ``http(s)://`` URL, so the caller fails closed.
+    """
+    base = (settings.BASE_URL or "").strip()
+    if not (base.startswith("http://") or base.startswith("https://")):
+        return ""
+    base = base.rstrip("/")
+    url = f"{base}{request.url.path}"
+    if request.url.query:
+        url = f"{url}?{request.url.query}"
+    return url
+
+
 def _verify_twilio(request: Request, form_data: dict) -> bool:
     """
-    Validate the X-Twilio-Signature header to confirm the request
-    genuinely came from Twilio and has not been tampered with.
-    Uses the Twilio auth token as the HMAC key.
+    Validate the X-Twilio-Signature header to confirm the request genuinely came
+    from Twilio and has not been tampered with. Uses the Twilio auth token as the
+    HMAC key.
+
+    PAS211J: the signed URL is pinned to BASE_URL (see _pinned_webhook_url), not
+    rebuilt from forwarded host/proto headers. If BASE_URL is missing/invalid the
+    verification fails closed.
     """
+    url = _pinned_webhook_url(request)
+    if not url:
+        logger.error(
+            "Twilio signature verify: BASE_URL missing/invalid — failing closed"
+        )
+        return False
     validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
-    # Reconstruct the URL Twilio signed — respect reverse-proxy headers
-    proto = request.headers.get("X-Forwarded-Proto", request.url.scheme)
-    host = request.headers.get("X-Forwarded-Host", request.headers.get("host", request.url.netloc))
-    url = f"{proto}://{host}{request.url.path}"
     signature = request.headers.get("X-Twilio-Signature", "")
     return validator.validate(url, form_data, signature)
+
+
+def _reject_unverified_or_replayed(request: Request, form_dict: dict, surface: str) -> None:
+    """PAS211J: shared fail-closed gate for Twilio webhooks. When signatures are
+    required (every non-development env), reject a forged signature (403) and then
+    reject a replay of a previously-seen signed request (403). No-op in explicit
+    development, where ``require_twilio_signature`` is False and live Twilio
+    signatures are not available."""
+    if not settings.require_twilio_signature:
+        return
+    if not _verify_twilio(request, form_dict):
+        logger.warning(f"Rejected forged Twilio {surface} webhook from {client_ip(request)}")
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature.")
+    signature = request.headers.get("X-Twilio-Signature", "")
+    if twilio_replay.is_replay(request.url.path, signature):
+        logger.warning(f"Rejected replayed Twilio {surface} webhook from {client_ip(request)}")
+        raise HTTPException(status_code=403, detail="Duplicate Twilio request (replay).")
 
 
 @router.post("/voice")
@@ -45,10 +89,10 @@ async def incoming_call(request: Request):
 
     # Verify the request genuinely came from Twilio. RN-2 (PAS211A): the seam is
     # require_twilio_signature, which is True in every non-development env, so a
-    # forged webhook can never be silently accepted in production.
-    if settings.require_twilio_signature and not _verify_twilio(request, form_dict):
-        logger.warning(f"Rejected forged Twilio voice webhook from {client_ip(request)}")
-        raise HTTPException(status_code=403, detail="Invalid Twilio signature.")
+    # forged webhook can never be silently accepted in production. PAS211J: the
+    # signed URL is pinned to BASE_URL (not forwarded headers) and a replayed
+    # signed request is rejected.
+    _reject_unverified_or_replayed(request, form_dict, "voice")
 
     call_sid = form_data.get("CallSid", "unknown")
     caller = form_data.get("From", "unknown")
@@ -128,9 +172,8 @@ async def call_status(request: Request):
     form_dict = dict(form_data)
 
     # RN-2 (PAS211A): enforce in every non-development env (see /voice above).
-    if settings.require_twilio_signature and not _verify_twilio(request, form_dict):
-        logger.warning(f"Rejected forged Twilio status webhook from {client_ip(request)}")
-        raise HTTPException(status_code=403, detail="Invalid Twilio signature.")
+    # PAS211J: same BASE_URL-pinned verification + replay rejection as /voice.
+    _reject_unverified_or_replayed(request, form_dict, "status")
 
     call_sid = form_data.get("CallSid", "unknown")
     call_status = form_data.get("CallStatus", "unknown")
