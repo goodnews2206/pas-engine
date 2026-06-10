@@ -9,7 +9,18 @@ import logging
 
 import httpx
 
+from app.services.security.pii_safety import redact_pii, sanitize_slack_payload
+
 logger = logging.getLogger("pas.slack")
+
+
+def _safe_err(err: Exception, webhook_url: str) -> str:
+    """PAS211I: scrub the webhook URL (a bearer-secret) and any secret-shaped
+    token out of an exception string before it is logged."""
+    msg = str(err)
+    if webhook_url:
+        msg = msg.replace(webhook_url, "[slack-webhook]")
+    return redact_pii(msg)
 
 
 async def send_call_summary(webhook_url: str, summary: str, outcome: str, lead: dict, duration_seconds: int):
@@ -94,10 +105,16 @@ async def send_slack_message(webhook_url: str, text: str):
 
 
 async def _post_to_slack(webhook_url: str, blocks: list):
+    # PAS211I: strip secret-shaped tokens from the payload before it leaves PAS.
+    # Lead contact details (name/phone/email) are an intentional operational
+    # handoff and are preserved; only secret-like values are redacted.
+    safe_blocks = sanitize_slack_payload(blocks)
     try:
         async with httpx.AsyncClient(timeout=6.0) as client:
-            resp = await client.post(webhook_url, json={"blocks": blocks})
+            resp = await client.post(webhook_url, json={"blocks": safe_blocks})
             resp.raise_for_status()
             logger.info("Slack message sent")
     except Exception as e:
-        logger.error(f"Slack send failed: {e}")
+        # PAS211I: never let the webhook URL or a token reach the logs via the
+        # exception string (httpx echoes the request URL on errors).
+        logger.error(f"Slack send failed: {_safe_err(e, webhook_url)}")

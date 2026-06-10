@@ -18,7 +18,18 @@ import logging
 
 import httpx
 
+from app.services.security.pii_safety import redact_pii, sanitize_slack_payload
+
 logger = logging.getLogger("pas.slack_sender")
+
+
+def _safe_err(err: Exception, webhook_url: str) -> str:
+    """PAS211I: scrub the webhook URL (a bearer-secret) and any secret-shaped
+    token out of an exception string before it is logged."""
+    msg = str(err)
+    if webhook_url:
+        msg = msg.replace(webhook_url, "[slack-webhook]")
+    return redact_pii(msg)
 
 _HTTP_TIMEOUT_SECONDS = 6.0
 
@@ -37,17 +48,23 @@ async def send_slack_notification(webhook_url: str, message: str) -> bool:
         logger.info("slack_sender: empty message — skipping send")
         return False
 
+    # PAS211I: strip secret-shaped tokens from the outgoing text before it
+    # leaves PAS. Lead contact details are an intentional operational handoff
+    # and are preserved; only secret-like values are redacted.
+    safe_message = sanitize_slack_payload(message)
+
     try:
         async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
-            resp = await client.post(webhook_url, json={"text": message})
+            resp = await client.post(webhook_url, json={"text": safe_message})
         if 200 <= resp.status_code < 300:
             logger.info("slack_sender: sent")
             return True
-        snippet = (resp.text or "")[:200]
+        snippet = redact_pii((resp.text or "")[:200])
         logger.error(
             f"slack_sender: HTTP {resp.status_code} from Slack | body={snippet!r}"
         )
         return False
     except Exception as e:
-        logger.error(f"slack_sender: send failed: {e}")
+        # PAS211I: never let the webhook URL or a token reach the logs.
+        logger.error(f"slack_sender: send failed: {_safe_err(e, webhook_url)}")
         return False

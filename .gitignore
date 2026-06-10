@@ -23,3 +23,5 @@ backups/
 integrity_check_report.json
 pas169_launch_readiness_report.json
 security_audit_report.json
+# PAS211I: readiness-gate scripts emit a JSON report when run — never commit it.
+*_readiness_report.json
