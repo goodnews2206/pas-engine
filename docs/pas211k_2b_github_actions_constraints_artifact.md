@@ -59,12 +59,36 @@ File: `.github/workflows/pas211k-2b-generate-constraints.yml`
   `pip install -r requirements.txt`.
 - Records **Python version, OS/kernel, pip version, and UTC timestamp** in the
   `constraints.txt` header (and echoes them to the build log).
-- Generates `constraints.raw.txt` via `pip freeze`.
+- Generates `constraints.raw.txt` via `pip freeze` (**production-only set** —
+  the freeze happens before any dev/test deps are installed).
 - Generates `constraints.txt` = header + raw freeze output.
-- Validates: `python -m pip check`, `python -m compileall -q app scripts tests`,
-  `pytest tests/mvp -q`.
-- Uploads both files as an artifact named **`pas211k-2b-python-constraints`**.
+- Validates: `python -m pip check`, `python -m compileall -q app scripts tests`.
+- **Only then** installs dev/test deps (`pip install -r requirements-dev.txt`)
+  and runs `pytest tests/mvp -q`.
+- Uploads both files as an artifact named **`pas211k-2b-python-constraints`**,
+  with **`if: always()`** so the artifact is available even if pytest (or another
+  later step) fails.
 - Uses a **read-only** `contents: read` token.
+
+### Why `requirements-dev.txt` exists (PAS211K.2B-prep.2)
+
+PAS211K.1 flagged that `pytest` was **undeclared** — it lived only in developer
+machines, so a clean Python 3.11 CI venv (which installs `requirements.txt`
+only) had no test runner and `pytest tests/mvp -q` failed. `requirements-dev.txt`
+declares that **test-only** tooling reproducibly:
+
+- `pytest` is **test-only, not a production/runtime dependency** — it must not
+  enter `requirements.txt`, production images, or the deploy model.
+- The workflow installs `requirements-dev.txt` **after** the production
+  constraints are frozen, so dev/test packages **never leak** into
+  `constraints.txt` / `constraints.raw.txt`. The uploaded artifact remains a
+  pure production graph.
+- The artifact upload uses **`if: always()`** so the generated constraints stay
+  **inspectable even when a validation step fails** (the prior run lost the
+  artifact because the upload sat after a failing pytest with no `always()`).
+
+PAS211K.2B proper still **reviews/scrubs** the artifact against the review
+checklist before any commit — `requirements-dev.txt` does not change that gate.
 
 ## What the workflow does NOT do
 
