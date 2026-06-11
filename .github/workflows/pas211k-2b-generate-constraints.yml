@@ -77,13 +77,25 @@ jobs:
           . .venv/bin/activate
           python -m compileall -q app scripts tests
 
+      # Dev/test deps are installed ONLY here — AFTER the constraints freeze
+      # above — so pytest and other test-only tooling never leak into
+      # constraints.txt / constraints.raw.txt.
+      - name: Install dev/test dependencies
+        run: |
+          set -euo pipefail
+          . .venv/bin/activate
+          pip install -r requirements-dev.txt
+
       - name: Validate — pytest tests/mvp
         run: |
           set -euo pipefail
           . .venv/bin/activate
           pytest tests/mvp -q
 
+      # if: always() ensures the constraints artifact is uploaded for inspection
+      # even when a later validation step (e.g. pytest) fails.
       - name: Upload constraints artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pas211k-2b-python-constraints

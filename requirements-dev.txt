@@ -1,0 +1,12 @@
+# PAS dev/test dependencies — Python 3.11+
+#
+# TEST-ONLY tooling. NOT installed in production images and NOT part of the
+# deploy dependency model (requirements.txt stays the runtime source of truth).
+#
+# Installed in CI ONLY AFTER the production constraints are frozen, so these
+# packages never leak into constraints.txt / constraints.raw.txt.
+#
+# See docs/pas211k_2b_github_actions_constraints_artifact.md.
+
+# Test runner (was previously undeclared — see PAS211K.1 install contract).
+pytest==9.0.3
