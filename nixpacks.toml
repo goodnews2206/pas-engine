@@ -4,8 +4,8 @@ nixPkgs = ["ffmpeg", "python311", "python311Packages.pip"]
 [phases.install]
 cmds = [
   "python3.11 -m venv /opt/venv",
-  "/opt/venv/bin/pip install --upgrade pip",
-  "/opt/venv/bin/pip install -r requirements.txt"
+  "/opt/venv/bin/pip install pip==26.1.2",
+  "/opt/venv/bin/pip install -r requirements.txt -c constraints.txt"
 ]
 
 [start]
