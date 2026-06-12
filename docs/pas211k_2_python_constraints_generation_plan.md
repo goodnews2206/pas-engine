@@ -4,6 +4,11 @@
 > must be generated, validated, and enforced — so the actual file is never
 > produced from the wrong environment. Generation + the install-command change
 > happen in **PAS211K.2B**, not here.
+>
+> **Status — PAS211K.2B completed:** `constraints.txt` (generated on Python
+> 3.11.15 / Linux, pip 26.1.2) is committed at the repo root, and `nixpacks.toml`
+> now installs with `pip install -r requirements.txt -c constraints.txt` after
+> pinning `pip==26.1.2`. `requirements.txt` is unchanged.
 
 ## Executive Summary
 
