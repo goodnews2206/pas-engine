@@ -35,6 +35,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from pydantic import BaseModel
 
+from app.auth import (
+    extract_bearer_token,
+    resolve_principal_from_jwt,
+)
 from app.config import get_settings
 from app.db.brokerage_store import (
     create_brokerage,
@@ -60,14 +64,43 @@ logger = logging.getLogger("pas.admin")
 
 # ───────────── AUTH ─────────────
 
-def require_admin(x_admin_key: str = Header(...)):
+def require_admin(
+    x_admin_key: Optional[str] = Header(default=None),
+    authorization: Optional[str] = Header(default=None),
+):
+    """Authenticate an ORVN operator.
+
+    PAS211G.3 — principal-aware seam. When JWT auth is explicitly enabled
+    (JWT_AUTH_ENABLED, default False) AND a Bearer token is presented, that token
+    is authoritative and FAILS CLOSED — a bad token is never downgraded to the
+    admin key. Otherwise the legacy X-Admin-Key path runs UNCHANGED, so default
+    deployments behave exactly as before and the key path keeps returning True.
+    """
     settings = get_settings()
-    expected = settings.ADMIN_API_KEY or ""
+
+    # 1. JWT path — gated; only active when explicitly enabled.
+    if getattr(settings, "JWT_AUTH_ENABLED", False):
+        token = extract_bearer_token(authorization)
+        if token is not None:
+            principal = resolve_principal_from_jwt(token)
+            if principal is None:
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+            if not principal.is_admin:
+                raise HTTPException(status_code=403, detail="Admin privilege required")
+            return principal
+
+    # 2. Legacy X-Admin-Key path. A completely absent header (x_admin_key is
+    # None and no Bearer was used) preserves FastAPI's prior missing-required-
+    # header status (422) for backward compatibility — distinct from a present-
+    # but-wrong key, which stays 401.
+    if x_admin_key is None:
+        raise HTTPException(status_code=422, detail="X-Admin-Key header required")
     # PAS211D: constant-time compare so the admin secret can't be recovered
     # byte-by-byte via response-timing. An empty configured key always rejects.
     # (The weak/empty-key production startup refusal in main.py is unchanged.)
+    expected = settings.ADMIN_API_KEY or ""
     if not expected or not hmac.compare_digest(
-        (x_admin_key or "").encode("utf-8"), expected.encode("utf-8")
+        x_admin_key.encode("utf-8"), expected.encode("utf-8")
     ):
         raise HTTPException(status_code=401, detail="Invalid admin key")
     return True

@@ -54,6 +54,7 @@ from app.auth.resolver import (
     resolve_principal_from_brokerage_api_key,
     resolve_principal_from_jwt,
     resolve_principal_from_jwt_stub,
+    extract_bearer_token,
 )
 
 __all__ = [
@@ -94,4 +95,5 @@ __all__ = [
     "resolve_principal_from_brokerage_api_key",
     "resolve_principal_from_jwt",
     "resolve_principal_from_jwt_stub",
+    "extract_bearer_token",
 ]
