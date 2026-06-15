@@ -57,6 +57,13 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""
 
+    # Anon (publishable) key for the RLS-aware scoped client (PAS211G.4). Unlike
+    # SUPABASE_SERVICE_KEY (which has BYPASSRLS), the anon key + a verified user
+    # access token make PostgREST run as the `authenticated` role so RLS applies.
+    # Default empty: the scoped client factory fails closed when unset, and no
+    # runtime path uses it yet (route/store migration is a later checkpoint).
+    SUPABASE_ANON_KEY: str = ""
+
     # Cal.com (booking — optional, returns simulated booking when missing)
     CALCOM_API_KEY: str = ""
     CALCOM_EVENT_TYPE_ID: int = 0
