@@ -57,12 +57,48 @@ export interface DemoUser {
   permissions: Permission[];
 }
 
+/*
+ * Person-owned identity profile (PAS301 §4 class A — portable).
+ * Attributes of the PERSON, not the workspace: they travel with the person
+ * across every workspace and survive departures. Display-only here.
+ */
+export interface DemoIdentityProfile {
+  timezone: string;
+  workingHours: string;
+}
+
+/*
+ * Personal PAS configuration (PAS301 §4 class A / §15 — person-owned, portable).
+ * The name and tone the person chose for their assistant. Display-only.
+ */
+export interface DemoAssistantPreferences {
+  assistantName: string;
+  tone: string;
+}
+
+/*
+ * Auth placeholder status. PAS301A is a SHELL — there is no real sign-in.
+ * The chosen direction (PAS301.5) is Google sign-in primary + email magic-link
+ * fallback; both are wired in a later checkpoint, not here.
+ */
+export interface DemoAuthStatus {
+  connected: false;
+  current: string;
+  plannedMethods: string[];
+  note: string;
+}
+
 export interface DemoSession {
   mode: "demo";
   sessionLabel: string;
   permissionBoundary: string;
   workspace: DemoWorkspace;
   user: DemoUser;
+  /* Person-owned (portable) — added in PAS301A. */
+  profile: DemoIdentityProfile;
+  assistant: DemoAssistantPreferences;
+  /* Auth shell status — added in PAS301A. */
+  auth: DemoAuthStatus;
 }
 
 /*
@@ -185,5 +221,19 @@ export const DEMO_SESSION: DemoSession = {
     initials: "DB",
     role: "Broker Owner",
     permissions: ROLE_PERMISSIONS["Broker Owner"],
+  },
+  profile: {
+    timezone: "America/New_York (ET)",
+    workingHours: "Mon–Fri · 8:00 AM – 6:00 PM",
+  },
+  assistant: {
+    assistantName: "PAS",
+    tone: "Calm · concise · proactive",
+  },
+  auth: {
+    connected: false,
+    current: "Demo session — real sign-in not connected yet",
+    plannedMethods: ["Continue with Google", "Email magic link"],
+    note: "Google sign-in / magic link will be wired in a later checkpoint.",
   },
 };
