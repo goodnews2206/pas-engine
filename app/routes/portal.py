@@ -30,8 +30,14 @@ from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from pydantic import BaseModel
 
 from app.db.booking_store import list_bookings
+from app.auth import (
+    extract_bearer_token,
+    resolve_principal_from_jwt,
+)
+from app.config import get_settings
 from app.db.brokerage_store import (
     get_brokerage_by_api_key,
+    get_brokerage_by_id,
     update_brokerage,
     set_brokerage_active,
     update_featured_properties,
@@ -83,8 +89,47 @@ class NotificationConfigUpdate(BaseModel):
 
 # ───────────── AUTH ─────────────
 
-def require_brokerage(x_api_key: str = Header(...)):
-    """Authenticate a brokerage client by API key. Returns the full brokerage record."""
+def require_brokerage(
+    x_api_key: Optional[str] = Header(default=None),
+    authorization: Optional[str] = Header(default=None),
+):
+    """Authenticate a brokerage client. Returns the full brokerage record.
+
+    PAS211G.3 — principal-aware seam. When JWT auth is explicitly enabled
+    (JWT_AUTH_ENABLED, default False) AND a Bearer token is presented, that token
+    is authoritative and FAILS CLOSED — a bad token is never downgraded to the
+    API key. A verified brokerage-scoped principal resolves its brokerage record
+    by its VERIFIED brokerage_id claim (never an inbound value). Otherwise the
+    legacy X-API-Key path runs UNCHANGED, so default deployments behave exactly
+    as before and this dependency keeps returning the brokerage dict that route
+    handlers consume.
+    """
+    settings = get_settings()
+
+    # 1. JWT path — gated; only active when explicitly enabled.
+    if getattr(settings, "JWT_AUTH_ENABLED", False):
+        token = extract_bearer_token(authorization)
+        if token is not None:
+            principal = resolve_principal_from_jwt(token)
+            if principal is None:
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+            if not principal.is_brokerage_scoped:
+                raise HTTPException(status_code=403, detail="Brokerage scope required")
+            brokerage = get_brokerage_by_id(principal.brokerage_id)
+            if (
+                not brokerage
+                or brokerage.get("id") == "demo"
+                or brokerage.get("id") != principal.brokerage_id
+            ):
+                raise HTTPException(status_code=403, detail="Brokerage not found for token scope")
+            return brokerage
+
+    # 2. Legacy X-API-Key path. A completely absent header (x_api_key is None
+    # and no Bearer was used) preserves FastAPI's prior missing-required-header
+    # status (422) for backward compatibility — distinct from a present-but-wrong
+    # key, which stays 401.
+    if x_api_key is None:
+        raise HTTPException(status_code=422, detail="X-API-Key header required")
     brokerage = get_brokerage_by_api_key(x_api_key)
     if not brokerage or brokerage.get("id") == "demo":
         raise HTTPException(status_code=401, detail="Invalid API key")

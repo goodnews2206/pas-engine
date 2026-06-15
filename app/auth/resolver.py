@@ -235,11 +235,21 @@ def resolve_principal_from_jwt(token: Optional[str]) -> Optional[Principal]:
 resolve_principal_from_jwt_stub = resolve_principal_from_jwt
 
 
-def _bearer_token(request) -> Optional[str]:
-    auth = request.headers.get("Authorization") or ""
+def extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
+    """Parse an ``Authorization`` header value → the bearer token, or None.
+
+    Returns None for a missing, non-Bearer, or empty-token header. Shared by the
+    resolver and by route dependencies (PAS211G.3) so Bearer parsing lives in one
+    place.
+    """
+    auth = authorization or ""
     if auth.lower().startswith("bearer "):
         return auth[7:].strip() or None
     return None
+
+
+def _bearer_token(request) -> Optional[str]:
+    return extract_bearer_token(request.headers.get("Authorization"))
 
 
 def _surface_for_path(path: str) -> Optional[str]:
@@ -277,4 +287,5 @@ __all__ = (
     "resolve_principal_from_brokerage_api_key",
     "resolve_principal_from_jwt",
     "resolve_principal_from_jwt_stub",
+    "extract_bearer_token",
 )
