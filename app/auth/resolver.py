@@ -21,16 +21,25 @@ import hmac
 import logging
 from typing import Optional
 
+import jwt
+
 from app.auth.principal import (
+    ALL_PRINCIPAL_TYPES,
     AUTH_ADMIN_KEY,
     AUTH_BROKERAGE_API_KEY,
+    AUTH_JWT,
     ROLE_ADMIN_LEGACY,
+    ROLE_AGENT,
     ROLE_BROKERAGE_LEGACY,
+    ROLE_OWNER,
+    SOURCE_JWT,
     SOURCE_LEGACY_ADMIN,
     SOURCE_LEGACY_BROKERAGE,
+    TYPE_AGENT,
     TYPE_BROKER_OWNER,
     TYPE_INTEGRATION_FORWARDER,
     TYPE_ORVN_ADMIN,
+    TYPE_TEAM_LEAD,
     Principal,
 )
 from app.config import get_settings
@@ -103,23 +112,127 @@ def resolve_principal_from_brokerage_api_key(
     )
 
 
-def resolve_principal_from_jwt_stub(token: Optional[str]) -> Optional[Principal]:
-    """JWT path — SAFE STUB (PAS211G.1).
+# Map a verified Supabase app-role claim onto the coarse PAS211G principal_type.
+# Used ONLY when the token carries no explicit, recognised ``principal_type``
+# claim. Conservative by design: a role we can't map leaves principal_type unset
+# (``None``) rather than inventing a privileged type. (No ROLE_TEAM_LEAD constant
+# exists yet — the literal mirrors the plan's future brokerage role, PAS301G.)
+_JWT_ROLE_TO_TYPE = {
+    ROLE_OWNER: TYPE_BROKER_OWNER,
+    ROLE_AGENT: TYPE_AGENT,
+    "team_lead": TYPE_TEAM_LEAD,
+}
 
-    * JWT disabled (default) → ``None`` (no Bearer auth offered).
-    * JWT enabled but verification not yet implemented → ``None`` (FAIL CLOSED).
 
-    It NEVER constructs a Principal from an unverified token. Real HS256
-    verification (Supabase Auth) lands in PAS211G.2.
+def _principal_from_claims(claims: dict) -> Optional[Principal]:
+    """Build a Principal from ALREADY-VERIFIED JWT claims.
+
+    Returns ``None`` when the token carries no usable subject — a production
+    identity is never minted without a verified ``sub`` / ``user_id``. Tenant
+    scope, role, and permissions come ONLY from verified claims; nothing is read
+    from the request body or query (PAS doctrine: ``brokerage_id`` is never
+    trusted from inbound payloads).
     """
-    if not get_settings().JWT_AUTH_ENABLED:
+    user_id = claims.get("sub") or claims.get("user_id")
+    if not user_id:
         return None
-    if token:
+
+    role = claims.get("role") or ""
+    brokerage_id = claims.get("brokerage_id") or None
+    email = claims.get("email") or None
+
+    # principal_type: an explicit, RECOGNISED claim wins; otherwise infer from
+    # the verified app role; otherwise leave unset (deny-by-default downstream).
+    ptype = claims.get("principal_type")
+    if ptype not in ALL_PRINCIPAL_TYPES:
+        ptype = _JWT_ROLE_TO_TYPE.get(role)
+
+    perms = claims.get("permissions")
+    permissions = (
+        tuple(p for p in perms if isinstance(p, str))
+        if isinstance(perms, (list, tuple))
+        else ()
+    )
+
+    session_id = claims.get("session_id") or claims.get("jti") or None
+
+    return Principal(
+        user_id=str(user_id),
+        email=email,
+        role=role,
+        brokerage_id=brokerage_id,
+        source=SOURCE_JWT,
+        principal_type=ptype,
+        permissions=permissions,
+        auth_method=AUTH_JWT,
+        session_id=session_id,
+    )
+
+
+def resolve_principal_from_jwt(token: Optional[str]) -> Optional[Principal]:
+    """Bearer token → Principal via REAL Supabase JWT verification (PAS211G.2).
+
+    Fail-closed at every step — returns ``None`` rather than a partial / zero-
+    trust identity whenever anything is off:
+
+      * ``JWT_AUTH_ENABLED`` is False (default)             → None (no Bearer auth)
+      * ``SUPABASE_JWT_SECRET`` is missing                  → None (cannot verify)
+      * no token                                            → None
+      * malformed / unsupported-alg / ``alg=none`` / bad signature → None
+      * expired                                             → None
+      * wrong issuer  (when ``JWT_ISSUER`` is configured)   → None
+      * wrong audience (when ``JWT_AUDIENCE`` is configured)→ None
+      * no verified subject claim                           → None
+
+    Verification is pinned to **HS256** (the Supabase Auth access-token signing
+    algorithm); the token is NEVER decoded without signature verification for
+    any trust decision, and ``alg=none`` is rejected. PAS211G.2 does NOT wire
+    this into any route — route enforcement is PAS211G.3.
+    """
+    settings = get_settings()
+    if not settings.JWT_AUTH_ENABLED:
+        return None
+
+    secret = settings.SUPABASE_JWT_SECRET or ""
+    if not secret:
         logger.warning(
-            "JWT_AUTH_ENABLED is true but JWT verification is not implemented yet "
-            "(PAS211G.2) — failing closed; Bearer token rejected."
+            "JWT_AUTH_ENABLED is true but SUPABASE_JWT_SECRET is empty — "
+            "failing closed; Bearer token rejected."
         )
-    return None
+        return None
+
+    if not token:
+        return None
+
+    decode_kwargs = {"algorithms": ["HS256"]}
+    options: dict = {}
+    if settings.JWT_AUDIENCE:
+        decode_kwargs["audience"] = settings.JWT_AUDIENCE
+    else:
+        # Supabase tokens always carry aud="authenticated"; when no expected
+        # audience is pinned we must NOT verify aud or every valid token fails.
+        options["verify_aud"] = False
+    if settings.JWT_ISSUER:
+        decode_kwargs["issuer"] = settings.JWT_ISSUER
+    if options:
+        decode_kwargs["options"] = options
+
+    try:
+        claims = jwt.decode(token, secret, **decode_kwargs)
+    except jwt.PyJWTError as exc:
+        logger.warning("JWT verification rejected token: %s", type(exc).__name__)
+        return None
+    except Exception:  # pragma: no cover - defensive, never trust on error
+        logger.warning("Unexpected error verifying JWT — failing closed.")
+        return None
+
+    return _principal_from_claims(claims)
+
+
+# Backwards-compatible alias. PAS211G.1 shipped a fail-closed stub under this
+# name; it now points at the real verifier so existing imports/exports keep
+# working without any route-layer change.
+resolve_principal_from_jwt_stub = resolve_principal_from_jwt
 
 
 def _bearer_token(request) -> Optional[str]:
@@ -140,8 +253,8 @@ def resolve_principal_from_request(request) -> Optional[Principal]:
     order: verified JWT (stub) → X-Admin-Key → X-API-Key. Returns ``None`` when
     no credential resolves. No route is forced to use this in PAS211G.1.
     """
-    # 1. JWT (safe stub — never grants in G.1).
-    principal = resolve_principal_from_jwt_stub(_bearer_token(request))
+    # 1. JWT (real verification — PAS211G.2; still unwired from routes).
+    principal = resolve_principal_from_jwt(_bearer_token(request))
     if principal is not None:
         return principal
 
@@ -162,5 +275,6 @@ __all__ = (
     "resolve_principal_from_request",
     "resolve_principal_from_admin_key",
     "resolve_principal_from_brokerage_api_key",
+    "resolve_principal_from_jwt",
     "resolve_principal_from_jwt_stub",
 )
