@@ -7,7 +7,9 @@ the resolver boundary (app.auth.resolver), and pure authorization helpers
 
 PAS211G.1 adds the resolver + authz scaffolding but does NOT enforce it on any
 production route yet (route migration is PAS211G.3). X-Admin-Key and X-API-Key
-auth in the existing routes is unchanged; the JWT path is a fail-closed stub.
+auth in the existing routes is unchanged. PAS211G.2 replaces the JWT stub with
+real Supabase HS256 verification, but the JWT path is still not wired into any
+route.
 """
 
 from app.auth.principal import (  # re-export for ergonomic imports
@@ -50,6 +52,7 @@ from app.auth.resolver import (
     resolve_principal_from_request,
     resolve_principal_from_admin_key,
     resolve_principal_from_brokerage_api_key,
+    resolve_principal_from_jwt,
     resolve_principal_from_jwt_stub,
 )
 
@@ -89,5 +92,6 @@ __all__ = [
     "resolve_principal_from_request",
     "resolve_principal_from_admin_key",
     "resolve_principal_from_brokerage_api_key",
+    "resolve_principal_from_jwt",
     "resolve_principal_from_jwt_stub",
 ]

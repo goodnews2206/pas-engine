@@ -29,5 +29,10 @@ openai==1.54.4
 # Supabase
 supabase==2.10.0
 
+# Auth — Supabase Auth JWT verification (HS256 access tokens, PAS211G.2).
+# Already present transitively (gotrue/twilio) and pinned in constraints.txt;
+# declared directly here because PAS now imports it (app/auth/resolver.py).
+PyJWT==2.13.0
+
 # Utilities
 python-multipart==0.0.12  # for FastAPI form parsing (Twilio webhooks)
