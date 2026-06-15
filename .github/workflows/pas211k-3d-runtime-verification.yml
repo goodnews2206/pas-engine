@@ -1,0 +1,88 @@
+name: PAS211K.3D Runtime Verification
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - ".python-version"
+      - "nixpacks.toml"
+      - "railway.toml"
+      - "Procfile"
+      - "web/.nvmrc"
+      - "web/package.json"
+      - "web/pnpm-lock.yaml"
+      - ".github/workflows/pas211k-3d-runtime-verification.yml"
+permissions:
+  contents: read
+jobs:
+  verify-runtime-declarations:
+    name: Verify runtime declarations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Assert runtime declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail() {
+            echo "::error::$1"
+            exit 1
+          }
+          assert_file() {
+            if [ ! -f "$1" ]; then
+              fail "Missing required file: $1"
+            fi
+          }
+          assert_file ".python-version"
+          assert_file "nixpacks.toml"
+          assert_file "railway.toml"
+          assert_file "Procfile"
+          assert_file "web/.nvmrc"
+          assert_file "web/package.json"
+          python_version="$(tr -d '\r\n' < .python-version)"
+          if [ "$python_version" != "3.11" ]; then
+            fail ".python-version must be exactly 3.11"
+          fi
+          case "$python_version" in
+            *.*.*|*x*|*X*)
+              fail ".python-version must use minor-only 3.11, not a patch or wildcard version"
+              ;;
+          esac
+          if ! grep -Eq 'python311' nixpacks.toml; then
+            fail "nixpacks.toml must declare python311"
+          fi
+          if ! grep -Eq 'python3\.11[[:space:]]+-m[[:space:]]+venv' nixpacks.toml; then
+            fail "nixpacks.toml must create the virtualenv with python3.11"
+          fi
+          node_version="$(tr -d '\r\n' < web/.nvmrc)"
+          if [ "$node_version" != "24" ]; then
+            fail "web/.nvmrc must be exactly 24"
+          fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          package_json = Path("web/package.json")
+          data = json.loads(package_json.read_text(encoding="utf-8"))
+          errors = []
+          engines = data.get("engines") or {}
+          node = engines.get("node")
+          package_manager = data.get("packageManager")
+          if node != "24.x":
+              errors.append(f"web/package.json engines.node must be '24.x' (got {node!r})")
+          if package_manager != "pnpm@11.3.0":
+              errors.append(
+                  f"web/package.json packageManager must be 'pnpm@11.3.0' "
+                  f"(got {package_manager!r})"
+              )
+          if errors:
+              for error in errors:
+                  print(f"::error::{error}")
+              raise SystemExit(1)
+          PY
+          if grep -Eqi '(python|node|pnpm)' railway.toml; then
+            fail "railway.toml must not declare Python, Node, or pnpm runtime versions"
+          fi
+          if grep -Eqi '(python|node|pnpm)' Procfile; then
+            fail "Procfile must not declare Python, Node, or pnpm runtime versions"
+          fi
+          echo "PAS211K.3D runtime declaration verification passed."
