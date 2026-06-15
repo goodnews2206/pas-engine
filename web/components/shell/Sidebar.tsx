@@ -8,6 +8,7 @@
  */
 
 import NavList from "./NavList";
+import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import { DEMO_SESSION } from "@/lib/session/demoSession";
 import styles from "./Sidebar.module.css";
 
@@ -22,13 +23,8 @@ export default function Sidebar() {
         <span className={styles.brand}>ORVN Labs</span>
       </div>
 
-      {/* Workspace context + role */}
-      <div className={styles.workspace}>
-        <span className={styles.workspaceName}>{workspace.name}</span>
-        <span className={styles.roleChip} aria-label={`Role: ${user.role}`}>
-          {user.role}
-        </span>
-      </div>
+      {/* Workspace shell — active workspace, role/hat, inert switcher (PAS301B) */}
+      <WorkspaceSwitcher />
 
       {/* Module navigation — client component for pathname-aware active state */}
       <nav className={styles.nav} aria-label="Module navigation">

@@ -88,6 +88,28 @@ export interface DemoAuthStatus {
   note: string;
 }
 
+/*
+ * Workspace membership model (PAS301B) — DISPLAY-ONLY.
+ *
+ * Previews the PAS301 "one identity, many workspaces" model. There is no real
+ * workspace switching, no membership enforcement, and no persistence here — the
+ * list is a build-time constant and every control that renders it is inert.
+ * Real membership + per-workspace role enforcement is a later backend checkpoint.
+ */
+export type DemoWorkspaceType = "personal" | "team" | "brokerage" | "orvn";
+
+export interface DemoWorkspaceMembership {
+  id: string;
+  name: string;
+  type: DemoWorkspaceType;
+  /* The person's role/hat in THIS workspace (display-only). */
+  role: Role;
+  /* True for the one workspace currently being acted in. */
+  active: boolean;
+  /* Short, product-language line about what this workspace holds. */
+  summary: string;
+}
+
 export interface DemoSession {
   mode: "demo";
   sessionLabel: string;
@@ -99,6 +121,9 @@ export interface DemoSession {
   assistant: DemoAssistantPreferences;
   /* Auth shell status — added in PAS301A. */
   auth: DemoAuthStatus;
+  /* Workspace membership shell — added in PAS301B. */
+  activeWorkspaceId: string;
+  workspaces: DemoWorkspaceMembership[];
 }
 
 /*
@@ -236,4 +261,25 @@ export const DEMO_SESSION: DemoSession = {
     plannedMethods: ["Continue with Google", "Email magic link"],
     note: "Google sign-in / magic link will be wired in a later checkpoint.",
   },
+  activeWorkspaceId: "demo-orvn-realty",
+  workspaces: [
+    {
+      id: "demo-personal",
+      name: "Your personal workspace",
+      type: "personal",
+      role: "Broker Owner",
+      active: false,
+      summary:
+        "Where your identity, preferences, and personal PAS setup live. Yours, and it travels with you.",
+    },
+    {
+      id: "demo-orvn-realty",
+      name: "ORVN Demo Realty",
+      type: "brokerage",
+      role: "Broker Owner",
+      active: true,
+      summary:
+        "The brokerage you are operating in right now. Its client and transaction records are workspace-governed.",
+    },
+  ],
 };
